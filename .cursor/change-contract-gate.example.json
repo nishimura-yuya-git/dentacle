@@ -1,0 +1,10 @@
+{
+  "mode": "pending",
+  "reason": "変更契約提示: 例）Hard Boundary ガード強化",
+  "proposed_whitelist": [
+    "scripts/cursor-safety-guard.mjs",
+    "docs/agent-loop-harness.md"
+  ],
+  "whitelist": [],
+  "expires_at": "2026-07-18T23:59:59+09:00"
+}

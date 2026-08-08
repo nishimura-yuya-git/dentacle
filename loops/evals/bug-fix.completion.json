@@ -1,0 +1,34 @@
+{
+  "id": "bug-fix.completion",
+  "version": 1,
+  "goal": "bug-fix",
+  "kind": "completion",
+  "description": "Bug Fix Loop 完成ゲート",
+  "source": "loops/goals/bug-fix.md",
+  "criteria": [
+    {
+      "id": "evaluation-run",
+      "label": "Evaluation コマンドと結果がある",
+      "required": true,
+      "signals": ["hasEvaluationCommand", "hasEvaluationResult"]
+    },
+    {
+      "id": "evaluation-not-stop",
+      "label": "Evaluation が stop ではない",
+      "required": true,
+      "signals": ["evaluationNotStop"]
+    },
+    {
+      "id": "evidence-link",
+      "label": "根拠リンク（パス / MEMORY / 根拠ノート）がある",
+      "required": true,
+      "signals": ["hasEvidenceLink"]
+    },
+    {
+      "id": "iteration-declared",
+      "label": "iteration を宣言している",
+      "required": false,
+      "signals": ["hasIteration"]
+    }
+  ]
+}

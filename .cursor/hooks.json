@@ -1,0 +1,54 @@
+{
+  "version": 1,
+  "hooks": {
+    "sessionStart": [
+      {
+        "command": "node scripts/cursor-session-start-memory.mjs"
+      },
+      {
+        "command": "CURSOR_HOOK_EVENT=sessionStart node scripts/cursor-security-hook.mjs"
+      }
+    ],
+    "sessionEnd": [
+      {
+        "command": "node scripts/cursor-session-end-memory.mjs"
+      }
+    ],
+    "preToolUse": [
+      {
+        "command": "context-mode hook cursor pretooluse",
+        "matcher": "Shell|Read|Grep|WebFetch|Task|MCP:ctx_execute|MCP:ctx_execute_file|MCP:ctx_batch_execute"
+      },
+      {
+        "command": "node scripts/cursor-safety-guard.mjs",
+        "matcher": "Write|StrReplace|Delete|EditNotebook",
+        "failClosed": true
+      }
+    ],
+    "subagentStart": [
+      {
+        "command": "node scripts/cursor-subagent-guard.mjs",
+        "failClosed": true
+      }
+    ],
+    "subagentStop": [
+      {
+        "command": "node scripts/cursor-subagent-stop.mjs"
+      }
+    ],
+    "postToolUse": [
+      {
+        "command": "context-mode hook cursor posttooluse"
+      }
+    ],
+    "stop": [
+      {
+        "command": "context-mode hook cursor stop"
+      },
+      {
+        "command": "node scripts/cursor-security-hook.mjs",
+        "failClosed": true
+      }
+    ]
+  }
+}

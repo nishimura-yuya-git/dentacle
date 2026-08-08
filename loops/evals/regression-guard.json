@@ -1,0 +1,28 @@
+{
+  "id": "regression-guard",
+  "version": 1,
+  "goal": "regression-guard",
+  "kind": "safety",
+  "description": "修正後の回帰確認",
+  "source": "loops/goals/regression-guard.md",
+  "criteria": [
+    {
+      "id": "evaluation-run",
+      "label": "Evaluation コマンドと結果がある",
+      "required": true,
+      "signals": ["hasEvaluationCommand", "hasEvaluationResult"]
+    },
+    {
+      "id": "evaluation-not-stop",
+      "label": "Evaluation が stop ではない",
+      "required": true,
+      "signals": ["evaluationNotStop"]
+    },
+    {
+      "id": "evidence-link",
+      "label": "根拠リンクがある",
+      "required": false,
+      "signals": ["hasEvidenceLink"]
+    }
+  ]
+}

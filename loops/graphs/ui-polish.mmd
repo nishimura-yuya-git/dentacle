@@ -1,0 +1,29 @@
+%% UI Polish Loop の外側 Graph（Sequential + 差し戻し）
+%% 正本: loops/goals/ui-polish.md
+%% 凡例:
+%%   灰: 入口・出口・人間確認
+%%   緑: 生成ノード（内側は Loop 型で AI が次手を決める）
+%%   紫: 判定ノード（完成ゲート。遷移は定義済み）
+%% maxIterations: ③→④ の往復は最大 3 回
+
+flowchart TD
+  IN["① 画像・意図の抽出<br/>トークン表 / 完成判定"] --> CONTRACT["② 変更契約<br/>必要時"]
+  CONTRACT --> GEN["③ 生成ノード<br/>面→タイポ→主ボタン→余白"]
+  GEN --> JUDGE["④ 判定ノード<br/>loop:evaluate / evaluator<br/>+ Regression Guard<br/>+ Interface Review"]
+
+  JUDGE -->|"pass / 説明可能な warn<br/>かつ Review が Block でない"| DONE["⑤ 完成宣言<br/>LOOP_COMPLETE 相当"]
+  JUDGE -->|"差し戻し<br/>完成条件未達・必須失敗<br/>または Review Block"| GEN
+  JUDGE -->|"stop / 上限3回 / No progress / 禁止衝突"| HUMAN["人間確認"]
+
+  DONE --> OUT["終了"]
+  HUMAN --> OUT
+
+  classDef entry fill:#e5e7eb,stroke:#64748b,color:#0f172a
+  classDef gen fill:#a8e6a3,stroke:#15803d,color:#14532d
+  classDef judge fill:#c4b5fd,stroke:#6d28d9,color:#1e1b4b
+  classDef exit fill:#e5e7eb,stroke:#64748b,color:#0f172a
+
+  class IN,CONTRACT,OUT entry
+  class GEN gen
+  class JUDGE judge
+  class DONE,HUMAN exit

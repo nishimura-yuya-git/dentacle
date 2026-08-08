@@ -1,0 +1,10 @@
+{
+  "reason": "変更契約承認: YYYY-MM-DD / 対象作業の要約",
+  "paths": [
+    "api/resend/emails.js"
+  ],
+  "prefixes": [
+    "supabase/migrations/"
+  ],
+  "expires_at": "2026-07-18T23:59:59+09:00"
+}

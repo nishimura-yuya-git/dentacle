@@ -1,0 +1,511 @@
+---
+description: 業務システム向けUIデザイン規約。ダッシュボード、モーダル、マトリクス、カレンダー、CSV取込などの標準を定義する。
+globs:
+alwaysApply: true
+---
+# 業務システムUIデザインルール
+
+このルールは、ダッシュボード、管理画面、業務入力、月間マトリクス、カレンダー、CSVアップロード、モーダル、トーストなどの**業務システムUI**に適用する。
+
+HP / LP / ブランドサイト向けの演出ルールは `ui-design-hp-lp.mdc` に分離する。業務アプリでは本ファイルと `ui-language.mdc` を優先する。
+
+## UI Polish Loop の運用
+
+業務UIの改善、見本画像、スクリーンショット、余白、ボタン、見た目に関する依頼では、実装前に `loops/goals/ui-polish.md` を適用する。
+
+- 業務UIか HP/LP かを最初に判定する。
+- 業務UIの場合は、本ファイルと `ui-language.mdc` を優先する。
+- 画像やスクリーンショットがある場合は、レイアウト、余白、色、重心、視線誘導、ボタン階層、禁止事項を言語化してから変更契約を出す。
+- 抽象語で止めず、今回使うトークン表（canvas / surface / elevated、ink階層、primaryの役割、余白、角丸、影）を5〜15行で出す。値は本ファイルを正とする。
+- 完成判定を3〜7個に絞り、実装後は面→タイポ→主ボタン→余白の順で小さく照合する。
+- 外部ブランド DESIGN.md の見た目をそのまま採用しない。書き方（トークン・定型・Iteration）だけ借りる。
+
+## 基本原則
+
+- **業務の迷いを減らす**: 見た目の派手さより、次に何をすべきかが即座に分かる情報設計を優先する。
+- **日本語優先**: 見出し、説明、ボタン、空状態、トーストは日本語で書く。装飾目的の英語ラベルを追加しない。
+- **上品な余白**: 主要コンテナは `p-6` 以上、モーダルは `p-8` 前後を基準にする。高密度表はセル内余白を絞ってよいが、見出し・操作列には余白を残す。
+- **静かな高級感**: 白、スレート、薄い境界線、控えめな影、明確な状態色で構成する。派手なグラデーションや常時動く装飾で高級感を作らない。
+- **既存コンポーネント優先**: `DashboardLayout`、`Button`、`Modal`、`Toast` など既存の共通UIを優先する。
+- **PCとモバイルは別設計**: PC画面の縮小だけで済ませない。モバイルはドロワー、下方向の情報流、タップ領域、カレンダー専用UIを検討する。
+
+## カラーシステム
+
+### 基本色
+
+- 主色: `#008C01` / `emerald` 系。主要アクション、選択状態、成功導線に使う。
+- 背景: `bg-[#F0F9F0]`, `bg-slate-50`, `bg-white` を基準にする。
+- 本文: `text-slate-900` を主見出し、`text-slate-700` を本文、`text-slate-400` を補助説明に使う。
+- 境界線: `border-slate-100` から `border-slate-200` を基準にする。
+
+### 状態色
+
+- 成功: `emerald` / `#008C01`
+- 危険・削除・不整合: `rose` / `red`
+- 注意・未確定・処理待ち: `amber` / `orange`
+- 情報・補助分類: `blue` / `indigo`
+- 無効・下書き・過去: `slate`
+
+### 色の使い方
+
+- 同じ業務状態には同じ色を使う。画面ごとに `pending` や `approved` の色を変えない。
+- 色だけで意味を伝えない。ラベル、数値、ツールチップ、`aria-label` を併用する。
+- 背景色の強い面積は小さくする。大きな面は `bg-white` / `bg-slate-50` を基準にし、状態色はバッジ・線・小さな面で使う。
+
+### 状態色の実装例
+
+```tsx
+const STATUS_STYLES = {
+  approved: 'bg-[#008C01] text-white border-[#008C01]',
+  pending: 'bg-orange-50 text-orange-600 border-orange-200',
+  waiting: 'bg-indigo-50 text-indigo-600 border-indigo-200',
+  draft: 'bg-slate-50 text-slate-400 border-slate-200',
+  rejected: 'bg-rose-50 text-rose-600 border-rose-200',
+  cancelled: 'bg-slate-100 text-slate-400 border-slate-200',
+} as const;
+
+type StatusKey = keyof typeof STATUS_STYLES;
+
+export function StatusBadge({ status, label }: { status: StatusKey; label: string }) {
+  return (
+    <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-bold ${STATUS_STYLES[status]}`}>
+      {label}
+    </span>
+  );
+}
+```
+
+## タイポグラフィ
+
+- 業務アプリの基本フォントはサンセリフを使う。装飾目的で明朝体や英字見出しを追加しない。
+- ページタイトル: `text-lg md:text-2xl font-bold text-slate-900`
+- セクション見出し: `text-sm font-bold text-slate-800`
+- 補助説明: `text-xs text-slate-400`
+- 表・バッジの補助文字は `text-[10px]` 以上を基準にする。`text-[8px]` / `text-[9px]` は、狭いセル内の補助情報に限定する。
+- `uppercase tracking-widest` は業務UIでは原則使わない。意味が日本語で伝わるラベルにする。
+
+## レイアウト標準
+
+### ダッシュボード・管理画面
+
+- 共通レイアウトは `DashboardLayout` を基準にする。
+- PCはサイドバー + 固定ヘッダー + メイン領域の構成にする。
+- モバイルはドロワーサイドバー、ホーム導線、プロフィール導線を明確にする。
+- ヘッダーは `bg-white/95 backdrop-blur-md border-b` のように、コンテンツと分離しつつ軽く見せる。
+- ページの主要操作はヘッダー右側またはタイトル直下に集約し、画面下部に散らさない。
+
+### ダッシュボード利用例
+
+```tsx
+export function OperationsDashboardPage() {
+  return (
+    <DashboardLayout title="業務ダッシュボード">
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+          <MetricPanel label="本日の申請" value="24" note="未確認 3件" tone="attention" />
+          <MetricPanel label="確定済み勤務" value="128" note="前日比 +8" tone="success" />
+          <MetricPanel label="要対応" value="5" note="重複・不足あり" tone="danger" />
+        </div>
+
+        <section className="rounded-[28px] border border-slate-100 bg-white p-6 shadow-sm">
+          <div className="mb-5 flex items-center justify-between gap-4">
+            <div>
+              <h2 className="text-base font-bold text-slate-900">次に対応する業務</h2>
+              <p className="mt-1 text-xs font-medium text-slate-400">未確認の多い順に表示しています</p>
+            </div>
+            <Button variant="outline" size="sm">一覧を見る</Button>
+          </div>
+          {/* 業務リストを配置 */}
+        </section>
+      </div>
+    </DashboardLayout>
+  );
+}
+```
+
+### 情報パネル
+
+- 業務システムでは、カードを「装飾箱」ではなく**情報パネル**として使う。
+- パネルは `bg-white rounded-[20px]` から `rounded-[28px]`、`border border-slate-100`、`shadow-sm` を基準にする。
+- `shadow-2xl` はモーダル、ドロワー、最前面通知など階層表現に限定する。
+- 1パネルに詰め込みすぎない。見出し、主要数値、補助説明、操作を明確に分ける。
+
+### 情報パネルの実装例
+
+```tsx
+type PanelTone = 'default' | 'success' | 'attention' | 'danger';
+
+const PANEL_TONES: Record<PanelTone, string> = {
+  default: 'text-slate-900 bg-slate-50',
+  success: 'text-[#008C01] bg-emerald-50',
+  attention: 'text-orange-600 bg-orange-50',
+  danger: 'text-rose-600 bg-rose-50',
+};
+
+export function MetricPanel({
+  label,
+  value,
+  note,
+  tone = 'default',
+}: {
+  label: string;
+  value: string;
+  note?: string;
+  tone?: PanelTone;
+}) {
+  return (
+    <div className="rounded-[24px] border border-slate-100 bg-white p-5 shadow-sm">
+      <p className="text-xs font-bold text-slate-400">{label}</p>
+      <div className="mt-3 flex items-end justify-between gap-3">
+        <p className="text-3xl font-black tracking-tight text-slate-900">{value}</p>
+        {note ? (
+          <span className={`rounded-full px-3 py-1 text-xs font-bold ${PANEL_TONES[tone]}`}>
+            {note}
+          </span>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+```
+
+## ボタン・操作導線
+
+### ボタンの階層
+
+- Primary: 保存、確定、インポート開始など、画面の主目的に使う。
+- Secondary / Outline: 戻る、キャンセル、詳細表示など副次操作に使う。
+- Danger: 削除、却下、取り消しなど破壊的操作に使う。
+- Ghost: 補助操作、アイコンボタン、軽い切替に使う。
+
+### 実装ルール
+
+- 原則として既存の `Button` を使う。
+- 主要ボタンは `rounded-xl` 以上、十分な横余白、`font-bold` を基準にする。
+- ホバーの `scale` は控えめにする。`hover:scale-[1.02]` 程度まで。
+- `animate-bounce`、過度な回転、派手な発光は業務UIで使わない。
+- 破壊的操作は、色・文言・確認導線で明確にする。
+
+## フォーム・入力
+
+- ラベルは日本語で明確に書く。プレースホルダだけに意味を持たせない。
+- 入力欄は `rounded-xl`, `border-slate-200`, `focus:ring-[#008C01]/30` を基準にする。
+- エラーは入力欄の近くに表示し、トーストだけで済ませない。
+- 数値・金額・日付は表示形式を統一する。金額は整数円で扱い、表示だけ整形する。
+- 大量入力画面では、保存対象・未保存状態・反映結果を画面内で確認できるようにする。
+
+## モーダル・ドロワー
+
+- 共通 `Modal` を優先する。新規に独自モーダルを作る場合も、Portal、ESC、背景クリック、スクロール固定、`aria-modal` を満たす。
+- モーダル外枠は `rounded-[32px]` から `rounded-[40px]`、背景は `bg-white`、境界は薄くする。
+- ヘッダー、本文、フッターを分け、本文だけをスクロールさせる。
+- フッター右側に主要操作、左または手前にキャンセルを置く。
+- 長い一覧を含むモーダルは、先に枠を開き、並び替え・描画を後から行う段階表示を許可する。
+- ローディング中は「何を準備しているか」を日本語で表示する。
+
+### モーダル内容の実装例
+
+```tsx
+<Modal
+  isOpen={open}
+  onClose={onClose}
+  title="申請状況の詳細"
+  size="xl"
+  footer={<div className="flex justify-end gap-3"><Button variant="outline">閉じる</Button><Button variant="luxury">確定する</Button></div>}
+>
+  <div className="space-y-4">
+    <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4">日別サマリー</div>
+    <div className="overflow-x-auto rounded-2xl border border-slate-100 bg-white">一覧テーブル</div>
+  </div>
+</Modal>
+```
+
+## テーブル・月間マトリクス
+
+### 高密度表の原則
+
+- 大量データ表は「見出し固定」「主要列固定」「横スクロール」「仮想表示」を検討する。
+- スタッフ名、日付、会場、ステータスなど業務判断に必要な列は視線移動が少ない位置に固定する。
+- 行ホバー、フォーカス、選択状態を用意する。キーボード操作時も状態が分かるようにする。
+- セル内の意味は、色、文字、ツールチップを組み合わせて表現する。
+
+### 月間マトリクス
+
+- 日付列は曜日・日付・イベント有無を同時に読める構成にする。
+- 会場は短いラベルと色で表現してよいが、凡例またはツールチップで意味を補う。
+- `approved`, `pending`, `waiting`, `draft`, `rejected`, `cancelled` などの状態色を統一する。
+- 時間重複や不足などの警告は `rose` 系で明示し、ツールチップに具体理由を表示する。
+- 500行を超える画面は、親ページ、表、行、セル、操作モーダル、集計パネルに分割する。
+
+### マトリクスセルの実装例
+
+```tsx
+const VENUE_STYLES = {
+  koshien: 'bg-blue-500 text-white',
+  glion: 'bg-[#008C01] text-white',
+  other: 'bg-slate-400 text-white',
+} as const;
+
+export function MatrixCell({
+  venue,
+  label,
+  conflict,
+  onAdd,
+}: {
+  venue?: keyof typeof VENUE_STYLES;
+  label?: string;
+  conflict?: boolean;
+  onAdd?: () => void;
+}) {
+  return (
+    <td className={`border-b border-r border-slate-50 p-1 text-center ${conflict ? 'bg-rose-50' : 'bg-white'}`}>
+      <div className="flex min-h-[36px] items-center justify-center">
+        {venue && label ? (
+          <span className={`relative flex h-7 w-7 items-center justify-center rounded-lg text-xs font-black shadow-sm ${VENUE_STYLES[venue]}`}>
+            {label}
+            {conflict ? (
+              <span className="absolute -right-1 -top-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-white text-[10px] font-black text-rose-500 shadow-sm">
+                !
+              </span>
+            ) : null}
+          </span>
+        ) : onAdd ? (
+          <button
+            type="button"
+            onClick={onAdd}
+            className="flex h-7 w-7 items-center justify-center rounded-lg border-2 border-dashed border-slate-200 text-lg font-black text-slate-300 transition hover:border-emerald-300 hover:bg-emerald-50 hover:text-[#008C01]"
+            aria-label="勤務を追加"
+          >
+            +
+          </button>
+        ) : null}
+      </div>
+    </td>
+  );
+}
+```
+
+## カレンダー
+
+- PCでは月間表、モバイルではミニカレンダー + 選択日の一覧を基本形にする。
+- 今日、選択日、過去日、土日、イベントあり、未確定ありを視覚的に区別する。
+- タップ領域は最低 `40px` 以上を目安にする。
+- カレンダーのドットは3個程度までに抑え、超過分は一覧側で詳細を見せる。
+- 管理者向けの警告バッジは小さくてもよいが、数字と意味が分かる補足を用意する。
+
+### モバイルカレンダー日付の実装例
+
+```tsx
+export function CalendarDayButton({
+  day,
+  selected,
+  today,
+  eventCount,
+  alertCount,
+  onClick,
+}: {
+  day: number;
+  selected: boolean;
+  today: boolean;
+  eventCount: number;
+  alertCount?: number;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`relative flex h-10 flex-col items-center justify-start rounded-xl pt-0.5 transition ${
+        selected ? 'bg-[#008C01]/10' : 'hover:bg-slate-50'
+      }`}
+      aria-label={`${day}日を選択`}
+    >
+      <span className={`flex h-7 w-7 items-center justify-center rounded-full text-[13px] font-bold ${
+        today ? 'bg-[#008C01] text-white' : selected ? 'bg-[#008C01]/20 text-[#008C01]' : 'text-slate-800'
+      }`}>
+        {day}
+      </span>
+      {eventCount > 0 ? (
+        <span className="mt-0.5 flex gap-0.5">
+          {Array.from({ length: Math.min(eventCount, 3) }).map((_, index) => (
+            <span key={index} className="h-1 w-1 rounded-full bg-slate-400" />
+          ))}
+        </span>
+      ) : null}
+      {alertCount ? (
+        <span className="absolute right-0.5 top-0 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-rose-500 text-[7px] font-black text-white">
+          {alertCount}
+        </span>
+      ) : null}
+    </button>
+  );
+}
+```
+
+## CSVアップロード・長時間処理
+
+### 基本フロー
+
+CSV取込や一括処理は「説明 → ファイル選択 → プレビュー → 処理開始 → 進捗 → 結果 → エラー詳細 / 再実行導線」の流れを標準にする。
+
+### UIルール
+
+- ドロップゾーンは `border-2 border-dashed rounded-2xl` を基準にし、ドラッグ中は主色の薄い背景にする。
+- 処理中はプログレスバーかステッパーを表示する。単なるスピナーだけで長時間待たせない。
+- ステップ名は日本語で短くする。例: `解析`, `識別`, `変換`, `照合`, `保存`, `完了`。
+- 完了時は対象件数、成功件数、スキップ件数、エラー件数を分けて表示する。
+- エラーは先頭数件を表示し、件数が多い場合は「他 N 件」と要約する。
+- 取込後に業務データへ自動反映する場合は、反映中であることを明示する。
+
+### CSVドロップゾーンの実装例
+
+```tsx
+export function CsvDropZone({
+  fileName,
+  dragging,
+  onSelect,
+  onDrop,
+}: {
+  fileName?: string;
+  dragging: boolean;
+  onSelect: () => void;
+  onDrop: (event: React.DragEvent<HTMLDivElement>) => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onSelect}
+      onDragOver={(event) => event.preventDefault()}
+      onDrop={onDrop}
+      className={`w-full cursor-pointer rounded-2xl border-2 border-dashed px-8 py-7 text-center transition ${
+        dragging ? 'border-emerald-400 bg-emerald-50' : 'border-slate-200 hover:border-emerald-300 hover:bg-emerald-50/40'
+      }`}
+    >
+      <p className="text-sm font-bold text-slate-700">
+        {fileName ?? 'CSVをドロップ、またはクリックして選択'}
+      </p>
+      <p className="mt-1 text-xs font-medium text-slate-400">文字コードと列構成を確認してから取り込みます</p>
+    </button>
+  );
+}
+```
+
+### ステッパーと結果サマリーの実装例
+
+```tsx
+const IMPORT_STEPS = ['解析', '識別', '変換', '照合', '保存', '完了'] as const;
+
+export function ImportStepper({ activeIndex, done }: { activeIndex: number; done: boolean }) {
+  return (
+    <div className="space-y-4">
+      <div className="h-1.5 overflow-hidden rounded-full bg-slate-100">
+        <div
+          className="h-full rounded-full bg-[#008C01] transition-all duration-500"
+          style={{ width: `${done ? 100 : (activeIndex / (IMPORT_STEPS.length - 1)) * 100}%` }}
+        />
+      </div>
+      <div className="grid grid-cols-6 gap-2">
+        {IMPORT_STEPS.map((step, index) => {
+          const active = index === activeIndex && !done;
+          const completed = done || index < activeIndex;
+          return (
+            <div key={step} className="text-center">
+              <div className={`mx-auto flex h-8 w-8 items-center justify-center rounded-full border-2 text-xs font-black ${
+                completed ? 'border-[#008C01] bg-[#008C01] text-white' : active ? 'border-[#008C01] bg-white text-[#008C01]' : 'border-slate-200 bg-white text-slate-300'
+              }`}>
+                {completed ? '✓' : index + 1}
+              </div>
+              <p className={`mt-1 text-[11px] font-bold ${active || completed ? 'text-slate-900' : 'text-slate-300'}`}>
+                {step}
+              </p>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+<div className="grid grid-cols-3 gap-3">
+  <div className="rounded-2xl bg-slate-50 py-4 text-center text-slate-700">対象件数 120</div>
+  <div className="rounded-2xl bg-emerald-50 py-4 text-center text-emerald-700">登録 98</div>
+  <div className="rounded-2xl bg-amber-50 py-4 text-center text-amber-700">スキップ 22</div>
+  <div className="col-span-3 rounded-2xl bg-rose-50 px-4 py-3 text-xs font-bold text-rose-600">
+    エラーがある場合は先頭数件を表示し、残りは件数で要約する
+  </div>
+</div>
+```
+
+## ローディング・空状態・トースト
+
+- ローディングは「処理中」だけでなく、何をしているかを書く。
+- 空状態は「データがありません」だけで終わらせず、次の行動があれば示す。
+- トーストは成功・失敗の短いフィードバックに使う。重要なエラーは画面内にも残す。
+- 業務UIのトースト見出しも日本語を優先する。`Success` / `Error` のような装飾英語は新規追加しない。
+
+## アニメーション
+
+- アニメーションは操作理解を助ける場合だけ使う。
+- モーダル表示、ドロワー開閉、トースト表示、処理中インジケータは許可する。
+- 常時アニメーションは原則禁止。警告、処理中、現在ステップなど、意味がある場合に限定する。
+- `prefers-reduced-motion` に配慮し、重要な情報をアニメーションだけで伝えない。
+- `animate-ping` や `animate-pulse` は小さな状態表示に限定し、複数箇所で同時に点滅させない。
+
+## アイコン・画像
+
+- Lucide React、Heroicons、React Icons、Feather Icons、Font Awesome React は使わない。
+- アイコンが必要な場合は、既存画像、インラインSVG、CSS表現を使う。
+- 絵文字を業務操作のアイコンとして使わない。
+- 画像アイコンは `alt=""` として装飾扱いにするか、意味を持つ場合は日本語の `alt` を付ける。
+- 角丸四角形の色付きアイコン台座は使ってよいが、乱用しない。業務アプリでは意味と導線の明確さを優先する。
+
+## アクセシビリティ
+
+- クリック可能要素は `button` / `a` を使い、`div` クリックを避ける。
+- アイコンボタンには `aria-label` または `title` を付ける。
+- フォーカスリングを消さない。キーボードで現在位置が分かること。
+- 色だけで状態を伝えない。
+- モーダルは `role="dialog"`、`aria-modal="true"`、ESCクローズ、スクロール固定を満たす。
+
+## ファイル分割
+
+- 業務UIは肥大化しやすいため、500行上限を必ず守る。
+- 高密度画面は以下に分割する。
+
+```text
+Page.tsx                状態管理とレイアウト
+components/*Table.tsx   表本体
+components/*Row.tsx     行表示
+components/*Cell.tsx    セル表示
+components/*Modal.tsx   詳細・編集モーダル
+components/*Panel.tsx   集計・監視パネル
+hooks/use*.ts           データ取得・操作
+utils/*.ts              並び替え・集計・表示変換
+types.ts                型定義
+```
+
+## 禁止事項
+
+- 業務画面に装飾目的の英語見出しを追加すること。
+- Lucideなど禁止アイコンライブラリを追加・使用すること。
+- CSV取込や保存処理で、進捗や結果を表示せずに待たせること。
+- `shadow-2xl`、派手なグラデーション、`animate-bounce` を通常UIに使うこと。
+- `text-[8px]` 以下の文字を主要情報や操作に使うこと。
+- 状態色を画面ごとに直感で変えること。
+- PC向け巨大テーブルをそのままモバイルに押し込むこと。
+- 500行を超える単一UIファイルを増やすこと。
+
+## 実装チェックリスト
+
+```text
+□ 画面内の文言は日本語優先か
+□ 主要操作と副次操作の階層が明確か
+□ 状態色が既存ルールと一致しているか
+□ モーダルはヘッダー・本文・フッターが分離されているか
+□ テーブルやマトリクスは固定列・横スクロール・大量データを考慮しているか
+□ カレンダーは今日・選択日・過去日・イベント有無が判別できるか
+□ CSV取込は説明・進捗・結果・エラーが揃っているか
+□ ローディングと空状態に次の行動が示されているか
+□ アイコンライブラリ禁止に違反していないか
+□ ファイルが500行を超える場合、分割計画があるか
+```

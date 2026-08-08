@@ -1,0 +1,34 @@
+{
+  "id": "ui-polish.completion",
+  "version": 1,
+  "goal": "ui-polish",
+  "kind": "completion",
+  "description": "UI Polish Loop 完成ゲート",
+  "source": "loops/goals/ui-polish.md",
+  "criteria": [
+    {
+      "id": "evaluation-run",
+      "label": "Evaluation コマンドと結果がある",
+      "required": true,
+      "signals": ["hasEvaluationCommand", "hasEvaluationResult"]
+    },
+    {
+      "id": "evaluation-not-stop",
+      "label": "Evaluation が stop ではない",
+      "required": true,
+      "signals": ["evaluationNotStop"]
+    },
+    {
+      "id": "evidence-link",
+      "label": "根拠リンクがある",
+      "required": true,
+      "signals": ["hasEvidenceLink"]
+    },
+    {
+      "id": "interface-review",
+      "label": "Interface Review（better-interface）に言及している",
+      "required": false,
+      "signals": ["hasInterfaceReview"]
+    }
+  ]
+}

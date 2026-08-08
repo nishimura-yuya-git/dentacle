@@ -1,0 +1,19 @@
+{
+  "read_only_types": [
+    "explore",
+    "cursor-guide",
+    "ci-investigator"
+  ],
+  "write_capable_types": [
+    "generalPurpose",
+    "best-of-n-runner",
+    "bugbot",
+    "security-review"
+  ],
+  "shell_types": [
+    "shell"
+  ],
+  "deny_write_types_when_contract_pending": true,
+  "deny_write_types_for_hard_boundary_task_without_approval": true,
+  "allow_shell_when_contract_pending": true
+}

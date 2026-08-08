@@ -1,0 +1,60 @@
+# 自前セキュリティハーネス（OpenAI / Codex Security 製品非依存）
+#
+# - pnpm audit（依存脆弱性）
+# - 差分セキュリティスキャン（秘匿情報・危険 API・禁止ロックファイル）
+# - findings を Artifact 保存（state/security-findings.json 相当）
+#
+# 設計: docs/agent-loop-harness.md §22
+
+name: Security harness
+
+on:
+  pull_request:
+
+jobs:
+  security-harness:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Check out the pull request
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        # version は package.json の packageManager（pnpm@10.16.0）に任せる
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Dependency audit
+        run: pnpm run security:audit
+        continue-on-error: true
+
+      - name: Diff security scan
+        env:
+          SECURITY_SCAN_OUTPUT: ${{ runner.temp }}/security-findings.json
+          SECURITY_FAIL_ON_SEVERITY: high
+        run: |
+          set -euo pipefail
+          BASE_SHA="${{ github.event.pull_request.base.sha }}"
+          HEAD_SHA="${{ github.event.pull_request.head.sha }}"
+          MERGE_BASE="$(git merge-base "$BASE_SHA" "$HEAD_SHA")"
+          pnpm run security:scan -- --diff "$MERGE_BASE" --fail-on-severity high --output "$SECURITY_SCAN_OUTPUT"
+
+      - name: Upload findings
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-findings
+          path: ${{ runner.temp }}/security-findings.json
+          if-no-files-found: warn
+          retention-days: 7

@@ -1,0 +1,22 @@
+{
+  "id": "main-doctor",
+  "version": 1,
+  "goal": "main-doctor",
+  "kind": "safety",
+  "description": "通常差分の安全確認",
+  "source": "loops/goals/main-doctor.md",
+  "criteria": [
+    {
+      "id": "evaluation-run",
+      "label": "Evaluation 結果がある",
+      "required": true,
+      "signals": ["hasEvaluationResult"]
+    },
+    {
+      "id": "evaluation-not-stop",
+      "label": "Evaluation が stop ではない",
+      "required": true,
+      "signals": ["evaluationNotStop"]
+    }
+  ]
+}

@@ -174,6 +174,7 @@ HP/LPでは、上記に加えて FV・写真・CTA のトークン（余白・�
 6. `pnpm run loop:evaluate` / `loop:evaluator` が `stop` ではない（`warn` は根拠を残す）。
 7. Interface Review（`/better-interface` quick または full）を実施し、Verdict が `Block` でない。完成宣言に mode / Verdict / Findings 件数を書いている。
 8. 未確認の表示ポイントがある場合、理由と次の確認方法を報告している。
+9. Observe Loop: 画面を動かしたうえで snapshot または screenshot を取得し、**Read して差分を1行以上書いた観察証拠**がある。キャプチャ未読の完成申告は無効。
 
 ## Implementation
 
@@ -201,6 +202,7 @@ HP/LPでは、上記に加えて FV・写真・CTA のトークン（余白・�
 - Interface Review の Verdict が `Block`。または完成条件に関わる `Needs changes` が残っている。
 - 完成条件チェックリストのいずれかを満たしていない。
 - 「実装した」と書いたが、完成判定との照合結果が示されていない。
+- 観察証拠が無い、またはキャプチャ／snapshot を Read せずに見た目OKと書いている。
 
 差し戻し時は、失敗した完成条件番号と、次に直す最小アクションを1〜3個だけ書く。
 
@@ -237,7 +239,24 @@ pnpm run loop:evaluator
 /better-interface full    # 主要画面の一発出し・作り直し
 ```
 
-画面変更では、必要に応じてブラウザ確認・スクリーンショット確認を行う。
+画面変更ではブラウザ確認を行う。知覚の優先順位は次のとおり（vision ループは最終手段）。
+
+```text
+1. シェル / 型チェック / 単体
+2. browser_snapshot（構造）
+3. screenshot（見た目）
+4. vision による推測は最終手段
+```
+
+### Observe Loop（必須・完成前）
+
+```text
+動かす → snapshot または screenshot → 画像/構造を Read → 差分を書く → 直す → もう一度
+```
+
+- クリックや保存が例外なく通っても、期待画面になったとはみなさない（Verify, don't assume）。
+- 「見た目OK」はキャプチャ／snapshot を Read したあとにだけ書いてよい。
+- Claim Grounding / Eval template は観察証拠欠落を `stop` にする。
 
 色・ボタン・タイポの静的プレビュー（preview.html 的カタログ）は任意。業務コア優先なら Loop 定義の強化より後回しでよい。
 
@@ -249,7 +268,7 @@ pnpm run loop:evaluator
 ## 完成宣言（UI Polish Loop）
 
 - iteration: N / 3
-- 完成条件: 1□ 2□ 3□ 4□ 5□ 6□ 7□ 8□（満たした番号を明示）
+- 完成条件: 1□ 2□ 3□ 4□ 5□ 6□ 7□ 8□ 9□（満たした番号を明示）
 - トークン表: 提示済み / 未提示
 - Evaluation:
   - コマンド: …
@@ -258,13 +277,17 @@ pnpm run loop:evaluator
 - Regression Guard: pass / warn / stop
 - Interface Review: quick|full / Block|Needs changes|Approve
 - Findings: HIGH n / MEDIUM n / LOW n（または なし）
+- 観察証拠:
+  - 種別: snapshot | screenshot
+  - パス: `artifacts/...` または MCP 取得名
+  - Read済み: はい（差分・問題点を1行）
 - 未検証: …（なければ「なし」）
 - Stop非該当の根拠: …
 - 根拠リンク: `path/to/file` または PROJECT_MEMORY.md §x.x（必須）
 - Working Graph: 追加した Entity / Relation の要約（なければ「なし」）
 ```
 
-完成報告時は宣言本文を `state/completion-declaration.md` に書き、`pnpm run loop:evaluator` の Claim Grounding を通す。
+完成報告時は宣言本文を `state/completion-declaration.md` に書き、`pnpm run loop:evaluator` の Claim Grounding を通す。観察証拠が無い UI Polish 宣言は `stop`。
 
 ## Output
 

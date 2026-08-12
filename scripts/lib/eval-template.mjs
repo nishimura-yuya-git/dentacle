@@ -82,6 +82,7 @@ export function buildScoreContext({
     hasEvaluationResult: Boolean(parsed?.hasEvaluationResult || result),
     hasEvidenceLink: Boolean(parsed?.hasEvidenceLink),
     hasMemoryRef: Boolean(parsed?.hasMemoryRef),
+    hasObserveEvidence: Boolean(parsed?.hasObserveEvidence),
     // verdictStatus は HB 等の別理由 stop を含みうるため、Evaluation 結果判定には使わない
     evaluationNotStop: result !== 'stop' && groundingStatus !== 'stop',
     hasIteration: /iteration\s*[:：]/i.test(text),

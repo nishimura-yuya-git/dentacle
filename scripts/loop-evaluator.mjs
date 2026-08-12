@@ -241,10 +241,11 @@ function buildVerdict({ evaluation, discovery, persistedState }) {
   };
 }
 
-function applyClaimGrounding(verdict, { evaluation }) {
+function applyClaimGrounding(verdict, { evaluation, declarationText = '' }) {
   const grounding = evaluateClaimGrounding({
     declarationPath,
     changedFiles: evaluation?.changedFiles ?? [],
+    goal: inferGoal(declarationText),
   });
 
   const checks = [
@@ -358,6 +359,7 @@ function buildReport() {
   });
   const grounded = applyClaimGrounding(baseVerdict, {
     evaluation: evaluationResult.json,
+    declarationText,
   });
   const templated = applyEvalTemplate(grounded.verdict, {
     declarationText,

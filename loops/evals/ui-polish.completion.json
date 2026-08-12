@@ -25,6 +25,12 @@
       "signals": ["hasEvidenceLink"]
     },
     {
+      "id": "observe-evidence",
+      "label": "観察証拠（種別・パス・Read済み差分）がある",
+      "required": true,
+      "signals": ["hasObserveEvidence"]
+    },
+    {
       "id": "interface-review",
       "label": "Interface Review（better-interface）に言及している",
       "required": false,

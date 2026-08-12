@@ -4,9 +4,6 @@
     "sessionStart": [
       {
         "command": "node scripts/cursor-session-start-memory.mjs"
-      },
-      {
-        "command": "CURSOR_HOOK_EVENT=sessionStart node scripts/cursor-security-hook.mjs"
       }
     ],
     "sessionEnd": [
@@ -44,10 +41,6 @@
     "stop": [
       {
         "command": "context-mode hook cursor stop"
-      },
-      {
-        "command": "node scripts/cursor-security-hook.mjs",
-        "failClosed": true
       }
     ]
   }

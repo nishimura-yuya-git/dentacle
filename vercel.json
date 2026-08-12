@@ -1,0 +1,16 @@
+{
+  "functions": {
+    "api/cursor/health.ts": {
+      "memory": 1024,
+      "maxDuration": 30
+    },
+    "api/schedule/propose.ts": {
+      "memory": 2048,
+      "maxDuration": 300
+    },
+    "api/schedule/gap-fill.ts": {
+      "memory": 2048,
+      "maxDuration": 300
+    }
+  }
+}

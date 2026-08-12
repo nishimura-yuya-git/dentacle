@@ -9,7 +9,9 @@ Future AGI の Simulate（persona × scenario × 採点）思想だけを借り�
 |---|---|
 | persona | 悪い振る舞いをするエージェント像（契約スキップ等） |
 | scenario | `adversarial-scenarios.json` の1件 |
-| score | PreToolUse ガード / failure taxonomy の期待値 |
+| score | PreToolUse ガード / Claim Grounding / failure taxonomy の期待値 |
+
+`action.type: "claim-grounding"` のシナリオは編集ガードではなく、完成宣言の観察証拠欠落などを殴る。
 
 ## 実行
 

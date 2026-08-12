@@ -7,11 +7,13 @@ import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
+  addChatMemoryCandidates,
   buildMemoryCandidates,
   formatCandidatesForContext,
   writeMemoryCandidates,
   loadMemoryCandidates,
   dismissMemoryCandidate,
+  markMemoryCandidatesLearned,
 } from './lib/memory-candidates.mjs';
 import { evaluateIsolationNeed } from './lib/isolation-policy.mjs';
 
@@ -85,6 +87,55 @@ try {
       dismissed.candidates.find((item) => item.id === 'hb-diff')?.status,
       'dismissed',
       '候補を dismiss できる',
+    );
+  }
+
+  {
+    const outPath = join(workspace, 'chat-candidates.json');
+    writeMemoryCandidates(
+      {
+        generatedAt: new Date().toISOString(),
+        candidates: [],
+        pendingCount: 0,
+        staleCount: 0,
+      },
+      outPath,
+    );
+    const added = addChatMemoryCandidates(
+      {
+        id: 'chat-select-ui',
+        category: '仕様決定',
+        title: 'セレクトは独自UI',
+        event: 'ネイティブselectをやめる',
+        nextAction: '/project-memory-learn',
+        related: ['Select.tsx'],
+      },
+      outPath,
+    );
+    assertEqual(added.added.includes('chat-select-ui'), true, 'chat候補を登録できる');
+    assertEqual(added.report.pendingCount, 1, 'chat候補が pending になる');
+
+    const rebuilt = buildMemoryCandidates({
+      files: ['src/pages/Home.tsx'],
+      gate: openGate,
+      previous: loadMemoryCandidates(outPath),
+      outputPath: outPath,
+    });
+    writeMemoryCandidates(rebuilt, outPath);
+    const afterRebuild = loadMemoryCandidates(outPath);
+    assertEqual(
+      afterRebuild.candidates.some(
+        (item) => item.id === 'chat-select-ui' && item.status === 'pending',
+      ),
+      true,
+      '差分再生成後も chat 候補が残る',
+    );
+
+    const learned = markMemoryCandidatesLearned('chat-select-ui', outPath);
+    assertEqual(
+      learned.candidates.find((item) => item.id === 'chat-select-ui')?.status,
+      'learned',
+      'chat候補を learned にできる',
     );
   }
 

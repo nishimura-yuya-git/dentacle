@@ -61,14 +61,73 @@ function assertTrue(value, message) {
 {
   const result = evaluateClaimGrounding({
     declarationText: `
-## 完成宣言（UI Polish Loop）
+## 完成宣言（Bug Fix Loop）
 - Evaluation:
-  - コマンド: pnpm run loop:ui
+  - コマンド: pnpm run loop:bugfix
   - 結果: warn
 - Regression Guard: warn
 `,
   });
-  assertEqual(result.status, 'warn', '根拠リンク不足は warn');
+  assertEqual(result.status, 'warn', '非UIで根拠リンク不足は warn');
+}
+
+{
+  // 期待値根拠: desktop-harness Observe Loop — UI完成はキャプチャ未読で通さない
+  const result = evaluateClaimGrounding({
+    declarationText: `
+## 完成宣言（UI Polish Loop）
+- Evaluation:
+  - コマンド: pnpm run loop:ui
+  - 結果: pass
+- Regression Guard: pass
+- Stop非該当の根拠: Hard Boundary 未接触。\`src/pages/X.tsx\`
+`,
+    goal: 'ui-polish',
+  });
+  assertEqual(result.status, 'stop', 'UI Polish で観察証拠なしは stop');
+  assertTrue(result.missing.includes('observe-evidence'), 'observe-evidence 欠落');
+}
+
+{
+  const parsed = parseCompletionDeclaration(`
+## 完成宣言（UI Polish Loop）
+- Evaluation:
+  - コマンド: pnpm run loop:ui
+  - 結果: pass
+- 観察証拠:
+  - 種別: screenshot
+  - パス: \`/opt/cursor/artifacts/screenshots/ui-polish.png\`
+  - Read済み: はい（主ボタン余白が不足、面階層は一致）
+- Stop非該当の根拠: \`src/pages/X.tsx\`
+`);
+  assertEqual(parsed.hasObserveEvidence, true, '観察証拠を検出');
+  assertEqual(parsed.observeKind, 'screenshot', '種別 screenshot');
+  assertTrue(
+    parsed.observePaths.includes('/opt/cursor/artifacts/screenshots/ui-polish.png'),
+    '観察パスを抽出',
+  );
+}
+
+{
+  const result = evaluateClaimGrounding({
+    declarationText: `
+## 完成宣言（UI Polish Loop）
+- iteration: 1 / 3
+- Evaluation:
+  - コマンド: pnpm run loop:evaluator
+  - 結果: pass
+- Regression Guard: pass
+- Interface Review: quick / Approve
+- 観察証拠:
+  - 種別: snapshot
+  - パス: \`browser_snapshot:home\`
+  - Read済み: はい（見出しと CTA の階層が一致）
+- Stop非該当の根拠: PROJECT_MEMORY.md §2.9 と差分 \`src/pages/Home.tsx\`
+`,
+    goal: 'ui-polish',
+    changedFiles: ['src/pages/Home.tsx'],
+  });
+  assertEqual(result.status, 'pass', '観察証拠ありの UI Polish は pass');
 }
 
 {

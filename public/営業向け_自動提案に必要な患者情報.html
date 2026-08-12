@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>デンタクル｜自動提案に必要な患者情報（営業向け）</title>
+    <style>
+      :root {
+        --ink: #0f172a;
+        --muted: #64748b;
+        --line: #e2e8f0;
+        --bg: #f0f9f0;
+        --card: #ffffff;
+        --green: #008c01;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font-family: 'Hiragino Sans', 'Noto Sans JP', sans-serif;
+        color: var(--ink);
+        background: var(--bg);
+        line-height: 1.7;
+      }
+      .wrap {
+        max-width: 760px;
+        margin: 0 auto;
+        padding: 40px 20px 72px;
+      }
+      h1 {
+        margin: 0 0 12px;
+        font-size: 1.45rem;
+        font-weight: 800;
+        letter-spacing: 0.01em;
+      }
+      .lead {
+        margin: 0 0 28px;
+        color: var(--muted);
+        font-size: 0.98rem;
+      }
+      .panel {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 20px;
+        padding: 24px 26px;
+        margin-bottom: 20px;
+        box-shadow: 0 1px 2px rgb(15 23 42 / 4%);
+      }
+      .panel h2 {
+        margin: 0 0 12px;
+        font-size: 1.05rem;
+        font-weight: 800;
+      }
+      .panel p {
+        margin: 0 0 12px;
+        font-size: 0.95rem;
+      }
+      .panel p:last-child {
+        margin-bottom: 0;
+      }
+      ul {
+        margin: 0;
+        padding-left: 1.25rem;
+      }
+      li {
+        margin: 6px 0;
+        font-size: 0.95rem;
+      }
+      .notes {
+        color: var(--muted);
+        font-size: 0.9rem;
+      }
+      .flow {
+        display: grid;
+        gap: 10px;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+      .flow li {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        margin: 0;
+        padding: 14px 16px;
+        border-radius: 14px;
+        background: #f8fafc;
+        border: 1px solid var(--line);
+        font-size: 0.95rem;
+        font-weight: 600;
+      }
+      .flow .n {
+        flex: 0 0 auto;
+        width: 28px;
+        height: 28px;
+        border-radius: 999px;
+        background: var(--green);
+        color: #fff;
+        font-size: 0.85rem;
+        font-weight: 800;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .flow .arrow {
+        justify-content: center;
+        padding: 0;
+        border: none;
+        background: transparent;
+        color: var(--green);
+        font-size: 1.1rem;
+        font-weight: 800;
+      }
+      .brand {
+        display: inline-block;
+        margin-bottom: 10px;
+        font-size: 0.8rem;
+        font-weight: 800;
+        color: var(--green);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <span class="brand">デンタクル</span>
+      <h1>自動提案に必要な患者情報（営業向け）</h1>
+      <p class="lead">
+        精度の燃料は、患者管理（患者一覧 → 患者カルテ）に登録した構造化情報です。自動提案はその内容を読んで仮枠を作ります。
+      </p>
+
+      <section class="panel">
+        <h2>特に効く項目</h2>
+        <ul>
+          <li>訪問頻度・可能曜日／時間帯</li>
+          <li>施設 or エリア</li>
+          <li>担当医・医師同行要否</li>
+          <li>前回訪問日・次回期限</li>
+          <li>NG日・不在枠（制約）</li>
+          <li>標準診療時間・電話確認要否・優先度</li>
+        </ul>
+      </section>
+
+      <section class="panel">
+        <h2>補足</h2>
+        <ul class="notes">
+          <li>長文メモや「知識」より、制約マスタとして登録された値が正です。</li>
+          <li>Day0 は全部埋まっていなくても仮案は出せます。埋まるほど精度が上がります。</li>
+          <li>電話確認の結果も、あとから制約を育てる経路になります。</li>
+        </ul>
+      </section>
+
+      <section class="panel">
+        <h2>導線</h2>
+        <ol class="flow">
+          <li>
+            <span class="n">1</span>
+            <span>患者管理で条件を登録する</span>
+          </li>
+          <li class="arrow" aria-hidden="true">↓</li>
+          <li>
+            <span class="n">2</span>
+            <span>カレンダーで自動提案</span>
+          </li>
+          <li class="arrow" aria-hidden="true">↓</li>
+          <li>
+            <span class="n">3</span>
+            <span>仮枠 → クリックで本予約（必要なら電話確認も）</span>
+          </li>
+        </ol>
+      </section>
+    </div>
+  </body>
+</html>

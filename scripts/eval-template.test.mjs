@@ -80,8 +80,9 @@ function assertTrue(value, message) {
 }
 
 {
+  // 期待値根拠: UI Polish 完成ゲート — 観察証拠は必須、Interface Review は任意
   const template = loadEvalTemplate('loops/evals/ui-polish.completion.json');
-  const signals = buildScoreContext({
+  const withoutObserve = buildScoreContext({
     declarationText: 'Evaluation: コマンド: pnpm run loop:ui\n結果: pass\n根拠: `src/pages/X.tsx`',
     parsed: parseCompletionDeclaration(
       'Evaluation:\n  - コマンド: pnpm run loop:ui\n  - 結果: pass\n根拠: `src/pages/X.tsx`',
@@ -89,8 +90,30 @@ function assertTrue(value, message) {
     evaluationResult: 'pass',
     verdictStatus: 'pass',
   });
-  const scored = scoreEvalTemplate(template, signals);
-  assertEqual(scored.status, 'warn', 'Interface Review 未記載は warn（任意）');
+  const scoredMissing = scoreEvalTemplate(template, withoutObserve);
+  assertEqual(scoredMissing.status, 'stop', '観察証拠なしは stop');
+  assertTrue(scoredMissing.missingRequired.includes('observe-evidence'), 'observe-evidence 必須欠落');
+
+  const withObserveText = `
+## 完成宣言（UI Polish Loop）
+- Evaluation:
+  - コマンド: pnpm run loop:ui
+  - 結果: pass
+- 観察証拠:
+  - 種別: screenshot
+  - パス: \`/tmp/ui.png\`
+  - Read済み: はい（余白は一致、ボタン階層を確認）
+- 根拠: \`src/pages/X.tsx\`
+`;
+  const withObserve = buildScoreContext({
+    declarationText: withObserveText,
+    parsed: parseCompletionDeclaration(withObserveText),
+    evaluationResult: 'pass',
+    verdictStatus: 'pass',
+  });
+  const scoredWarn = scoreEvalTemplate(template, withObserve);
+  assertEqual(scoredWarn.status, 'warn', 'Interface Review 未記載は warn（任意）');
+  assertEqual(scoredWarn.missingRequired.length, 0, '必須欠落なし');
 }
 
 {

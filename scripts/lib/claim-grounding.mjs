@@ -5,6 +5,9 @@
  * 完成宣言があるときだけ検証し、無いときは skip（通常の loop:run を邪魔しない）。
  *
  * 本格 NER/グラフDB は持たない。インターフェース（根拠リンク）だけ本格互換にする。
+ *
+ * UI Polish では Observe Loop 原則を適用する:
+ * 見た目・画面変化の完成主張は、キャプチャ／snapshot を Read した証拠が無いと stop。
  */
 
 import { existsSync, readFileSync } from 'node:fs';
@@ -18,6 +21,18 @@ const EVIDENCE_LINE_RE = /(?:根拠|Evidence Map|evidence|Stop非該当の根拠
 const PATH_RE = /`([^`]+)`/g;
 const MEMORY_REF_RE = /PROJECT_MEMORY\.md|§\s*\d+|memory\s*:/i;
 const PNPM_RE = /pnpm\s+run\s+[\w:-]+/;
+const OBSERVE_KIND_RE = /(?:種別|type)\s*[:：]\s*(snapshot|screenshot)/i;
+const OBSERVE_PATH_LINE_RE = /(?:パス|path)\s*[:：]\s*(.+)/i;
+const OBSERVE_READ_RE = /(?:Read済み|read(?:\s*済み)?|read)\s*[:：]\s*(はい|yes|true)\s*(.*)/i;
+const PLACEHOLDER_RE = /^(…|\.\.\.|なし|n\/a|-)?$/i;
+
+/**
+ * @param {string} value
+ */
+function isMeaningful(value) {
+  const text = String(value ?? '').trim();
+  return text.length > 1 && !PLACEHOLDER_RE.test(text);
+}
 
 /**
  * 完成宣言テキストをパースする。
@@ -31,8 +46,20 @@ export function parseCompletionDeclaration(text) {
   let evaluationResult = null;
   let evidenceNotes = [];
   const evidencePaths = [];
+  let observeKind = null;
+  const observePaths = [];
+  let observeReadConfirmed = false;
+  let observeReadNote = '';
+  let inObserveSection = false;
 
   for (const line of lines) {
+    if (/^\s*#{1,6}\s+/.test(line) && !/観察証拠|Observe/i.test(line)) {
+      inObserveSection = false;
+    }
+    if (/観察証拠|Observe\s*evidence/i.test(line)) {
+      inObserveSection = true;
+    }
+
     const commandMatch = line.match(COMMAND_RE);
     if (commandMatch) {
       evaluationCommand = commandMatch[1].trim();
@@ -53,6 +80,36 @@ export function parseCompletionDeclaration(text) {
 
     for (const pathMatch of line.matchAll(PATH_RE)) {
       evidencePaths.push(pathMatch[1]);
+      if (inObserveSection) {
+        observePaths.push(pathMatch[1]);
+      }
+    }
+
+    if (inObserveSection) {
+      const kindMatch = line.match(OBSERVE_KIND_RE);
+      if (kindMatch) {
+        observeKind = kindMatch[1].toLowerCase();
+      }
+
+      const pathLineMatch = line.match(OBSERVE_PATH_LINE_RE);
+      if (pathLineMatch) {
+        const raw = pathLineMatch[1].trim().replace(/^`|`$/g, '');
+        if (isMeaningful(raw)) {
+          observePaths.push(raw);
+        }
+      }
+
+      const readMatch = line.match(OBSERVE_READ_RE);
+      if (readMatch) {
+        observeReadConfirmed = true;
+        const note = String(readMatch[2] ?? '')
+          .replace(/^[（(]\s*/, '')
+          .replace(/[）)]\s*$/, '')
+          .trim();
+        if (isMeaningful(note)) {
+          observeReadNote = note;
+        }
+      }
     }
   }
 
@@ -63,12 +120,21 @@ export function parseCompletionDeclaration(text) {
   const hasEvidenceNote = evidenceNotes.some(
     (note) => note && note !== '…' && note !== '...' && note !== 'なし' && note.length > 1,
   );
+  const uniqueObservePaths = [...new Set(observePaths.filter((path) => isMeaningful(path)))];
+  const hasObserveEvidence = Boolean(
+    observeKind && uniqueObservePaths.length > 0 && observeReadConfirmed && isMeaningful(observeReadNote),
+  );
 
   return {
     evaluationCommand,
     evaluationResult,
     evidencePaths: [...new Set(evidencePaths)],
     evidenceNotes,
+    observeKind,
+    observePaths: uniqueObservePaths,
+    observeReadConfirmed,
+    observeReadNote,
+    hasObserveEvidence,
     hasEvaluationCommand: Boolean(
       (evaluationCommand && evaluationCommand.length > 1 && evaluationCommand !== '…') || hasPnpmCommand,
     ),
@@ -97,6 +163,18 @@ export function resolveEvidencePaths(paths, { changedFiles = [], cwdExists = exi
 }
 
 /**
+ * UI Polish 完成ゲートが観察証拠を要求するか。
+ * @param {{ goal?: string | null, declarationText?: string }} input
+ */
+export function requiresObserveEvidence({ goal = null, declarationText = '' } = {}) {
+  const normalizedGoal = String(goal ?? '')
+    .trim()
+    .toLowerCase();
+  if (normalizedGoal === 'ui-polish') return true;
+  return /UI Polish Loop/i.test(String(declarationText ?? ''));
+}
+
+/**
  * 完成宣言の主張を根拠に照合する。
  *
  * @returns {{
@@ -113,6 +191,7 @@ export function evaluateClaimGrounding({
   declarationText = null,
   changedFiles = [],
   requireEvidencePathOnDisk = false,
+  goal = null,
 } = {}) {
   let text = declarationText;
   if (text == null) {
@@ -164,6 +243,11 @@ export function evaluateClaimGrounding({
     missing.push('evidence-link');
   }
 
+  const needsObserve = requiresObserveEvidence({ goal, declarationText: text });
+  if (needsObserve && !parsed.hasObserveEvidence) {
+    missing.push('observe-evidence');
+  }
+
   const evidenceResolution = resolveEvidencePaths(parsed.evidencePaths, { changedFiles });
   const badPaths = evidenceResolution.filter((item) => !item.ok);
   if (requireEvidencePathOnDisk && badPaths.length > 0) {
@@ -184,6 +268,19 @@ export function evaluateClaimGrounding({
     };
   }
 
+  if (missing.includes('observe-evidence')) {
+    return {
+      status: 'stop',
+      reason:
+        'UI Polish 完成宣言に観察証拠がありません（Observe Loop: キャプチャ／snapshot を Read するまで完成にしない）。',
+      nextAction:
+        '観察証拠に 種別（snapshot|screenshot）・パス・Read済み: はい（差分1行） を記入してください。',
+      parsed,
+      missing,
+      evidenceResolution,
+    };
+  }
+
   if (missing.includes('evidence-link') || missing.includes('evidence-path-unresolved')) {
     return {
       status: 'warn',
@@ -198,7 +295,9 @@ export function evaluateClaimGrounding({
 
   return {
     status: 'pass',
-    reason: '完成宣言の主張は根拠リンクと Evaluation 結果にグラウンディングされています。',
+    reason: needsObserve
+      ? '完成宣言の主張は観察証拠・根拠リンク・Evaluation 結果にグラウンディングされています。'
+      : '完成宣言の主張は根拠リンクと Evaluation 結果にグラウンディングされています。',
     nextAction: null,
     parsed,
     missing: [],

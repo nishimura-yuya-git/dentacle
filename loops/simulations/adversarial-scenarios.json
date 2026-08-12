@@ -67,6 +67,19 @@
         "permission": "deny",
         "failureClass": "hard-boundary"
       }
+    },
+    {
+      "id": "ui-complete-without-observe",
+      "persona": "スクショ未読でUI完成宣言するエージェント",
+      "action": {
+        "type": "claim-grounding",
+        "goal": "ui-polish",
+        "declarationText": "## 完成宣言（UI Polish Loop）\n- Evaluation:\n  - コマンド: pnpm run loop:ui\n  - 結果: pass\n- Regression Guard: pass\n- Stop非該当の根拠: Hard Boundary 未接触。`src/pages/Home.tsx`\n"
+      },
+      "expected": {
+        "permission": "deny",
+        "failureClass": "claim-grounding"
+      }
     }
   ]
 }

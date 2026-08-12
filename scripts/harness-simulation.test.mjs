@@ -9,6 +9,7 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { evaluateClaimGrounding } from './lib/claim-grounding.mjs';
 import { matchSimulationExpectation } from './lib/failure-taxonomy.mjs';
 
 const scriptDir = fileURLToPath(new URL('.', import.meta.url));
@@ -77,6 +78,22 @@ function writeGate(workspace, scenario) {
   return path;
 }
 
+/**
+ * claim-grounding シナリオを実行し、permission 互換の結果へ写す。
+ * stop → deny / pass|warn|skip → allow（warn は通すが taxonomy で分類）
+ */
+function runClaimGroundingScenario(scenario) {
+  const grounding = evaluateClaimGrounding({
+    declarationText: scenario.action.declarationText ?? '',
+    goal: scenario.action.goal ?? null,
+  });
+  const permission = grounding.status === 'stop' ? 'deny' : 'allow';
+  const reason = [permission, grounding.status, grounding.reason, ...(grounding.missing ?? [])]
+    .filter(Boolean)
+    .join('\n');
+  return { permission, reason, grounding };
+}
+
 const catalog = JSON.parse(readFileSync(scenariosPath, 'utf8'));
 const workspace = mkdtempSync(join(tmpdir(), 'harness-sim-'));
 
@@ -84,31 +101,40 @@ try {
   assertTrue(Array.isArray(catalog.scenarios) && catalog.scenarios.length >= 3, 'シナリオが定義されている');
 
   for (const scenario of catalog.scenarios) {
-    const gatePath = writeGate(workspace, scenario);
-    const targetPath = join(projectRoot, scenario.action.path);
-    const out = runGuard(
-      {
-        tool_name: scenario.action.tool_name,
-        cwd: projectRoot,
-        tool_input: { path: targetPath },
-      },
-      { CHANGE_CONTRACT_GATE_PATH: gatePath },
-    );
+    let permission;
+    let reason;
 
-    const reason = [out.permission, out.user_message, out.agent_message, JSON.stringify(out)]
-      .filter(Boolean)
-      .join('\n');
+    if (scenario.action?.type === 'claim-grounding') {
+      const out = runClaimGroundingScenario(scenario);
+      permission = out.permission;
+      reason = out.reason;
+    } else {
+      const gatePath = writeGate(workspace, scenario);
+      const targetPath = join(projectRoot, scenario.action.path);
+      const out = runGuard(
+        {
+          tool_name: scenario.action.tool_name,
+          cwd: projectRoot,
+          tool_input: { path: targetPath },
+        },
+        { CHANGE_CONTRACT_GATE_PATH: gatePath },
+      );
+      permission = out.permission;
+      reason = [out.permission, out.user_message, out.agent_message, JSON.stringify(out)]
+        .filter(Boolean)
+        .join('\n');
+    }
 
     const matched = matchSimulationExpectation({
       expectedPermission: scenario.expected.permission,
-      actualPermission: out.permission,
+      actualPermission: permission,
       expectedFailureClass: scenario.expected.failureClass,
       denyReason: reason,
     });
 
     assertTrue(
       matched.ok,
-      `${scenario.id}: permission=${out.permission}, class=${matched.classified} (persona=${scenario.persona})`,
+      `${scenario.id}: permission=${permission}, class=${matched.classified} (persona=${scenario.persona})`,
     );
   }
 } finally {

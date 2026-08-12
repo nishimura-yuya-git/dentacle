@@ -66,6 +66,25 @@ terminals/ フォルダの .txt ファイルを head -n 10 で確認
 2. ref は動的に変わるため、古い ref でクリックしない
 3. モーダルを開いた後も再度 `browser_snapshot` を実行する
 4. 確認ポイントでは `browser_take_screenshot` を撮影する
+5. **画面を変えたあとは Verify**（例外なし成功 ≠ 期待画面）。snapshot / screenshot を取り、**Read してから**結果を断言する
+
+### 知覚の優先順位
+
+```text
+1. browser_snapshot（構造・ref）を先に使う
+2. 見た目判定が必要なら browser_take_screenshot
+3. vision で画素を推測するループは最終手段（毎回やらない）
+```
+
+### Observe Loop（見た目・動作確認時）
+
+```text
+動かす → snapshot または screenshot → Read → 差分を書く → 直す → 再確認
+```
+
+- 「正常」「見た目OK」はキャプチャ未読のまま書かない。
+- UI Polish 完成宣言には観察証拠（種別・パス・Read済み差分1行）が必須。欠落は Claim Grounding で `stop`。
+- 動きや状態つき UI は可能なら複数フレーム／操作後の再 snapshot で確認する。
 
 ---
 
@@ -149,6 +168,7 @@ browser_press_key で "End" または "PageDown"
 
 ### ✅ 正常動作確認
 - [機能名]: [確認内容] → 正常
+- 観察証拠: snapshot|screenshot / [パスまたは取得名] / Read済み: はい（差分1行）
 
 ### ⚠️ 注意事項
 - [気になった点]
@@ -156,6 +176,7 @@ browser_press_key で "End" または "PageDown"
 ### ❌ 問題あり（あれば）
 - [問題の説明]
 - スクリーンショット: [ファイルパス]
+- Read結果: [何が違うか]
 
 ### 🧹 クリーンアップ
 - [TEST]データ削除: ✅ 完了

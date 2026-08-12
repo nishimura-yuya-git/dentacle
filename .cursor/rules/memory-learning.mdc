@@ -48,7 +48,21 @@ AIが同じ失敗・同じ指摘を繰り返さないように、会話中の指
 1. 指摘を受けた応答で、まず指摘内容に対応する（修正・回答）。
 2. 直後に **咀嚼 → 細分化チェック → 追記候補ブロック** を出す。
 3. すでに同等内容が十分ある項目だけスキップし、スキップ理由を書く。
-4. 反映自体は `/project-memory-learn` 待ち。
+4. **チャット提示した候補は、同じターンで `state/memory-candidates.json` に登録する**（取りこぼし防止）。
+5. 反映自体は `/project-memory-learn` 待ち。
+
+### 必須：チャット候補の永続化（§2.5 連携）
+
+会話ログの自動解析はしない。代わりに、提示した候補を明示登録する。
+
+```bash
+pnpm run memory:candidates -- --add '[{"id":"chat-YYYYMMDD-短いslug","category":"仕様決定","title":"...","event":"...","nextAction":"/project-memory-learn で反映","related":["path"]}]'
+```
+
+- `id` は `chat-` 接頭辞を推奨（差分由来の `hb-diff` 等と衝突させない）。
+- sessionStart が未反映をリマインドする。sessionEnd の差分再生成でも chat 候補は消えない。
+- 未反映の一括再提示は `/project-memory-pending` または `pnpm run memory:candidates`。
+- `/project-memory-learn` 反映後は `pnpm run memory:candidates -- --learned <id>` で消化する。
 
 ---
 
@@ -224,12 +238,17 @@ memory-learning.mdc
   - 咀嚼・細分化する
   - 観点チェックで漏れを洗う
   - 追記候補を自動提示する
+  - 提示候補を memory:candidates --add で state に残す
   - PROJECT_MEMORY.md は編集しない
+
+sessionStart / memory:candidates
+  - 未反映 pending をリマインド・一括再提示できる
 
 /project-memory-learn
   - ユーザーが明示実行した時だけ動く
   - PROJECT_MEMORY.md を読む
   - 重複を確認する
   - 必要最小限の追記を行う
+  - 反映した chat 候補を --learned で消化する
   - 追記後に報告する
 ```

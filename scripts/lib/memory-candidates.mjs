@@ -223,7 +223,8 @@ export function formatCandidatesForContext(report, limit = 5) {
   const lines = [
     '【PROJECT_MEMORY 追記候補の未反映リマインダー】',
     `未反映 ${pending.length} 件（stale ${report.staleCount || 0} 件）。PROJECT_MEMORY.md は自動編集しない。`,
-    '必要ならチャットに追記候補を出し、ユーザーに /project-memory-learn を促すこと。',
+    '応答の早い段階で未反映候補を一括再提示し、ユーザーに /project-memory-learn を促すこと。',
+    'チャット由来候補は `pnpm run memory:candidates -- --add` で state に残す（会話ログ自動解析はしない）。',
     '',
   ];
 
@@ -244,6 +245,83 @@ export function dismissMemoryCandidate(id, outputPath = MEMORY_CANDIDATES_PATH) 
   const current = loadMemoryCandidates(outputPath);
   const candidates = current.candidates.map((item) =>
     item.id === id ? { ...item, status: 'dismissed', dismissedAt: new Date().toISOString() } : item,
+  );
+  const report = {
+    ...current,
+    generatedAt: new Date().toISOString(),
+    candidates,
+    pendingCount: candidates.filter((item) => item.status === 'pending').length,
+    staleCount: candidates.filter((item) => item.status === 'pending' && item.stale).length,
+  };
+  writeMemoryCandidates(report, outputPath);
+  return report;
+}
+
+/**
+ * チャット提示した追記候補を state に登録する（会話ログ自動解析はしない）。
+ * sessionStart リマインド・sessionEnd マージで取りこぼしを防ぐ。
+ */
+export function addChatMemoryCandidates(items, outputPath = MEMORY_CANDIDATES_PATH) {
+  const list = Array.isArray(items) ? items : [items];
+  const current = loadMemoryCandidates(outputPath);
+  const byId = new Map((current.candidates || []).map((item) => [item.id, item]));
+
+  const added = [];
+  const skipped = [];
+
+  for (const raw of list) {
+    if (!raw || typeof raw !== 'object') {
+      skipped.push({ id: null, reason: 'invalid_item' });
+      continue;
+    }
+    const id = String(raw.id || '').trim();
+    if (!id) {
+      skipped.push({ id: null, reason: 'missing_id' });
+      continue;
+    }
+    const prev = byId.get(id);
+    if (prev?.status === 'dismissed' || prev?.status === 'learned') {
+      skipped.push({ id, reason: prev.status });
+      continue;
+    }
+
+    const next = buildCandidate({
+      id,
+      category: String(raw.category || '仕様決定'),
+      title: String(raw.title || id),
+      event: String(raw.event || raw.title || id),
+      nextAction:
+        String(raw.nextAction || 'チャットに追記候補を再提示し、/project-memory-learn を促す。'),
+      related: Array.isArray(raw.related) ? raw.related.map(String) : [],
+    });
+    next.source = 'chat';
+    next.createdAt = prev?.createdAt || next.createdAt;
+    byId.set(id, next);
+    added.push(id);
+  }
+
+  const candidates = [...byId.values()].sort((a, b) => String(a.id).localeCompare(String(b.id)));
+  const report = {
+    generatedAt: new Date().toISOString(),
+    staleDays: current.staleDays ?? DEFAULT_STALE_DAYS,
+    candidates,
+    pendingCount: candidates.filter((item) => item.status === 'pending').length,
+    staleCount: candidates.filter((item) => item.status === 'pending' && item.stale).length,
+    gateMode: current.gateMode || null,
+    source: 'chat-add',
+  };
+  writeMemoryCandidates(report, outputPath);
+  return { report, added, skipped };
+}
+
+/** /project-memory-learn 反映後に候補を学習済みにする */
+export function markMemoryCandidatesLearned(ids, outputPath = MEMORY_CANDIDATES_PATH) {
+  const idSet = new Set((Array.isArray(ids) ? ids : [ids]).map(String));
+  const current = loadMemoryCandidates(outputPath);
+  const candidates = current.candidates.map((item) =>
+    idSet.has(item.id)
+      ? { ...item, status: 'learned', learnedAt: new Date().toISOString() }
+      : item,
   );
   const report = {
     ...current,

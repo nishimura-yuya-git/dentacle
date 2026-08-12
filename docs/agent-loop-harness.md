@@ -426,9 +426,22 @@ node scripts/loop-discover.mjs --write-state
 | SSoT | `scripts/lib/claim-grounding.mjs` |
 | 入力 | `state/completion-declaration.md`（`LOOP_DECLARATION_FILE` で変更可） |
 | skip | 宣言ファイルなし |
-| stop | Evaluation コマンドまたは結果の欠落、空宣言 |
+| stop | Evaluation コマンドまたは結果の欠落、空宣言、**UI Polish の観察証拠欠落** |
 | warn | 根拠リンク不足（パス / MEMORY 節 / 根拠ノート） |
 | 検証 | `pnpm run test:claim-grounding` |
+
+#### Observe Loop（UI Polish 必須）
+
+[desktop-harness](https://github.com/xfreeze2/desktop-harness) から借りたのは思想だけ（Mac CLI は入れない）。
+
+```text
+動かす → snapshot|screenshot → Read → 差分を書く → 直す
+```
+
+- 完成宣言の `観察証拠`（種別・パス・Read済み差分）が無い UI Polish は `stop`
+- Eval template `ui-polish.completion` の `observe-evidence` も必須
+- 知覚優先: 構造 snapshot → 見た目 screenshot → vision は最終手段
+- 出典の原則名: Verify, don't assume / Observe loop
 
 ## 13. loop-context の役割
 
@@ -582,13 +595,14 @@ SSoT: `scripts/lib/subagent-policy.mjs`
 
 | タイミング | 処理 |
 |---|---|
-| `sessionEnd` | 差分・契約ゲート・ハーネス変更から候補を生成し `state/memory-candidates.json` へ保存 |
-| `sessionStart` | 未反映候補があれば `additional_context` でリマインド |
-| CLI | `pnpm run memory:candidates` / `--write` / `--dismiss <id>` |
+| `sessionEnd` | 差分・契約ゲート・ハーネス変更から候補を生成し `state/memory-candidates.json` へ保存（既存 chat 候補は消さない） |
+| `sessionStart` | 未反映候補があれば `additional_context` でリマインド（一括再提示を促す） |
+| CLI | `pnpm run memory:candidates` / `--write` / `--add` / `--learned <id>` / `--dismiss <id>` |
+| コマンド | `/project-memory-pending` で pending を一括再提示 |
 
-- 会話ログは候補に使わない
+- 会話ログの自動解析はしない。チャット提示候補は `--add` で明示登録（`source: chat`）
 - 古い候補は stale（要再確認）になる
-- 反映は必ずユーザーが `/project-memory-learn` を実行したときだけ
+- 反映は必ずユーザーが `/project-memory-learn` を実行したときだけ。反映後は `--learned`
 - 無効化: `MEMORY_CANDIDATES_DISABLE=1`
 
 ### 15.5 危険差分の隔離（Phase E）

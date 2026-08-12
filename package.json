@@ -51,14 +51,30 @@
     "loop:evaluator": "node scripts/loop-evaluator.mjs",
     "loop:run": "node scripts/loop-runner.mjs --mode=main-safe --goal=main-doctor",
     "loop:ssot": "node scripts/loop-runner.mjs --mode=main-safe --goal=ssot-debt --with-regression-guard",
-    "loop:ui": "node scripts/loop-runner.mjs --mode=main-safe --goal=ui-polish --with-regression-guard"
+    "loop:ui": "node scripts/loop-runner.mjs --mode=main-safe --goal=ui-polish --with-regression-guard",
+    "cursor:smoke": "node --experimental-strip-types scripts/cursor-sdk-smoke.ts",
+    "cursor:test-env": "node --experimental-strip-types server/cursor/env.test.ts",
+    "cursor:test-health": "node --experimental-strip-types server/cursor/healthGate.test.ts",
+    "schedule:test-parse": "node --experimental-strip-types server/schedule/parseProposeResult.test.ts",
+    "schedule:test-accuracy": "node --experimental-strip-types server/schedule/validateProposeResult.test.ts",
+    "schedule:test-pack": "node --experimental-strip-types server/schedule/packProposeSlots.test.ts",
+    "schedule:test-local": "node --experimental-strip-types server/schedule/buildLocalProposeSlots.test.ts",
+    "schedule:test-prompt": "node --experimental-strip-types server/schedule/buildProposePrompt.test.ts",
+    "schedule:test-memory-sections": "node --experimental-strip-types server/schedule/loadProposeMemorySections.test.ts",
+    "schedule:test-travel": "node --experimental-strip-types src/utils/schedule/travelDistance.test.ts",
+    "schedule:test-due": "node --experimental-strip-types src/utils/schedule/visitDueUrgency.test.ts",
+    "cursor:test-usage": "node --experimental-strip-types server/cursor/usageTypes.test.ts"
   },
   "dependencies": {
+    "@cursor/sdk": "1.0.27",
+    "@supabase/supabase-js": "2.49.8",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "react-router-dom": "6.28.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.9.1",
+    "@types/node": "22.10.2",
     "@types/react": "^18.3.5",
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "^4.3.1",

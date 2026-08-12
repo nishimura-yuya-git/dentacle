@@ -126,7 +126,17 @@ alwaysApply: false
 - 推測を確定事実として書かない
 - 個人情報や秘匿情報を不要に増やさない
 
-### STEP 4: 完了報告する
+### STEP 4: state の候補を消化する
+
+反映したチャット由来候補があれば、対応する id を学習済みにする。
+
+```bash
+pnpm run memory:candidates -- --learned chat-YYYYMMDD-slug
+```
+
+差分由来（`hb-diff` 等）で今回の反映と無関係なものは触らない。不要なら `--dismiss`。
+
+### STEP 5: 完了報告する
 
 追記後、以下を報告する。
 
@@ -141,6 +151,9 @@ alwaysApply: false
 
 ### 追記した要点
 - ...
+
+### 消化した memory:candidates id
+- chat-... / なし
 
 ### 追記しなかった内容
 - なし / ...
@@ -181,7 +194,8 @@ alwaysApply: false
 
 ## 関連ルール
 
-- `.cursor/rules/memory-learning.mdc` — 学習候補の検知と追記案提示
+- `.cursor/rules/memory-learning.mdc` — 学習候補の検知と追記案提示・`--add` 永続化
+- `.cursor/commands/project-memory-pending.md` — 未反映候補の一括再提示
 - `.cursor/rules/safety.mdc` — `PROJECT_MEMORY.md` 自動編集禁止の原則
 - `.cursor/rules/change-contract.mdc` — 変更前の影響範囲宣言
 - `.cursor/commands/post-fix-memory.md` — 修正後レビュー特化の既存コマンド

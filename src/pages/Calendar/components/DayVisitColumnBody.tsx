@@ -1,0 +1,218 @@
+import type { PointerEvent as ReactPointerEvent } from 'react'
+import { Skeleton } from '@/components/ui/Skeleton'
+import {
+  GRID_START_MINUTES,
+  SLOT_HEIGHT_PX,
+  SLOT_MINUTES,
+  visitBlockStyle,
+} from '@/pages/Calendar/utils/calendarGrid'
+import {
+  isAutoProposalTentative,
+  provisionalBlockHeightPx,
+  provisionalStatusLabel,
+  visitBlockClassName,
+} from '@/pages/Calendar/utils/visitBlockAppearance'
+import { formatTime } from '@/utils/dates'
+import { visitStatusLabel } from '@/utils/roleLabels'
+import type {
+  CalendarBlock,
+  CalendarVisit,
+} from '@/pages/Calendar/components/dayVisitGrid.types'
+
+const BLOCK_LABEL: Record<string, string> = {
+  break: '休憩',
+  travel: '移動',
+  meeting: '会議',
+  other: 'ブロック',
+}
+
+const SKELETON_BLOCKS = [
+  { start: '09:30', end: '10:15' },
+  { start: '11:00', end: '11:45' },
+  { start: '14:00', end: '14:30' },
+] as const
+
+type PreviewRange = { startTime: string; endTime: string }
+
+type Props = {
+  teamId: string
+  loading: boolean
+  timeSlots: number[]
+  visits: CalendarVisit[]
+  blocks: CalendarBlock[]
+  createPreview: PreviewRange | null
+  movingPreview: PreviewRange | null
+  resizeVisitId: string | null
+  resizeStart: string | null
+  resizeEnd: string | null
+  hideVisitId: string | null
+  canResize: boolean
+  onVisitPointerDown: (
+    visit: CalendarVisit,
+    event: ReactPointerEvent<HTMLButtonElement>,
+  ) => void
+  onResizePointerDown: (
+    visit: CalendarVisit,
+    event: ReactPointerEvent<HTMLSpanElement>,
+  ) => void
+  onSelectBlock?: (block: CalendarBlock) => void
+}
+
+export function DayVisitColumnBody({
+  teamId,
+  loading,
+  timeSlots,
+  visits,
+  blocks,
+  createPreview,
+  movingPreview,
+  resizeVisitId,
+  resizeStart,
+  resizeEnd,
+  hideVisitId,
+  canResize,
+  onVisitPointerDown,
+  onResizePointerDown,
+  onSelectBlock,
+}: Props) {
+  return (
+    <>
+      {timeSlots.map((slot) => (
+        <div
+          key={`${teamId}-${slot}`}
+          className="pointer-events-none absolute left-0 right-0 border-t border-slate-100"
+          style={{
+            top: ((slot - GRID_START_MINUTES) / SLOT_MINUTES) * SLOT_HEIGHT_PX,
+            height: SLOT_HEIGHT_PX,
+          }}
+        />
+      ))}
+
+      {createPreview ? (
+        <div
+          className="pointer-events-none absolute left-1 right-1 z-[2] overflow-hidden rounded-md border border-[#008C01]/40 bg-[#008C01]/15 px-1.5 py-1"
+          style={visitBlockStyle(createPreview.startTime, createPreview.endTime)}
+          aria-hidden
+        >
+          <p className="truncate text-[10px] font-bold text-[#008C01]">
+            {createPreview.startTime}-{createPreview.endTime}
+          </p>
+        </div>
+      ) : null}
+
+      {movingPreview ? (
+        <div
+          className="pointer-events-none absolute left-1 right-1 z-[4] overflow-hidden rounded-md border border-[#008C01] bg-[#008C01]/20 px-1.5 py-1"
+          style={visitBlockStyle(movingPreview.startTime, movingPreview.endTime)}
+          aria-hidden
+        >
+          <p className="truncate text-[10px] font-bold text-[#008C01]">移動中</p>
+        </div>
+      ) : null}
+
+      {loading
+        ? SKELETON_BLOCKS.map((block, index) => {
+            const { top, height } = visitBlockStyle(block.start, block.end)
+            return (
+              <div
+                key={`${teamId}-sk-${index}`}
+                className="absolute left-1 right-1 z-[1] overflow-hidden rounded-md border border-slate-100 bg-slate-50/80 px-1.5 py-1"
+                style={{ top, height }}
+              >
+                <Skeleton variant="text" width="40%" height={8} className="mb-1" />
+                <Skeleton variant="text" width="70%" height={10} className="mb-1" />
+                <Skeleton variant="text" width="35%" height={8} />
+              </div>
+            )
+          })
+        : null}
+
+      {!loading
+        ? blocks.map((block) => {
+            const { top, height } = visitBlockStyle(block.start_time, block.end_time)
+            return (
+              <button
+                key={block.id}
+                type="button"
+                data-calendar-block="true"
+                onClick={(event) => {
+                  event.stopPropagation()
+                  onSelectBlock?.(block)
+                }}
+                className="absolute left-1 right-1 z-[1] overflow-hidden rounded-md border border-slate-300 bg-slate-200/80 px-1.5 py-1 text-left"
+                style={{ top, height }}
+              >
+                <p className="truncate text-[10px] font-bold text-slate-500">
+                  {formatTime(block.start_time)}-{formatTime(block.end_time)}
+                </p>
+                <p className="truncate text-xs font-bold text-slate-700">
+                  {block.title || BLOCK_LABEL[block.block_type] || 'ブロック'}
+                </p>
+              </button>
+            )
+          })
+        : null}
+
+      {!loading
+        ? visits.map((visit) => {
+            if (hideVisitId === visit.id) return null
+            const displayStart =
+              resizeVisitId === visit.id && resizeStart
+                ? resizeStart
+                : visit.start_time
+            const displayEnd =
+              resizeVisitId === visit.id && resizeEnd ? resizeEnd : visit.end_time
+            const { top, height } = visitBlockStyle(displayStart, displayEnd)
+            const provisionalAuto = isAutoProposalTentative(visit)
+            const blockHeight = provisionalAuto
+              ? provisionalBlockHeightPx(height)
+              : height
+            const statusText = provisionalAuto
+              ? provisionalStatusLabel(blockHeight)
+              : visitStatusLabel(visit.status)
+            return (
+              <button
+                key={visit.id}
+                type="button"
+                data-visit-block="true"
+                title={
+                  provisionalAuto ? 'クリックで本予約に確定' : undefined
+                }
+                aria-label={
+                  provisionalAuto
+                    ? `${visit.patients?.name_kanji ?? '患者'}の仮予約。クリックで本予約に確定`
+                    : undefined
+                }
+                onPointerDown={(event) => onVisitPointerDown(visit, event)}
+                className={visitBlockClassName(visit)}
+                style={{ top, height: blockHeight }}
+              >
+                <p className="truncate text-[10px] font-bold leading-none text-slate-500">
+                  {formatTime(displayStart)}-{formatTime(displayEnd)}
+                </p>
+                <p className="mt-0.5 truncate text-[11px] font-bold leading-none text-slate-900">
+                  {visit.patients?.name_kanji ?? '患者不明'}
+                </p>
+                <p
+                  className={[
+                    'mt-0.5 shrink-0 truncate text-[10px] font-bold leading-none',
+                    provisionalAuto ? 'text-[#008C01]' : 'font-medium text-slate-500',
+                  ].join(' ')}
+                >
+                  {statusText}
+                </p>
+                {canResize && !provisionalAuto ? (
+                  <span
+                    data-resize-handle="true"
+                    onPointerDown={(event) => onResizePointerDown(visit, event)}
+                    className="absolute inset-x-1 bottom-0 h-2 cursor-ns-resize rounded-b-md bg-transparent"
+                    aria-hidden
+                  />
+                ) : null}
+              </button>
+            )
+          })
+        : null}
+    </>
+  )
+}

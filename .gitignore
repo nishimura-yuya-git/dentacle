@@ -24,9 +24,11 @@ dist-ssr
 *.sw?
 .env
 .env.local
+.env.*.local
 .env.development.local
 .env.test.local
 .env.production.local
+!.env.example
 
 # Hard Boundary 一時許可（セッション限定。コミット禁止）
 .cursor/hard-boundary-session-allow.json
@@ -39,3 +41,7 @@ state/
 
 # 隔離用 git worktree
 .worktrees/
+
+# Apotool 一時スクレイプ成果物（個人情報）
+tmp/
+*.tsbuildinfo

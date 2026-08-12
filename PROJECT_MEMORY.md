@@ -49,7 +49,7 @@
 | ルート最適化 | `src/utils/schedule/travelDistance.ts` + 割付スナップショットの距離行列（§6.16 / §6.39）。SDKは結果を読むだけ | 移動過多、施設まとめ崩れ、車両/チーム偏り |
 | 電話確認→本予約化 | `ensurePhoneConfirmationForVisit` 等（§6.6 / §6.32）。`visit_phone_confirmations` | 未確認の本予約化、NG後の再提案漏れ |
 | 患者訪問条件 | 患者制約・Day0 / 割付ナレッジ（§6.13 / §6.48）。構造化制約テーブルの細部は要確認 | 頻度・曜日・医師同行などの制約欠落 |
-| ログインIP・認証監査 | `auth_audit_logs` / `log_auth_audit_event` / `auth_ip_blocks`、閲覧UI `/auth-audit`（§6.15） | 監査欠落、院ユーザーへの漏洩、改ざんIPの採用、誤ブロック・運営ロックアウト |
+| ログインIP・認証監査 | `auth_audit_logs` / `log_auth_audit_event` / `auth_ip_blocks` / `auth_presence`、閲覧UI `/auth-audit`（§6.15） | 監査欠落、院ユーザーへの漏洩、改ざんIPの採用、誤ブロック・運営ロックアウト |
 
 #### 共通計算・共通判定
 
@@ -217,7 +217,7 @@
 | 患者訪問条件 | `patient_visit_conditions` + `visitDueUrgency.ts` | 頻度・曜日・期限緊急度の正（§6.39） | 患者カルテ、自動提案 |
 | 構造化制約（NG/不在/可能枠） | 要確認（テーブル・ファイル未確定） | 割付精度の正。自由記述Wikiではない（§6.13） | 制約マスタ、電話確認昇格、割付ジョブ |
 | 距離行列（住所→移動根拠） | `src/utils/schedule/travelDistance.ts` | 座標/距離の算出。エージェントは結果を読むだけ（§6.16） | 割付ジョブ、ルート最適化 |
-| ログインIP・認証監査 | `auth_audit_logs` + `log_auth_audit_event` + `auth_ip_blocks` | 誰がいつどこから認証したか。clinic/memberships・地図・IPブロック。閲覧UIは運営のみ `/auth-audit`（§6.15） | ログイン監査画面 |
+| ログインIP・認証監査 | `auth_audit_logs` + `log_auth_audit_event` + `auth_ip_blocks` + `auth_presence` | 誰がいつどこから認証したか。clinic/memberships・地図・IPブロック・在席心拍。閲覧UIは運営のみ `/auth-audit`（§6.15） | ログイン監査画面 |
 
 ### 禁止
 
@@ -476,15 +476,22 @@ DB上の確定・集計テーブル
 - **日本地図UI（2026-08-12）**:
   - 正アセットは `public/icon/map-full.svg`（Geolonia japanese-prefectures / GFDL）。簡易シルエットを増やさない。
   - 都道府県は `data-code` で塗り分け。件数バッジ。海外は異常強調。座標は DB 非保存（都道府県代表点でピン）。
-  - **画面は Select 切替**: 「推定ログイン位置」↔「認証イベント一覧」。同時表示しない。初期は地図。都道府県クリックで一覧へ自動切替＋絞り込み。地図は非表示時もマウント維持。
+  - **画面は Select 切替**: 「推定ログイン位置」↔「認証イベント一覧」↔「現在ログイン中」。同時表示しない。初期は地図。都道府県クリックで一覧へ自動切替＋絞り込み。地図は非表示時もマウント維持。
+  - **件数表示**: サイドの海外／推定不可カードや凡例ピルは置かない。地方チップ行の右端に `国内 N` / `海外 N` の簡潔テキストのみ（海外は件数>0で一覧絞り込み可）。
   - ズーム: デフォルトはデータがある都道府県へフィット（データ範囲）。地方チップ（北海道〜九州沖縄）／全国。都道府県クリックの一覧切替は維持。
+  - **九州・沖縄ズーム**: Geolonia は沖縄・鹿児島離島をインセット描画するため、全体外接だと全国並みにズームアウトする。`zoomSelector` で本土のみ＋南方向の余白拡張（§10.28）。
+- **ハートビート在席（2026-08-12）**:
+  - 正は `auth_presence`（ユーザー単位 PK）。`touch_auth_presence` / `list_auth_presence` / `clear_auth_presence`。
+  - ログイン中クライアントが約20秒ごとに心拍（タブ非表示中は停止、復帰で即送信）。ログアウト時に行削除。
+  - 運営UI「現在ログイン中」は直近60秒以内を在席とし、20秒ポーリングで更新。有効セッション一覧（Auth sessions）とは別物。
 - **IPブロック（2026-08-12）**:
   - 正は `auth_ip_blocks`（運営のみ RLS）。`block_auth_ip` / `unblock_auth_ip` / `is_request_ip_blocked`。
   - 一般ユーザーはログイン直後・MFA完了後に拒否（`signOut`）。**運営はロックアウト回避のためバイパス**。
   - 監査一覧から手動ブロック／解除できる。完全な Edge 強制ではない（クライアント＋RPC 判定）。
+  - **IPの意味**: 記録・ブロック対象は回線の出口（グローバルIP）。Mac等の端末単体番号ではない。同じWi‑Fiの別端末でも一致しうる。ブロック確認文言で別端末照合と回線共有影響を案内する（`formatAuthIpBlockConfirmMessage`）。
 - ログイン系監査と業務操作ログ（`operation_traces`）はテーブル/責務を分離する。
 - エージェント（Cursor SDK）経路に監査テーブルを直結させない（§6.12）。
-- 関連: `recordAuthAudit.ts`, `AuthAuditPage.tsx`, `AuthAuditJapanMap.tsx`, `japanMapZoom.ts`, `formatAuthAudit.ts`, `lookupIpRegion.ts`, `navConfig.ts`, `public/icon/map-full.svg`, `20260812151000_auth_audit_platform_admin_only.sql`, `20260812160000_auth_audit_clinic_and_ip_blocks.sql`, §6.29, §6.50, §7, §10.27
+- 関連: `recordAuthAudit.ts`, `authPresence.ts`, `AuthAuditPage.tsx`, `AuthPresencePanel.tsx`, `AuthAuditJapanMap.tsx`, `japanMapZoom.ts`, `formatAuthAudit.ts`, `formatAuthIpBlock.ts`, `lookupIpRegion.ts`, `navConfig.ts`, `public/icon/map-full.svg`, `20260812151000_auth_audit_platform_admin_only.sql`, `20260812160000_auth_audit_clinic_and_ip_blocks.sql`, `20260812170000_auth_presence_heartbeat.sql`, §6.29, §6.50, §7, §10.27, §10.28
 
 ### 6.16 距離算出とルート最適化の責務（2026-08-08 決定 / 2026-08-11 改定）
 
@@ -917,7 +924,8 @@ DB上の確定・集計テーブル
 | テーブル・API | 読み取り | 作成 | 更新 | 削除 | 注意点 |
 |---|---|---|---|---|---|
 | 認証監査（`auth_audit_logs`） | 運営のみ | `log_auth_audit_event` のみ | 原則不可 | 原則不可 | IPは request.headers。クライアント申告禁止。clinic_idは検証付き。membershipsはスナップショット（§6.15） |
-| IPブロック（`auth_ip_blocks`） | 運営のみ | `block_auth_ip` | `unblock_auth_ip`（論理無効化） | 原則不可 | 一般ログイン拒否。運営は `is_request_ip_blocked` バイパス（§6.15） |
+| IPブロック（`auth_ip_blocks`） | 運営のみ | `block_auth_ip` | `unblock_auth_ip`（論理無効化） | 原則不可 | 一般ログイン拒否。運営はバイパス。対象は回線出口IP（§6.15） |
+| 在席ハートビート（`auth_presence`） | 運営のみ一覧 | `touch_auth_presence`（本人） | 本人 upsert | 本人／logout時 | 直近60秒＝在席。運営一覧は `list_auth_presence`（§6.15） |
 | `GET /api/cursor/health` | Bearer=`CURSOR_HEALTH_SECRET` | — | — | — | 未設定は401。公開は ok/service/ready のみ（§6.36 / §10.10） |
 | `clinic_members` | 所属メンバー | bootstrap（非運営 owner）/ admin（owner以外・非運営） | admin（owner行以外） | admin（owner行以外・grantなし） | UIロックだけでは不可。§6.40 |
 | `POST /api/schedule/propose` | — | 認可済みロール | — | — | JWT必須。60秒クールダウン＋同時1本。公開エラーは固定文言（§6.40） |
@@ -1013,6 +1021,7 @@ AIが自分の実装に合わせて期待値を作ることは禁止。
 | 2026-08-11 | 設定マスタ表の見出しがスクロールでずれる | border-collapse と sticky | border-separate + sticky thead（§10.24） |
 | 2026-08-11 | カレンダーアイコンのツールチップが下に隠れる | 見出し帯 overflow-x-auto が absolute をクリップ | portal + fixed + z-[100]（§10.25） |
 | 2026-08-12 | ログイン監査で地図の下に表が潰れる | fillViewport で地図＋表を同時表示 | 地図/一覧は Select 切替。同時に縦積みしない（§6.15 / §10.27） |
+| 2026-08-12 | 九州・沖縄選択で地図が全国並みにズームアウト | 沖縄・鹿児島離島インセットを外接に含めた | 本土のみ zoomSelector＋南余白（§6.15 / §10.28） |
 
 ### 記録ルール
 
@@ -1214,6 +1223,13 @@ AIが自分の実装に合わせて期待値を作ることは禁止。
 - 再発防止: 「推定ログイン位置」と「認証イベント一覧」は **Select 切替**（同時表示しない）。都道府県選択で一覧へ自動切替。地図は非表示時もマウント維持（§6.15）。
 - 関連: `AuthAuditPage.tsx`, `AuthAuditJapanMap.tsx`
 
+### 10.28 九州・沖縄ズームが全国並みにズームアウトする（2026-08-12）
+
+- 事象: 「九州・沖縄」チップを選ぶと地図が極端にズームアウトし、九州に寄らない。
+- 原因: Geolonia `map-full.svg` は沖縄・鹿児島離島を地図内インセットで描く。これらを外接に含めると全国に近い viewBox になる。
+- 再発防止: 九州のズームは `zoomSelector` で本土県のみ（沖縄・鹿児島除外）。南方向に余白を足して鹿児島本土が切れにくくする。塗り分け用 selector とズーム用を分ける（§6.15）。
+- 関連: `japanMapZoom.ts`, `AuthAuditJapanMap.tsx`
+
 ---
 
 ## 11. 🔗 重要ドキュメント・参照先
@@ -1291,7 +1307,7 @@ AIは作業開始時に以下を確認する。
 □ 自動提案・ルート最適化の裏処理なら §6.10 / §6.11 / §6.12（Cursor SDK・開発local/本番Cloud・DB直結禁止・Adapter・HTTP MCP・self-hosted当面不要）を守った
 □ 精度・導入ナレッジなら §6.13（構造化制約が正・電話確認から昇格・自然文の無確認ハード制約化禁止）を守った
 □ SDK モデル選択なら §6.14（Grok 4.5 → 50%超 Composer 2.5 → 100% GPT 5.6 Sol。自前ルーター。IDは list 確認）を守った
-□ 認証・監査なら §6.15（サーバー側IP・clinic紐付け/memberships・端末はUA要約・運営のみ `/auth-audit`・地図は map-full.svg＋Select切替＋地方ズーム・IPブロックは運営バイパス・推定地域は表示時GeoIP・操作ログと分離・§10.27）を守った
+□ 認証・監査なら §6.15（サーバー側IP＝回線出口・clinic/memberships・端末UA要約・運営のみ `/auth-audit`・地図は件数をチップ行右端・九州は zoomSelector・在席はハートビート・IPブロックは回線共有前提文言・運営バイパス・§10.27/§10.28）を守った
 □ ルート距離なら §6.16 / §6.39（`travelDistance.ts` で行列、生住所非渡与、住所必須、地図鍵を渡さない）を守った
 □ サービス名・画面コピーなら §6.17（対外名はデンタクル。内部識別子は Detacle。装飾英語見出しを増やさない。SEOはサブタイトル側）を守った
 □ 初期機能・導入なら §6.18 / §6.19（Apotool骨格＋ボタン1つ。v0はMustのみ。立ち上げ/既存の2レーン）を守った
@@ -1398,4 +1414,5 @@ AIは作業開始時に以下を確認する。
 - `2026-08-12`: ログイン監査 UI（運営のみ `/auth-audit`）と推定地域列（表示時 GeoIP）を §6.15 / §6.29 / §12 に追記（`/project-memory-learn`）
 - `2026-08-12`: 未反映4件を整理。ログイン監査2件は既反映を確認。ハーネス差分は §2.5 / §2.14 で充足。HB差分で §2.1 業務コア／共通判定のパスを固定。ログイン監査ナビアイコンを §6.33 に追記（`/project-memory-learn`）
 - `2026-08-12`: ログイン監査の地図UI・Select切替・地方ズーム・clinic紐付け・IPブロックを §6.15 / §7 / §10.27 / §12 に追記（`/project-memory-learn`）
+- `2026-08-12`: 在席ハートビート・件数テキスト配置・九州ズーム再発防止・IP回線共有文言を §6.15 / §7 / §10.28 / §12 に追記（`/project-memory-learn`）
 

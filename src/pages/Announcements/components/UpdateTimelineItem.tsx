@@ -4,6 +4,7 @@ import {
   formatProductUpdateDate,
   formatProductUpdateKindLabel,
   formatProductUpdateNumber,
+  formatProductUpdatePlatformLabel,
   formatProductUpdateSurfaceLabel,
 } from '@/pages/Announcements/formatProductUpdate'
 import type { ProductUpdateView } from '@/pages/Announcements/productUpdateTypes'
@@ -59,18 +60,19 @@ export function UpdateTimelineItem({
               <span aria-hidden="true">→</span>
             </a>
           ) : null}
-          {item.surfaces.length > 0 ? (
-            <div className="mt-3.5 flex flex-wrap gap-2">
-              {item.surfaces.map((surface) => (
-                <span
-                  key={surface}
-                  className="inline-flex items-center rounded-md bg-emerald-50 px-2 py-1 text-[13px] font-bold text-[#008C01]"
-                >
-                  {formatProductUpdateSurfaceLabel(surface)}
-                </span>
-              ))}
-            </div>
-          ) : null}
+          <div className="mt-3.5 flex flex-wrap gap-2">
+            <span className="inline-flex items-center rounded-md bg-emerald-50 px-2 py-1 text-[13px] font-bold text-[#008C01]">
+              {formatProductUpdatePlatformLabel(item.platform)}
+            </span>
+            {item.surfaces.map((surface) => (
+              <span
+                key={surface}
+                className="inline-flex items-center rounded-md bg-emerald-50 px-2 py-1 text-[13px] font-bold text-[#008C01]"
+              >
+                {formatProductUpdateSurfaceLabel(surface)}
+              </span>
+            ))}
+          </div>
           {footer}
         </div>
       </div>

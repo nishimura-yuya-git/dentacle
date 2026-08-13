@@ -13,6 +13,7 @@ import { supabase } from '@/lib/supabase'
 import { IconHoverTooltip } from '@/pages/Calendar/components/IconHoverTooltip'
 import { useAnchoredPopover } from '@/pages/Calendar/hooks/useAnchoredPopover'
 import { AiUsageModelSwitcherMenu } from '@/pages/Admin/sections/AiUsageModelSwitcherMenu'
+import { shouldCloseModelSwitcherAfterSave } from '@/pages/Admin/sections/modelSwitcherUx'
 
 const PANEL_WIDTH = 400
 
@@ -29,7 +30,7 @@ function AiModelIcon() {
   )
 }
 
-/** 全院共通 Cursor モデル切替（Grok は版セレクト） */
+/** 全院共通 Cursor モデル切替（Grok は版スライダー。保存後もパネルは開いたまま） */
 export function AiUsageModelSwitcher() {
   const toast = useToast()
   const { user } = useAuth()
@@ -85,7 +86,7 @@ export function AiUsageModelSwitcher() {
       : (PLATFORM_CURSOR_MODEL_OPTIONS.find((option) => option.id === next)
           ?.label ?? next)
     toast.success(`${label} に切り替えました`)
-    close()
+    if (shouldCloseModelSwitcherAfterSave()) close()
   }
 
   return (

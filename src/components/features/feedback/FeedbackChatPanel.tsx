@@ -10,7 +10,7 @@ type Props = {
   onClose?: () => void
 }
 
-/** ご意見チャット本体（日本語・個人情報注意・送信で Issue 化） */
+/** ご意見チャット本体（日本語・個人情報注意） */
 export function FeedbackChatPanel({ variant, onClose }: Props) {
   const chat = useFeedbackChat()
   const listRef = useRef<HTMLDivElement>(null)
@@ -70,48 +70,40 @@ export function FeedbackChatPanel({ variant, onClose }: Props) {
         </p>
       ) : null}
 
-      {chat.issueNumber ? (
-        <p className="mt-3 text-xs font-medium text-slate-400">
-          受付中の Issue #{chat.issueNumber}
-          {chat.issueUrl ? (
-            <>
-              {' '}
-              <a
-                href={chat.issueUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="font-bold text-[#008C01] underline-offset-2 hover:underline"
-              >
-                GitHubで開く
-              </a>
-            </>
-          ) : null}
-        </p>
-      ) : null}
-
       <form
-        className="mt-4 space-y-3"
+        className="mt-4"
         onSubmit={(event) => {
           event.preventDefault()
           void chat.send()
         }}
       >
-        <label className="block">
+        <label className="relative block">
           <span className="sr-only">ご意見の本文</span>
           <textarea
             value={chat.draft}
             onChange={(event) => chat.setDraft(event.target.value)}
             rows={3}
             placeholder="気づいたこと、再現手順、期待する動きを書いてください"
-            className="w-full resize-none rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-[#008C01] focus:ring-4 focus:ring-[#008C01]/20"
+            className="w-full resize-none rounded-xl border border-slate-200 bg-white px-4 py-3 pr-16 text-sm text-slate-900 outline-none transition focus:border-[#008C01] focus:ring-4 focus:ring-[#008C01]/20"
             disabled={chat.busy}
           />
+          <button
+            type="submit"
+            disabled={!chat.draft.trim() || chat.busy}
+            aria-label="送信する"
+            aria-busy={chat.busy}
+            className="absolute bottom-2 right-2 inline-flex h-11 w-11 items-center justify-center rounded-full bg-[#E7F4E7] shadow-sm transition-colors hover:bg-[#D5EDD5] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#008C01]/35 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            <img
+              src="/icon/paper-plane.png"
+              alt=""
+              width={28}
+              height={28}
+              className="h-7 w-7 object-contain"
+              draggable={false}
+            />
+          </button>
         </label>
-        <div className="flex justify-end">
-          <Button type="submit" variant="primary" loading={chat.busy} disabled={!chat.draft.trim()}>
-            送信する
-          </Button>
-        </div>
       </form>
     </section>
   )

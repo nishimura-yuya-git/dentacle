@@ -25,7 +25,7 @@ export function SecurityLayout({ children }: { children: ReactNode }) {
 
   return (
     <div className="flex min-h-dvh bg-[linear-gradient(-15deg,#F8FBF8,#F0F9F0,#E7F4E8_85%)]">
-      <aside className="sticky top-0 hidden h-dvh w-[298px] shrink-0 border-r border-slate-200/70 bg-white md:flex md:flex-col">
+      <aside className="sticky top-0 hidden h-dvh w-56 shrink-0 border-r border-slate-200/70 bg-white md:flex md:flex-col">
         <SecurityRail onSignOut={() => void signOut()} />
       </aside>
 
@@ -41,7 +41,7 @@ export function SecurityLayout({ children }: { children: ReactNode }) {
             role="dialog"
             aria-modal="true"
             aria-label="安全性メニュー"
-            className="absolute inset-y-0 left-0 flex w-[298px] flex-col border-r border-slate-200/70 bg-white shadow-lg"
+            className="absolute inset-y-0 left-0 flex w-56 flex-col border-r border-slate-200/70 bg-white shadow-lg"
           >
             <SecurityRail
               onSignOut={() => void signOut()}
@@ -71,7 +71,7 @@ export function SecurityLayout({ children }: { children: ReactNode }) {
         </header>
 
         <main className="flex-1 px-5 py-10 md:px-8 md:py-12">
-          <div className="mx-auto w-full max-w-3xl">
+          <div className="mx-auto w-full max-w-4xl">
             <article className="rounded-[32px] bg-white p-5 font-normal leading-[1.7] text-[16px] text-slate-900 shadow-[0_2px_5px_-2px_rgba(0,20,40,0.08)] sm:p-7 md:p-8">
               {children}
             </article>

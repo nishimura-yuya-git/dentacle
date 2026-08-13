@@ -77,6 +77,10 @@ describe('安全性ページの文言', () => {
     assert.match(SECURITY_NETWORK_NOTE, /サーバー側/)
   })
 
+  it('院向け文言に Issue と書かない', () => {
+    assert.equal(/issue/i.test(allCopy()), false)
+  })
+
   it('Nani の翻訳コピーや装飾英語をレールに置かない', () => {
     const copy = allCopy()
     assert.equal(/あたらしく翻訳/.test(copy), false)
@@ -93,9 +97,9 @@ describe('安全性ページの面', () => {
     }
   })
 
-  it('298px レールと白パネルを使う', () => {
+  it('業務ナビと同じ w-56 レールと白パネルを使う', () => {
     const layout = readFileSync(join(here, '../../components/layout/SecurityLayout.tsx'), 'utf8')
-    assert.match(layout, /w-\[298px\]/)
+    assert.match(layout, /\bw-56\b/)
     assert.match(layout, /rounded-\[32px\]/)
     assert.match(layout, /#F8FBF8/)
     assert.equal(layout.includes('FeedbackChatLauncher'), false)

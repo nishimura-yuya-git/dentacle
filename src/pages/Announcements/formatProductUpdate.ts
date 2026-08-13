@@ -1,5 +1,6 @@
 import type {
   ProductUpdateKind,
+  ProductUpdatePlatform,
   ProductUpdateStatus,
   ProductUpdateSurface,
 } from '@/pages/Announcements/productUpdatePolicy'
@@ -8,6 +9,12 @@ const KIND_LABEL: Record<ProductUpdateKind, string> = {
   feature: '新機能',
   improve: '改善',
   fix: '修正',
+}
+
+const PLATFORM_LABEL: Record<ProductUpdatePlatform, string> = {
+  web: 'Web',
+  mac: 'Mac',
+  windows: 'Windows',
 }
 
 const SURFACE_LABEL: Record<ProductUpdateSurface, string> = {
@@ -32,6 +39,10 @@ export function formatProductUpdateKindLabel(kind: ProductUpdateKind): string {
 
 export function formatProductUpdateSurfaceLabel(surface: ProductUpdateSurface): string {
   return SURFACE_LABEL[surface]
+}
+
+export function formatProductUpdatePlatformLabel(platform: ProductUpdatePlatform): string {
+  return PLATFORM_LABEL[platform]
 }
 
 export function formatProductUpdateStatusLabel(status: ProductUpdateStatus): string {

@@ -4,6 +4,7 @@ import {
   formatProductUpdateDate,
   formatProductUpdateKindLabel,
   formatProductUpdateNumber,
+  formatProductUpdatePlatformLabel,
   formatProductUpdateStatusLabel,
   formatProductUpdateSurfaceLabel,
 } from './formatProductUpdate.ts'
@@ -33,5 +34,11 @@ describe('formatProductUpdate labels', () => {
     assert.equal(formatProductUpdateKindLabel('feature'), '新機能')
     assert.equal(formatProductUpdateSurfaceLabel('calendar'), 'カレンダー')
     assert.equal(formatProductUpdateStatusLabel('proposed'), '提案中')
+  })
+
+  it('対象環境は Web / Mac / Windows と出す', () => {
+    assert.equal(formatProductUpdatePlatformLabel('web'), 'Web')
+    assert.equal(formatProductUpdatePlatformLabel('mac'), 'Mac')
+    assert.equal(formatProductUpdatePlatformLabel('windows'), 'Windows')
   })
 })

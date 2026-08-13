@@ -18,7 +18,7 @@ const navClass = ({ isActive }: { isActive: boolean }) =>
     isActive ? 'bg-[#008C01]/10 text-[#008C01]' : 'text-slate-700 hover:bg-slate-50',
   ].join(' ')
 
-/** Nani 左 298px レールの骨格。色・文言はデンタクル。 */
+/** 業務サイドバーと同じ w-56。色・文言はデンタクル。 */
 export function SecurityRail({ onSignOut, onNavigate }: Props) {
   return (
     <div className="flex h-full min-h-0 flex-col px-[17px] pb-6 pt-4">

@@ -79,8 +79,23 @@ export const GROK_VERSION_SELECT_OPTIONS = PLATFORM_CURSOR_MODEL_OPTIONS.filter(
     : option.label.replace(/^Grok\s+/, ''),
 }))
 
-export function grokVersionValue(
-  modelId: PlatformCursorModelId,
-): Extract<PlatformCursorModelId, 'grok-4.5' | 'grok-4.6'> {
+export type GrokVersionId = Extract<PlatformCursorModelId, 'grok-4.5' | 'grok-4.6'>
+
+export function grokVersionValue(modelId: PlatformCursorModelId): GrokVersionId {
   return isGrokPlatformCursorModelId(modelId) ? modelId : 'grok-4.5'
+}
+
+/** 離散スライダー用。4.5 が 0、4.6 が 1。3段階にはしない。 */
+export function grokVersionStepIndex(modelId: PlatformCursorModelId): 0 | 1 {
+  return grokVersionValue(modelId) === 'grok-4.6' ? 1 : 0
+}
+
+export function grokVersionFromStepIndex(index: number): GrokVersionId {
+  return index >= 1 ? 'grok-4.6' : 'grok-4.5'
+}
+
+/** トラック上の位置 0〜1 を最寄りの版へスナップする。 */
+export function grokVersionFromTrackRatio(ratio: number): GrokVersionId {
+  const clamped = Math.min(1, Math.max(0, ratio))
+  return grokVersionFromStepIndex(clamped < 0.5 ? 0 : 1)
 }

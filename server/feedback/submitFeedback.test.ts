@@ -146,7 +146,8 @@ describe('submitFeedback', () => {
     assert.equal(memory.threads[0]?.pagePath, '/calendar')
     assert.equal(result.messages[0]?.role, 'user')
     assert.equal(result.messages[1]?.role, 'system')
-    assert.match(result.messages[1]?.body ?? '', /#7/)
+    assert.match(result.messages[1]?.body ?? '', /受け付けました/)
+    assert.equal(/issue/i.test(result.messages[1]?.body ?? ''), false)
   })
 
   it('同じスレッドへの続きはコメントにする', async () => {

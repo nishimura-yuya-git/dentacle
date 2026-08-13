@@ -150,7 +150,7 @@
 ### 2.10 薄い知識Graph層: Claim Grounding / Working Graph（2026-07-28 決定）
 
 - 制御 Graph（`loops/graphs/*.mmd`）とは別に、知識Graphの薄い層をハーネスに入れる。本格 NER・グラフDB・Claude 自動抽出パイプラインは入れない。
-- Claim Grounding: 完成宣言（`state/completion-declaration.md`）の主張を Evaluation 結果・根拠リンクと照合する。宣言ファイルが無いときは `skip`（通常の `loop:run` を止めない）。Evaluation 欠落は `stop`、根拠不足は `warn`。UI Polish は観察証拠に加えページ枠照合が必須（§2.14 / §2.15）。欠落は `stop`。
+- Claim Grounding: 完成宣言（`state/completion-declaration.md`）の主張を Evaluation 結果・根拠リンクと照合する。宣言ファイルが無いときは `skip`（通常の `loop:run` を止めない）。Evaluation 欠落は `stop`、根拠不足は `warn`。UI Polish は観察証拠・ページ枠照合・借り契約・操作観察が必須（§2.14 / §2.15）。欠落は `stop`。
 - Working Graph: エージェントが整理した Entity / Relation だけを `state/working-graph.json` に残す。型は `SCREEN | API | TABLE | SSOT | SYMPTOM | DOC`、関係は `touches | depends_on | reported_in`。
 - 完成報告時は宣言を `state/completion-declaration.md` に書き、`pnpm run loop:evaluator` で Claim Grounding を通す。
 - 将来の本格KG（抽出→解決→組立→クエリ）へ型だけ互換にしておく。全面導入は要件が揃うまで行わない。
@@ -193,25 +193,30 @@
 - 入れないもの: Future AGI self-host / Gateway / Protect / Prompt optimization / Voice simulation。
 - 関連: `docs/agent-loop-harness.md` §23, `loops/evals/`, `loops/simulations/`, `loops/README.md`, `pnpm run test:eval-template`, `pnpm run test:failure-taxonomy`
 
-### 2.14 Observe Loop（UI Polish 観察証拠必須）（2026-08-11 決定）
+### 2.14 Observe Loop（UI Polish 観察証拠必須）（2026-08-11 決定 / 2026-08-14 改定）
 
 - UI Polish の完成申告は、画面を動かしたうえで snapshot または screenshot を取得し、**Read して差分を1行以上書いた観察証拠**が必須。キャプチャ未読の完成申告は無効。
 - 完成宣言の `観察証拠` に含める項目: 種別（`snapshot` | `screenshot`）・パス（または取得名）・`Read済み: はい（差分1行）`。
 - Claim Grounding（§2.10）と Eval template `ui-polish.completion` の `observe-evidence` が欠落すると `stop`。敵対シナリオ `ui-complete-without-observe` で回帰監視する。
 - 内側パネルだけのスクショは観察として数えない。見本キャプチャと実装キャプチャ（ページ全体）のペアと `ページ枠照合` が必須。欠落は `observe-chrome` で `stop`（§2.15）。
+- **操作観察（2026-08-14）**: 端の▼・アカウントメニュー・セレクトは開いてから snapshot / screenshot する。閉じた静止画だけでは見切れを完成根拠にしない。端の開閉が無い画面は完成宣言に `なし（端の開閉なし）`。欠落は `observe-edge` で `stop`。敵対シナリオ `ui-complete-without-edge-observe`。
 - 知覚の優先順位: 構造 `browser_snapshot` → 見た目 screenshot（ページ全体） → vision による推測は最終手段。
 - 出典の原則名: Verify, don't assume / Observe loop（[desktop-harness](https://github.com/xfreeze2/desktop-harness) から借りるのは思想だけ。Mac CLI は入れない）。
-- Interface Review（§2.11）と併用する。観察証拠があっても Verdict が `Block` なら完成報告禁止。見本に無い業務枠が残っている Layout Finding は HIGH。
-- 関連: `scripts/lib/claim-grounding.mjs`, `loops/goals/ui-polish-gate.md`, `loops/goals/ui-polish.md`, `loops/evals/ui-polish.completion.json`, `loops/simulations/adversarial-scenarios.json`, `.cursor/skills/playwright-mcp-testing/SKILL.md`, `docs/agent-loop-harness.md` §12.2.2, §2.15
+- Interface Review（§2.11）と併用する。観察証拠があっても Verdict が `Block` なら完成報告禁止。**2026-08-14 改定**: 業務ハブを文書シェル化した Layout Finding は HIGH。対象の業務枠が残っているだけでは HIGH にしない（§2.15）。開閉で端メニューが見切れる、固定枠が動く・ガクつくのも Layout HIGH。
+- 関連: `scripts/lib/claim-grounding.mjs`, `loops/goals/ui-polish-gate.md`, `loops/goals/ui-polish.md`, `loops/evals/ui-polish.completion.json`, `loops/simulations/adversarial-scenarios.json`, `.cursor/skills/playwright-mcp-testing/SKILL.md`, `docs/agent-loop-harness.md` §12.2.2, §2.15, §10.38
 
-### 2.15 UI Polish ページ枠照合ゲート（2026-08-13 決定）
+### 2.15 UI Polish ページ枠照合ゲート（2026-08-13 決定 / 2026-08-14 改定）
 
 - 完成・「寄せた」申告は、見本キャプチャ（または「なし（指示のみ）」）と実装キャプチャ（ページ全体）を Read し、完成宣言に `ページ枠照合`（見本 / 実装 / 差分 / Read済み）を書く。内側パネルだけのスクショは完成根拠にしない。
 - Claim Grounding の欠落コードは `observe-chrome`。Eval template `ui-polish.completion` の `chrome-compare` も必須。敵対シナリオ `ui-complete-inner-panel-only`。
-- 画面種別は業務UI / HP-LP / **文書シェル（専用ページ枠）** の三択。見本が専用シェルなら、対象画面を `DashboardLayout`（業務サイドバー・クリニック名ピル・ご意見 FAB 等）で包んだまま完成にしない。原子（`Button` / `Modal` / `Toast`）の再利用とページ枠は別。
-- Stop の分割: 他画面の導線・グローバルナビ変更は確認停止。対象画面のラッピング差は差し戻し（完成禁止）。「既存UI導線を大きく変える」を対象画面の枠修正まで Stop にしない。
+- **参照の正体（2026-08-14）**: 見本の名前を書く。この案件の文書シェル見本は **Nani!?**。Cursor Cloud と決めつけない。ウィジェット見本（スライダー等）は部品だけ。ページ枠まで借りない。
+- **対象枠ロック（2026-08-14）**: 対象画面の既存枠が正。見本が専用シェルでも、業務ハブ（`/proposals` 等）の `DashboardLayout` は残す。`SecurityLayout` は `/security` だけ。原子（`Button` / `Modal` / `Toast`）の再利用とページ枠は別。2026-08-13 の「見本が専用シェルなら DashboardLayout で包まない」は、**対象が文書シェルのときだけ**に限定する。
+- **借り契約（2026-08-14）**: 完成宣言に参照の正体・対象枠（ロックまたは変更承認）・借りてよい・借りないを書く。欠落は `borrow-inventory` で `stop`。Eval template の `borrow-inventory` と敵対シナリオ `ui-complete-without-borrow-inventory` で監視する。既定で借りない: ページ枠、レール幅 px、暗い面、見本の段階数、「詳細設定」、装飾英語、見本文言、**共有メニューの下開き**。既存ナビ幅（業務ナビ `w-56`）とメニューの開く方向は案件SSoT。Nani の 298px を丸コピーしない。
+- **操作観察（2026-08-14）**: 完成宣言に `操作観察`（対象 / 種別 / パス / Read済み、または `なし（端の開閉なし）`）を書く。欠落は `observe-edge` で `stop`。Eval template の `observe-edge` と敵対シナリオ `ui-complete-without-edge-observe` で監視する。開閉で固定枠が動く・ガクつく・見切れる完成は禁止。枠幅を変えたら本文幅も見る。Iteration は対象枠ロック → 借り一覧 → 面 → タイポ → 主ボタン → 余白 → 端の開閉。
+- 画面種別は業務UI / HP-LP / **文書シェル（その画面だけ）** の三択。
+- Stop の分割: 他画面ナビ・**対象枠の変更**は確認停止。見本枠の移植・借りない物の実装・端の見切れは差し戻し（完成禁止）。
 - Context Budget: 完成禁止条件は短い `loops/goals/ui-polish-gate.md` を must として残す。長い `ui-polish.md` の後半は窓から落ちる前提（§2.9）。
-- 関連: `loops/goals/ui-polish-gate.md`, `loops/goals/ui-polish.md`, `scripts/lib/claim-grounding.mjs`, `scripts/lib/context-budget.mjs`, `loops/evals/ui-polish.completion.json`, `.cursor/rules/ui-design.mdc`, `.cursor/rules/agent-loops.mdc`, §2.9, §2.14, §10.29
+- 関連: `loops/goals/ui-polish-gate.md`, `loops/goals/ui-polish.md`, `scripts/lib/claim-grounding.mjs`, `scripts/lib/context-budget.mjs`, `loops/evals/ui-polish.completion.json`, `.cursor/rules/ui-design.mdc`, `.cursor/rules/agent-loops.mdc`, §2.9, §2.14, §6.45, §6.56, §10.29, §10.37, §10.38
 
 ---
 
@@ -618,11 +623,12 @@ DB上の確定・集計テーブル
 - 最終ログイン列はクライアントから取得可能になるまで「—」表示とする。
 - 関連: `src/pages/Members/*`, `DashboardLayout`（`titleAside`）, RPC `add_clinic_member_by_email`, §6.24, §6.26, §6.40
 
-### 6.26 セレクトは独自UI（2026-08-09 決定）
+### 6.26 セレクトは独自UI（2026-08-09 決定 / 2026-08-14 追記）
 
 - 画面上のセレクトは必ず `src/components/ui/Select.tsx` を使う（丸角メニュー・薄い境界・影・選択項目左にチェック・portal 配置）。
 - 見た目用のネイティブ `<select>` を新規追加しない。フォーム送信・required 用の sr-only 同期のみ例外。
-- 関連: `Select.tsx`, §10.6（親の overflow-hidden でメニューを消さない）
+- **長いラベル（2026-08-14）**: メニュー幅はラベルに合わせ、右端の狭いトリガーでは左へずらして画面内に収める（`placeSelectMenu.ts`）。項目は `min-w-0` ＋折り返し。`truncate` だけだと flex 子が右抜けする（§10.35）。
+- 関連: `Select.tsx`, `placeSelectMenu.ts`, §10.6, §10.35
 
 ### 6.27 お支払い履歴（銀行振替・縦タイムライン）（2026-08-09 決定）
 
@@ -763,8 +769,8 @@ DB上の確定・集計テーブル
 - **料金表示は円**: `USD_TO_JPY = 160`（`aiModelPricing.ts`）。確定課金と参照概算を円換算。実請求の正は Cursor 課金。
 - **絞り込み**: 「AI利用状況」見出し右端（`actions`）にクリニック・開始日・終了日を**横1行**で置く（`DatePicker inline`・`flex-nowrap`。§10.12）。既定は直近30日。
 - **合計**: 同行の `/icon/coin.png` アイコン → 連絡者リストと同型の近傍ポップオーバー（`useAnchoredPopover`）。中身は**料金合計のみ**（確定＋参照概算の合算円）。
-- **モデル切替（2026-08-13）**: 全院共通。許容・既定は §6.53。Grok は1行＋版セレクト。Composer は単独行。自動カスケードではない。
-- 関連: `ProposalsPage.tsx`, `useAiUsageDashboard.tsx`, `AiUsageFilters.tsx`, `AiUsageTotals.tsx`, `AiUsageModelSwitcher.tsx`, `AiUsageModelSwitcherMenu.tsx`, `public/icon/coin.png`, §6.14, §6.29, §6.36, §6.37, §6.46, §6.53, §10.12
+- **モデル切替（2026-08-13 / 2026-08-14 改定）**: 全院共通。許容・既定は §6.53。Grok は1行＋版スライダー。Composer は単独行。自動カスケードではない。
+- 関連: `ProposalsPage.tsx`, `useAiUsageDashboard.tsx`, `AiUsageFilters.tsx`, `AiUsageTotals.tsx`, `AiUsageModelSwitcher.tsx`, `AiUsageModelSwitcherMenu.tsx`, `GrokVersionSlider.tsx`, `public/icon/coin.png`, §6.14, §6.29, §6.36, §6.37, §6.46, §6.53, §10.12
 
 ### 6.39 自動提案スナップショット（住所必須・距離・頻度）（2026-08-11 決定）
 
@@ -827,24 +833,27 @@ DB上の確定・集計テーブル
 - 見出し下に全患者数と今月新規患者数（`created_at`・Asia/Tokyo）のサマリー帯を置き、検索で全患者数を変えない。
 - 電話確認一覧（`/contacts`）は患者一覧と同型の検索・サマリー・表を使い、列だけ電話確認向けにする。既存の OK / NG 業務ロジックは維持する。
 
-### 6.45 運営向け自動提案画面UI（2026-08-09 決定 / 2026-08-11 改定）
+### 6.45 運営向け自動提案画面UI（2026-08-09 決定 / 2026-08-11 改定 / 2026-08-14 改定）
 
 - `/proposals` は §6.34 のとおり運営専用（§6.46）。
 - **`fillViewport`** で画面縦幅いっぱいにし、表は内部スクロール＋ sticky 見出し（操作ログ／設定と同型）。
-- 提案内は見出し右の Select「表示」で **条件設定 / 最近のジョブ / 提案内容** を1画面ずつ出す（縦積みの3ブロックにしない）。
-- **条件設定**: 生成に効くのは対象日・チームのみ。訪問条件・優先ルール等の未接続UIは「準備中」折りたたみ。ステッパーは条件設定内のコンパクト表示。
-- **最近のジョブ**: 全院から直近100件を取得し、クリニック Select で絞り込み（デフォルト「すべてのクリニック」。全院時のみクリニック列）。再利用・採用は **ジョブ所属の `clinic_id`** を使う（ヘッダーの active clinic で別院を汚さない）。
+- **ページ枠（2026-08-14）**: 業務枠（サイドバー・クリニック名・ご意見FAB）は残す。主面は白 article 1枚。緑グラデの外枠・角丸影の浮いたカード・`max-w-4xl` は使わない。見出し帯直下からメイン列いっぱい（安全性の文書幅は変えない。§6.56）。
+- **切替（2026-08-14）**: 見出しは常に「自動提案」。右端（`DashboardLayout` の `actions`）にテキストタブ **条件設定 / 最近のジョブ / AI利用状況**。見出し右 Select「表示」「画面」には戻さない。タブを本文先頭に置かない。`actions` の幅は画面切替で変えない（クリニック Select をタブ列に足さない。§10.33）。
+- **提案内容一覧は置かない（2026-08-14）**: ナビ項目も採用／却下一覧もハブに置かない。採用の主導線は診療カレンダーの仮枠（§6.34 / §6.35）。生成成功後は最近のジョブへ戻す。ジョブ行の操作は再利用のみ。
+- **条件設定**: 生成に効くのは対象日・チームのみ。訪問条件・優先ルール等の未接続UIは「準備中」折りたたみ。4段ステッパーは置かない。
+- **最近のジョブ**: 全院から直近100件。クリニック Select は本文（件数の右）。デフォルト「すべてのクリニック」。全院時のみクリニック列。再利用は **ジョブ所属の `clinic_id`**（ヘッダーの active clinic で別院を汚さない）。
+- **重複見出し・導入文を置かない**: ページ見出し／タブと同名の本文見出し、ハブ先頭の「対象日とチームを指定して…運営向けです。」は置かない（§10.34）。
 - ユーザー向け文言に「Day0」のラベル・バッジを出さない。内部関数名・開発用語としての利用は可。
 - サイドバーの選択状態は背景・文字・アイコン色で表し、左端の緑縦バーは使わない。
-- 関連: `ProposalsPage.tsx`, `GenerateProposalSection.tsx`, `RecentJobsSection.tsx`, `ProposalItemsSection.tsx`, `filterRecentJobs.ts`, §6.34, §6.38, §6.46
+- 関連: `ProposalsPage.tsx`, `proposalsHub.ts`, `ProposalsArticle.tsx`, `ProposalsHubNav.tsx`, `GenerateProposalSection.tsx`, `RecentJobsSection.tsx`, `filterRecentJobs.ts`, §6.34, §6.35, §6.38, §6.46, §6.56, §10.33, §10.34
 
-### 6.46 運営AIハブ（自動提案 / AI利用状況の切替）（2026-08-11 決定 / 同日改定）
+### 6.46 運営AIハブ（自動提案 / AI利用状況の切替）（2026-08-11 決定 / 同日改定 / 2026-08-14 改定）
 
 - 運営向けの自動提案と AI利用状況は**1ページに統合**する（`ProposalsPage`）。
-- 切替UIはコンテンツ内の丸ピル（旧 `PlatformAiViewSelect`）ではなく、**見出し右の共通 Select「画面」**（自動提案 / AI利用状況）。設定画面のセクション Select と同型。
+- **切替（2026-08-14）**: 見出し右端のテキストタブ（条件設定 / 最近のジョブ / AI利用状況）。旧丸ピル `PlatformAiViewSelect` と見出し右 Select「画面」は使わない。
 - URL: `/proposals`（自動提案）／`/proposals?view=usage`（AI利用状況）。旧 `/admin/ai-usage` はリダイレクト。
 - サイドバーは「自動提案」1項目のみ（`matchPrefixes` に `/admin/ai-usage` を含め、旧直リンクでも選択中表示）。
-- 関連: `ProposalsPage.tsx`, `navConfig.ts`, `AiUsagePage.tsx`, §6.33, §6.38, §6.45
+- 関連: `ProposalsPage.tsx`, `proposalsHub.ts`, `ProposalsHubNav.tsx`, `navConfig.ts`, `AiUsagePage.tsx`, §6.33, §6.38, §6.45
 
 ### 6.47 空き枠埋め（gap_fill・副導線）（2026-08-11 決定 / 同日改定）
 
@@ -937,7 +946,7 @@ DB上の確定・集計テーブル
 - **S-09（未完）**: PITR は Pro 以上の有料アドオンで、現状コンピュートが Micro のため **Small 以上への変更が前提**。課金承認後に `pitr_7` 等を有効化する（勝手に課金変更しない）。
 - 関連: Advisors、§6.40、§7
 
-### 6.53 運営モデル切替（Grok 4.6・2026-08-13 決定）
+### 6.53 運営モデル切替（Grok 4.6・2026-08-13 決定 / 2026-08-14 改定）
 
 自動提案の実行モデルは運営画面で全院共通に切り替える。§6.14 の自動カスケードは未実装のまま。
 
@@ -945,26 +954,31 @@ DB上の確定・集計テーブル
 - **既定・おすすめ**: `grok-4.5`（未切替・行が読めない場合もこれ）
 - Composer 2.5 は残す。既定を 4.6 に上げない。4.5 を外さない。
 - `grok-4.6` は手動切替の選択肢。カスケード帯（0〜50% 等）にはまだ載せない。
-- **UI（2026-08-13）**: Grok 4.5 と 4.6 は別行に並べない。見出しは「Grok」1行、版は共通 `Select`（§6.26）。Composer 2.5 は単独行のまま。
-- **版セレクトのラベル**: `4.5（おすすめ）` / `4.6`。見出しと重複する「Grok」は選択肢に書かない。正: `GROK_VERSION_SELECT_OPTIONS`
+- **UI（2026-08-14）**: Grok 4.5 と 4.6 は別行に並べない。見出しは「Grok」1行。版は離散スライダー（太いピル＋白つまみ、2段階）。Composer 2.5 は単独行のまま。見出しとスライダーの間に「版」ラベルを出さない（§10.32）。
+- **スライダー**: トラックは薄い緑 `#D5EDD5`。つまみは白円。見本の暗い面・オレンジ・3段階・「詳細設定」は借りない。ラベルは `4.5（おすすめ）` / `4.6`（「Grok」は書かない）。正: `GROK_VERSION_SELECT_OPTIONS` / `GrokVersionSlider.tsx`
+- **操作（2026-08-14）**: ドラッグ中は見た目だけ動かし、確定は指を離したとき（`pointerup`）。保存成功でもパネルは閉じない。閉じるのは外側クリック / ESC / トリガー再押下（§10.36）。
 - 選択肢の正: `src/config/aiModelOptions.ts`。DB 制約: `platform_ai_settings.cursor_model_id`
 - 環境変数 `CURSOR_MODEL_ID` はフォールバック既定（`grok-4.5`）。runtime の正は運営切替。
-- 関連: `AiUsageModelSwitcher.tsx`, `AiUsageModelSwitcherMenu.tsx`, `loadPlatformCursorModel.ts`, `aiModelPricing.ts`, §6.14, §6.26, §6.36, §6.38
+- 関連: `AiUsageModelSwitcher.tsx`, `AiUsageModelSwitcherMenu.tsx`, `GrokVersionSlider.tsx`, `modelSwitcherUx.ts`, `loadPlatformCursorModel.ts`, `aiModelPricing.ts`, §6.14, §6.26, §6.36, §6.38, §10.32, §10.36
 
-### 6.54 ご意見チャット → GitHub Issue（2026-08-13 決定）
+### 6.54 ご意見チャット → GitHub Issue（2026-08-13 決定 / 同日追記 / 同日 FAB UI 追記）
 
 アプリ内の「ご意見・不具合」チャットを、開発用の GitHub Issue にする。
 
 - **入口**: 右下 FAB、アカウントメニュー「ご意見・不具合」、専用ページ `/feedback`。**業務サイドバー（`APP_NAV`）には置かない**（§6.33）。
 - **正の記録は GitHub Issue**。同一スレッドの続きは Issue コメント。「新しいご意見」で別 Issue を作る。`feedback_threads` / `feedback_messages` はアプリ内履歴のみ。
-- **API**: `POST /api/feedback/send`。ログイン JWT 必須。公開エラーは固定日本語（内部の GitHub / Postgres 生文言は出さない。§6.40）。
+- **院向け文言**: 画面に `Issue` / `GitHub Issue` と書かない。挨拶の正は「開発チームが内容を確認します」。受付完了は会話内の日本語のみ（「受け付けました。続きは同じ会話に書いてください。」）。受付番号・GitHubリンクは出さない。
+- **API**: `POST /api/feedback/send`。ログイン JWT 必須。公開エラーは固定日本語（内部の GitHub / Postgres 生文言は出さない。§6.40）。未設定時も「Issue連携」と言わない。
 - **トークン**: サーバ専用 `GITHUB_FEEDBACK_TOKEN`（未設定時は `GITHUB_TOKEN`）。リポジトリは `GITHUB_FEEDBACK_REPO`。`VITE_` 接頭辞は禁止（§6.36 と同じ）。
 - **レート制限**: 同一ユーザー 15 秒に 1 通。
 - **RLS**: 本人または運営のみ SELECT。INSERT のみ（UPDATE/DELETE ポリシーは付けない）。
 - **個人情報**: 患者氏名・カルテ番号は Issue 本文に載せない（§6.20 と同一）。画面に注意文を出す。MEMORY・コミットにも転記しない。
-- 関連: `api/feedback/send.ts`, `server/feedback/`, `src/components/features/feedback/`, `src/pages/Feedback/FeedbackPage.tsx`, `AccountMenu.tsx`, §5, §6.20, §6.33, §7
+- **安全性ページ**: ご意見の説明でも GitHub Issue と書かない（§10.30）。
+- **FAB UI（2026-08-13）**: 閉じているときのアイコンは `/icon/chat.png`。開いているときは閉じる×。面は淡い緑 `#E7F4E7`、ホバー `#D5EDD5`。閉じる×は主色。濃い緑の塗りは使わない。
+- **送信（2026-08-13）**: 入力欄の右下に置く。面は FAB と同じ淡い緑の円（`rounded-full`）。アイコンは `/icon/paper-plane.png` のみ（「送信」文字は出さない）。大きさは `h-7`（28px）で円の中に余白を残す。32px だと縁に先端が付く。
+- 関連: `api/feedback/send.ts`, `server/feedback/`, `src/features/feedback/feedbackCopy.ts`, `src/components/features/feedback/`, `src/pages/Feedback/FeedbackPage.tsx`, `src/pages/Security/securityCopy.ts`, `AccountMenu.tsx`, `public/icon/chat.png`, `public/icon/paper-plane.png`, §5, §6.20, §6.33, §7, §10.30
 
-### 6.55 お知らせ（プロダクト更新・2026-08-13 決定）
+### 6.55 お知らせ（プロダクト更新・2026-08-13 決定 / 2026-08-14 追記）
 
 - 正本はログイン後 `/announcements`。院も運営も同じ入口。
 - 入口はアカウントメニュー（マイページの次）。業務ナビ（サイドバー）と設定（導入タイプ・チーム・担当・稼働枠）には置かない。
@@ -974,7 +988,19 @@ DB上の確定・集計テーブル
 - 流れ: 運営が「更新を提案する」（`proposed`）→ 「入れる」（`published`）または「入れない」（`rejected`）。院に見えるのは入れる後だけ。いきなり `published` で作らない。
 - 書込は RPC のみ: `propose_product_update` / `publish_product_update` / `reject_product_update`。テーブル直書き禁止。公開判定の SSoT は `productUpdatePolicy.ts`。
 - エージェントは提案まで。`publish_product_update`（入れる）は運営の人間が行う。
-- 関連: `AnnouncementsPage.tsx`, `AccountMenu.tsx`, `product_updates`, §6.21, §6.24, §6.33, §6.34
+- **対象環境（2026-08-14）**: カラムは `product_updates.platform`（`web` / `mac` / `windows`）。既定と既存行は `web`。UIラベルは「対象環境」。セレクトは3つ。「すべて」なし。1件1環境。**表示のみ**（一覧を環境で絞り込まない）。`surfaces` と混ぜない。書込は `propose_product_update` の `p_platform`。
+- 関連: `AnnouncementsPage.tsx`, `productUpdatePolicy.ts`, `AccountMenu.tsx`, `product_updates`, `propose_product_update`, §6.21, §6.24, §6.33, §6.34
+
+### 6.56 安全性ページ枠（2026-08-13 決定）
+
+`/security` は文書シェル。業務ダッシュボードの内側パネル寄せで幅を広げない。
+
+- 左レール幅は業務ナビと同じ `w-56`。Nani 見本の 298px は使わない。
+- 左レールは本文スクロールでも固定（`sticky` / ビューポート固定）。本文と一緒に流さない。
+- 本文パネルは `max-w-4xl`。`max-w-5xl` まで広げない。
+- アカウントメニューは上に開く（レール下端のため。下開きだと見切れる）。開く方向は案件SSoT。見本の下開きは借りない。位置の再計測でガクつかせない（§10.31）。
+- 自動提案ハブは業務枠のまま主面を白 article にするが、**本文幅は本節を適用しない**（§6.45）。
+- 関連: `SecurityLayout.tsx`, `SecurityRail.tsx`, `placeAccountMenu.ts`, §6.24, §6.45, §10.31
 
 ---
 
@@ -1086,6 +1112,15 @@ AIが自分の実装に合わせて期待値を作ることは禁止。
 | 2026-08-12 | ログイン監査で地図の下に表が潰れる | fillViewport で地図＋表を同時表示 | 地図/一覧は Select 切替。同時に縦積みしない（§6.15 / §10.27） |
 | 2026-08-12 | 九州・沖縄選択で地図が全国並みにズームアウト | 沖縄・鹿児島離島インセットを外接に含めた | 本土のみ zoomSelector＋南余白（§6.15 / §10.28） |
 | 2026-08-13 | 内側パネルだけで UI Polish 完成にした | 観察がページ枠を要求せず、DashboardLayout 優先を誤読し、完成禁止条件が Context Budget で落ちた | ページ枠照合必須。内側だけは stop。Hard Gate を must に置く（§2.15 / §10.29） |
+| 2026-08-13 | 院向けご意見画面に Issue と出した | 裏側の正（GitHub Issue）を画面コピー・エラー・安全性ページにそのまま出した | 院向け文言に Issue と書かない。チャット以外の公開文言も確認する（§6.54 / §10.30） |
+| 2026-08-13 | アカウントメニューが開閉でガクつく | 位置の再計測で top が跳ね、transition が付いていた | portal＋bottomアンカー。同じ座標なら setState しない。位置に transition を付けない（§10.31） |
+| 2026-08-13 | 見出し横に「版」などの説明ラベルを足した | 見出しとセレクトが並ぶとき短い英語／説明を足した | 説明ラベルを足さない（§10.32 / §6.53） |
+| 2026-08-14 | 見出しタブの幅が画面切替で変わった | 条件付き Select を `actions` に足した | タブ列の幅を変えない。クリニック Select は本文へ（§10.33 / §6.45） |
+| 2026-08-14 | 自動提案に同名見出し・導入文・緑グラデを重ねた | ハブを文書ページのように装飾した | 重複見出し・導入文・緑グラデ外枠を置かない（§10.34 / §6.45） |
+| 2026-08-14 | Select の長い院名が右抜けした | メニュー幅＝トリガー幅、flex 子に min-w-0 なし | 幅はラベルに合わせ、右端では左へずらす（§10.35 / §6.26） |
+| 2026-08-14 | Grok スライダー操作でパネルが即閉じた | 保存成功で閉じる／押した瞬間に確定していた | 確定は pointerup。保存後も開いたまま（§10.36 / §6.53） |
+| 2026-08-14 | 見本を Cursor Cloud と決めつけ、業務ハブを文書シェル化した | UI Loop が見本の枠に寄せるだけだった | 参照は Nani!?。対象枠ロック。借り一覧必須（§2.15 / §10.37） |
+| 2026-08-14 | 静止スクショだけで端の▼を開かず UI Polish 完成にした | 観察が閉じたページ全体で足り、端の開閉を要求しなかった | 操作観察必須。欠落は `observe-edge` で stop。枠幅変更後は本文幅も見る（§2.14 / §2.15 / §10.38） |
 
 ### 記録ルール
 
@@ -1298,8 +1333,71 @@ AIが自分の実装に合わせて期待値を作ることは禁止。
 
 - 事象: 見本寄せで白パネルの角丸・本文だけ合わせ、業務ダッシュボード枠のまま完成申告した。
 - 原因: 観察証拠が内側スクショで足りた。`DashboardLayout` 優先をページ枠まで適用した。完成禁止条件が長い goal 文書の後半にあり Context Budget で落ちた。
-- 再発防止: ページ枠照合必須（§2.15）。内側パネルだけの完成は `observe-chrome` で stop。短い Hard Gate を must に置く。対象画面のラッピング差は Stop ではなく差し戻し。
-- 関連: `loops/goals/ui-polish-gate.md`, `scripts/lib/claim-grounding.mjs`, §2.9, §2.14, §2.15
+- 再発防止: ページ枠照合必須（§2.15）。内側パネルだけの完成は `observe-chrome` で stop。短い Hard Gate を must に置く。**2026-08-14**: 業務ハブの枠が残っていることは完成禁止ではない。見本枠の移植と借りない物の実装が差し戻し。対象枠の無断変更は確認停止（§10.37）。
+- 関連: `loops/goals/ui-polish-gate.md`, `scripts/lib/claim-grounding.mjs`, §2.9, §2.14, §2.15, §10.37
+
+### 10.30 院向けご意見画面に Issue と出した（2026-08-13）
+
+- 事象: ご意見チャットの挨拶が「開発用の Issue として受け付けます」になっていた。送信後に「受付中の Issue #N」「GitHubで開く」を出した。未設定エラーが「Issue連携がまだ設定されていません」、安全性ページが「GitHub Issue」だった。
+- 原因: 裏側の正（GitHub Issue）を院向けコピーにそのまま出した。チャット本文だけ直し、公開エラーと安全性ページを見落としやすい。
+- 再発防止: 院向けに出る文字列に `Issue` / `GitHub Issue` と書かない。挨拶・受付メッセージ・公開エラー・安全性ページを確認する。受付番号と GitHub リンクも院向けに出さない。
+- 関連: `feedbackCopy.ts`, `FeedbackChatPanel.tsx`, `publicErrors.ts`, `securityCopy.ts`, `buildIssue.ts`, §6.54
+
+### 10.31 アカウントメニューは位置の再計測でガクつかせない（2026-08-13）
+
+- 事象: 開閉でレール高さが変わったり、測り直して top が跳ねるとメニューがガクガクした。
+- 原因: 座標を毎回 setState し、位置に transition が付いていた。
+- 再発防止: portal＋bottomアンカー。同じ座標なら setState しない。位置に transition を付けない。
+- 関連: `placeAccountMenu.ts`, `AccountMenu.tsx`, `SecurityLayout.tsx`, §6.24, §6.56
+
+### 10.32 見出しとセレクトの間に短い説明ラベルを足さない（2026-08-13）
+
+- 事象: Grok 行の見出し横に「版」を足した。見出しと操作が並ぶとき短い説明ラベルが増えやすい。
+- 原因: セレクト単体の意味を補おうとして、既にある見出しと重複するラベルを足した。
+- 再発防止: 見出しとセレクト／スライダーが並ぶとき、間に「版」「表示」「画面」などの説明ラベルを足さない。
+- 関連: `AiUsageModelSwitcher.tsx`, `GrokVersionSlider.tsx`, §6.26, §6.53
+
+### 10.33 見出しタブの幅を画面切替で変えない（2026-08-14）
+
+- 事象: 最近のジョブだけクリニック Select を見出し右（`actions`）に足し、タブ列の幅が画面ごとに変わった。
+- 原因: 画面固有の絞り込みをタブと同じ行に置いた。
+- 再発防止: `actions` のタブ幅は固定。クリニック Select は本文（件数の右）。条件付き操作を見出しタブに足さない。
+- 関連: `ProposalsPage.tsx`, `ProposalsHubNav.tsx`, `RecentJobsSection.tsx`, §6.45, §6.46
+
+### 10.34 自動提案に同名見出し・導入文・緑グラデを重ねない（2026-08-14）
+
+- 事象: ページ見出し「自動提案」の下に同名見出しや「対象日とチームを指定して…運営向けです。」を置いた。緑グラデ外枠・角丸浮きカード・本文先頭タブも重なった。提案内容は見出し削除だけでは一覧が残った。
+- 原因: ハブを文書ページや安全性シェルに寄せすぎた。採用一覧をハブにも置こうとした。
+- 再発防止: ページ見出し／タブと同名の本文見出しを置かない。ハブ先頭の導入文を置かない。緑グラデ外枠・`max-w-4xl` の浮きカードにしない。提案内容ナビ／一覧は置かない（採用の正はカレンダー仮枠）。タブは見出し右端のまま本文先頭に戻さない。
+- 関連: `ProposalsPage.tsx`, `ProposalsArticle.tsx`, `proposalsHub.ts`, §6.34, §6.35, §6.45
+
+### 10.35 Selectメニューの長いラベルを右に出さない（2026-08-14）
+
+- 事象: 長いクリニック名がメニュー右端から画面外へ抜けた。
+- 原因: メニュー幅をトリガー幅に固定し、flex 子に `min-w-0` がなく、右端で左揃えのまま広げた。
+- 再発防止: メニュー幅はラベルに合わせ、右端では左へずらす（`placeSelectMenu.ts`）。項目は `min-w-0` ＋折り返し。
+- 関連: `Select.tsx`, `placeSelectMenu.ts`, §6.26
+
+### 10.36 Grokスライダーは離してから確定し、保存後もパネルを閉じない（2026-08-14）
+
+- 事象: つまみを押した瞬間に保存され、パネルが閉じた。ドラッグ中に確定して操作しづらかった。
+- 原因: 値変更のたびに保存し、保存成功でメニューを閉じていた。見本の暗い面・3段階も借りかけた。
+- 再発防止: ドラッグ中は見た目だけ。確定は `pointerup`。`shouldCloseModelSwitcherAfterSave()` は false。閉じるのは外側クリック / ESC / トリガー再押下。見本の暗い面・3段階・「詳細設定」は借りない。
+- 関連: `GrokVersionSlider.tsx`, `modelSwitcherUx.ts`, `AiUsageModelSwitcherMenu.tsx`, §6.53
+
+### 10.37 見本を Cursor Cloud と決めつけ、業務ハブを文書シェル化した（2026-08-14）
+
+- 事象: 文書シェル見本は Nani!? なのに、添付スライダーを Cursor Cloud 画面として扱った。自動提案を安全性シェルに寄せ、緑グラデ・`max-w-4xl`・導入文を重ねた。
+- 原因: UI Loop が「見本の枠に寄せる／見本に無い枠は残さない」だけだった。参照名も借り一覧も無かった。
+- 再発防止: 参照の正体を書く。文書シェルは Nani!?。対象枠をロックする。借りてよい／借りないを完成宣言に書く。欠落は `borrow-inventory` で stop。
+- 関連: `loops/goals/ui-polish-gate.md`, `scripts/lib/claim-grounding.mjs`, §2.15, §6.45, §6.56
+
+### 10.38 静止スクショだけで端の開閉を UI Polish 完成にした（2026-08-14）
+
+- 事象: `/security` 左レール下端のアカウントメニューが下開きのまま画面外へ出ていた。閉じたページ全体スクショでは先頭がわずかに見えるだけで完成にできた。レールを `w-56` にしたあと本文が細く見える再チェックも無かった。
+- 原因: Observe Loop が端のオーバーレイを開く手順を持っていなかった。借りない一覧にメニューの開き方が無く、枠幅変更の Iteration がレールだけで止まっていた。
+- 再発防止: 端の▼は開いてから観察する。完成宣言に操作観察が無い UI Polish は `observe-edge` で stop。無しなら「なし（端の開閉なし）」。開閉で固定枠が動く・ガクつく・見切れる完成は禁止（ガクつき防止の実装は §10.31）。見本の下開きは借りない。枠幅を変えたら本文幅も見る。
+- 関連: `loops/goals/ui-polish-gate.md`, `scripts/lib/claim-grounding.mjs`, `placeAccountMenu.ts`, `SecurityLayout.tsx`, §2.14, §2.15, §6.56, §10.31
 
 ---
 
@@ -1313,14 +1411,14 @@ AIが自分の実装に合わせて期待値を作ることは禁止。
 - `docs/agent-loop-harness.md` — Agent Loop / Hard Boundary ハーネス設計
 - `loops/goals/bug-fix.md` — Bug Fix 完成ゲート（差し戻し / maxIterations / 完成宣言）
 - `loops/graphs/bug-fix.mmd` — Bug Fix 外側 Graph
-- `loops/goals/ui-polish-gate.md` / `loops/goals/ui-polish.md` / `loops/graphs/ui-polish.mmd` — UI Polish 完成ゲート（Interface Review・§2.11 / 観察証拠・§2.14 / ページ枠照合・§2.15）
+- `loops/goals/ui-polish-gate.md` / `loops/goals/ui-polish.md` / `loops/graphs/ui-polish.mmd` — UI Polish 完成ゲート（Interface Review・§2.11 / 観察証拠・操作観察・§2.14 / ページ枠照合・借り契約・§2.15）
 - `.cursor/skills/better-interface/SKILL.md` / `.cursor/commands/better-interface.md` — 横断 Interface Review 司令塔
 - `.cursor/skills/better-ui/SKILL.md` — UI polish 細部レシピ（既存トークン準拠）
-- `.cursor/skills/playwright-mcp-testing/SKILL.md` — ブラウザ確認と Observe Loop（§2.14）
+- `.cursor/skills/playwright-mcp-testing/SKILL.md` — ブラウザ確認と Observe Loop（§2.14。端の▼は開いてから撮る）
 - `loops/goals/regression-guard.md` / `loops/graphs/regression-guard.mmd` — Regression Guard 完成ゲート
 - `scripts/lib/loop-progress.mjs` — No progress ブレーキ
 - `scripts/lib/context-budget.mjs` — Context Budget（must / compress / drop）
-- `scripts/lib/claim-grounding.mjs` — Claim Grounding（主張↔根拠。UI Polish は観察証拠・ページ枠照合必須・§2.14 / §2.15）
+- `scripts/lib/claim-grounding.mjs` — Claim Grounding（主張↔根拠。UI Polish は観察証拠・ページ枠照合・借り契約・操作観察必須・§2.14 / §2.15）
 - `scripts/lib/working-graph.mjs` / `scripts/working-graph.mjs` — Working Graph（薄い共有メモリ）
 - `scripts/cursor-safety-guard.mjs` — PreToolUse ガード（変更契約 + Hard Boundary）
 - `scripts/change-contract-gate.mjs` — 変更契約ゲート CLI
@@ -1368,8 +1466,8 @@ AIは作業開始時に以下を確認する。
 □ pnpm run memory:audit で要詰めを確認し、理解レポート §6 に件数を書いた（§2.8）
 □ 不具合対応なら Bug Fix 完成ゲート（§2.7）と完成宣言を守った
 □ UI / 回帰確認なら §2.9（UI Polish / Regression Guard Graph・No progress・Context Budget）を守った
-□ UI Polish なら §2.11（Interface Review `/better-interface`。Verdict が Block なら完成報告禁止）と §2.14（観察証拠: snapshot|screenshot を Read して差分1行）と §2.15（ページ枠照合。内側パネルだけでは完成無効）を守った
-□ 完成報告なら §2.10（Claim Grounding / Working Graph。宣言は state/completion-declaration.md）を守った。UI Polish なら観察証拠欠落またはページ枠照合欠落で stop（§2.14 / §2.15）
+□ UI Polish なら §2.11（Interface Review `/better-interface`。Verdict が Block なら完成報告禁止）と §2.14（観察証拠: snapshot|screenshot を Read して差分1行。端の▼は開いてから撮る）と §2.15（ページ枠照合・参照の正体は Nani!?・対象枠ロック・借り契約・操作観察。内側パネルだけでは完成無効。業務ハブの DashboardLayout は残す。見本の下開き・298px は借りない）を守った
+□ 完成報告なら §2.10（Claim Grounding / Working Graph。宣言は state/completion-declaration.md）を守った。UI Polish なら観察証拠欠落・ページ枠照合欠落・借り契約欠落・操作観察欠落で stop（§2.14 / §2.15）
 □ セキュリティ境界は §2.12（GPT非依存の `security:scan`。hook 自動実行はしない。必要なときだけ手動）を守った
 □ プラットフォーム保安なら §6.52（シード一時表DROP・漏洩PW保護ON・DB SSL Enforcement ON。PITRは課金承認後）を守った
 □ 雛形コピー直後なら Git 未初期化で scan skip になることを理解した。本開発開始前に `git init` した（§2.12）
@@ -1377,7 +1475,7 @@ AIは作業開始時に以下を確認する。
 □ 評価契約・失敗分類・敵対シナリオは §2.13（Future AGI 製品ではなく薄い型だけ。LLM-as-judge を司法の主にしない）を守った
 □ 自動提案・ルート最適化の裏処理なら §6.10 / §6.11 / §6.12（Cursor SDK・開発local/本番Cloud・DB直結禁止・Adapter・HTTP MCP・self-hosted当面不要）を守った
 □ 精度・導入ナレッジなら §6.13（構造化制約が正・電話確認から昇格・自然文の無確認ハード制約化禁止）を守った
-□ SDK モデル選択なら §6.14 / §6.53（カスケードは後続。手動切替は grok-4.5 / grok-4.6 / composer-2.5。既定は grok-4.5。Grok は1行＋版セレクト、ラベルは版番号のみ。IDは list 確認）を守った
+□ SDK モデル選択なら §6.14 / §6.53（カスケードは後続。手動切替は grok-4.5 / grok-4.6 / composer-2.5。既定は grok-4.5。Grok は1行＋版スライダー、ラベルは版番号のみ。「版」ラベルなし。保存後もパネルを閉じない。IDは list 確認）を守った
 □ 認証・監査なら §6.15（サーバー側IP＝回線出口・clinic/memberships・端末UA要約・運営のみ `/auth-audit`・地図は件数をチップ行右端・九州は zoomSelector・在席はハートビート・IPブロックは回線共有前提文言・運営バイパス・§10.27/§10.28）を守った
 □ ルート距離なら §6.16 / §6.39（`travelDistance.ts` で行列、生住所非渡与、住所必須、地図鍵を渡さない）を守った
 □ サービス名・画面コピーなら §6.17（対外名はデンタクル。内部識別子は Detacle。装飾英語見出しを増やさない。SEOはサブタイトル側）を守った
@@ -1388,7 +1486,7 @@ AIは作業開始時に以下を確認する。
 □ フォントなら §6.23（Zen Maru Gothic・本文500/14px/20px/`rgb(17,24,39)`）を守った
 □ アプリヘッダーなら §6.24 / §10.6（クリニック名＋▼アカウントメニュー・マイページの次にお知らせ・単独ログアウト禁止・緑背景ロゴ枠なし・仮文字なし・ドロップダウン親に overflow-hidden 禁止・業務ナビはサイドバー§6.33）を守った
 □ ユーザー管理なら §6.25 / §6.40（タイトル右隣検索・役割/状態フィルタなし・表＋10名固定ページネーション・招待ドロワー／作成モーダル・既存ユーザー所属追加・編集のみ／オーナーロックは UI＋RLS・招待 RPC で owner 不可・最終ログインは「—」可）を守った
-□ セレクトUIなら §6.26（独自 Select のみ。ネイティブ見た目の select を増やさない。メニューは portal）を守った
+□ セレクトUIなら §6.26 / §10.35（独自 Select のみ。ネイティブ見た目の select を増やさない。メニューは portal。長いラベルは幅合わせ＋右端では左へずらす）を守った
 □ 日付・時刻入力なら §6.43（DatePicker / TimePicker。ネイティブ type=date / type=time の見た目を増やさない。近傍ポップオーバー内 portal は §10.18）を守った
 □ お支払い履歴なら §6.27（銀行振替前提・縦タイムラインUI。カード決済前提にしない）を守った
 □ 契約者情報・契約情報なら §6.28（8項目表示・login_email独立・運営のみ書込・締結PDF）を守った
@@ -1402,16 +1500,17 @@ AIは作業開始時に以下を確認する。
 □ 空き枠埋めなら §6.47（副導線のみ・近接分最優先・住所必須明示・レート秒カウントダウン・決定論フォールバック・採用はクライアント・warnings 可・生住所非渡与。主導線を空き枠探しにしない）を守った
 □ 操作ログなら §6.50（表形式日本語・fillViewport・操作/対象/クリニックSelect・ページネーション・全院時のみクリニック列）を守った
 □ 設定画面なら §6.51 / §10.24（見出しSelectでセクション切替・導入タイプはSelect+1面・マスタは表パネル・sticky は border-separate・お知らせは混ぜない）を守った
-□ お知らせなら §6.55（入口はアカウントメニュー／`/announcements`・ログイン非掲載・デプロイ自動掲載禁止・提案→入れる／入れない・`/proposals` と混ぜない・エージェントは提案まで）を守った
+□ お知らせなら §6.55（入口はアカウントメニュー／`/announcements`・ログイン非掲載・デプロイ自動掲載禁止・提案→入れる／入れない・対象環境は platform 表示のみ・`/proposals` と混ぜない・エージェントは提案まで）を守った
 □ 患者住所・ジオコードなら §6.20 / §6.49 / §10.23（住所の正はApotool・CSVに住所なし・座標化して距離根拠・外れ値はNULL・latitude NULL は再実行）を守った
 □ Cursor SDK 基盤なら §6.36 / §10.10（server/cursor・Private中 local・Cloud URL・鍵を VITE_ に出さない・health は CURSOR_HEALTH_SECRET Bearer 必須・公開DTO最小化）を守った
 □ 本番公開／Vercel デプロイなら §6.36 / §10.10（`CURSOR_HEALTH_SECRET` とサーバー専用 `CURSOR_*` を Environment Variables へ。`VITE_` 禁止。未設定なら手順を案内）を守った
 □ 割付精度ゲートなら §6.37（apply前の決定論hard/warn・travel_jump含む・棄却率停止・accuracy 保存）を守った
-□ 運営AI利用状況なら §6.38 / §6.46 / §10.12（入口は `/proposals?view=usage`・見出しSelect切替・単独ナビ禁止・見出し右に横1行フィルタ・coin.png ポップオーバーで料金合計のみ・円換算160・精度UIなし・参照料金表は出さない）を守った
-□ 運営AIハブなら §6.45 / §6.46（見出しSelectで画面切替・提案内もセクションSelect・fillViewport+sticky表・最近のジョブはクリニック絞り込み・再利用はジョブの clinic_id・サイドバーは自動提案1項目・旧 `/admin/ai-usage` はリダイレクト）を守った
+□ 運営AI利用状況なら §6.38 / §6.46 / §10.12（入口は `/proposals?view=usage`・見出し右テキストタブ・単独ナビ禁止・見出し右に横1行フィルタ・coin.png ポップオーバーで料金合計のみ・円換算160・精度UIなし・参照料金表は出さない）を守った
+□ 運営AIハブなら §6.45 / §6.46 / §10.33 / §10.34（見出しは常に自動提案・右端テキストタブ3つ・提案内容一覧なし・導入文なし・ステッパーなし・緑グラデ外枠なし・クリニック Select は本文・生成後は最近のジョブ・fillViewport+sticky表・再利用はジョブの clinic_id・サイドバーは自動提案1項目・旧 `/admin/ai-usage` はリダイレクト）を守った
 □ 自動提案スナップショットなら §6.39（住所必須・距離行列・頻度/期限緊急度・schema v2・生住所非渡与）を守った
 □ セキュリティ是正なら §6.40 / §10.11（clinic_members RLS 分割・運営除外・propose 60秒クールダウン・待機時間明示のレート制限文言・公開エラーは固定文言）を守った
-□ ご意見チャットなら §6.54 / §6.20 / §6.33（入口は FAB・アカウントメニュー・`/feedback`。業務ナビ禁止。正は GitHub Issue。トークンはサーバ専用。`VITE_` 禁止。患者PIIは載せない。公開エラーは固定文言）を守った
+□ ご意見チャットなら §6.54 / §6.20 / §6.33 / §10.30（入口は FAB・アカウントメニュー・`/feedback`。業務ナビ禁止。FABは chat.png＋淡い緑。送信は入力内右下の円＋ paper-plane.png（h-7）。正の記録は GitHub Issue。院向け文言に Issue と書かない。受付番号・GitHubリンク非表示。トークンはサーバ専用。`VITE_` 禁止。患者PIIは載せない。公開エラーは固定文言）を守った
+□ 安全性ページ枠なら §6.56 / §10.31 / §10.38（左レール w-56・本文スクロールでも固定・本文 max-w-4xl・アカウントメニューは上に開く。Nani の 298px・下開き・max-w-5xl は使わない。枠幅を変えたら本文幅も見る）を守った
 □ Cloud 送信のコンプライアンスなら §6.12（UUID・制約中心。氏名・電話・生住所非渡与。DPA/同意を文書化）を守った
 □ ナビ▼メニューなら §10.8（overflow で消さない。portal＋fixed。主導線はサイドバーアコーディオン）を守った
 □ Cloud 起動時は `cloud` を明示したか（未指定で local に黙って落ちない）を確認した
@@ -1493,4 +1592,8 @@ AIは作業開始時に以下を確認する。
 - `2026-08-13`: お知らせ（提案→入れる／入れない・ログイン非掲載）を §6.55 / §6.21 / §6.24 / §6.33 / §6.51 / §3 / §7 / §12 に追記（`/project-memory-learn`）。main 上のご意見チャットが先に §6.54 を使っていたため、お知らせは §6.55
 - `2026-08-13`: UI Polish ページ枠照合ゲートを §2.15 / §2.9 / §2.10 / §2.14 / §10.29 / §11 / §12 に追記（`/project-memory-learn`）。内側パネルだけの完成は無効。Hard Gate を Context Budget の must に置く
 - `2026-08-13`: 運営モデル切替の Grok を1行＋版セレクトにまとめる UI を §6.38 / §6.53 / §12 に追記（`/project-memory-learn`）。ラベルは `4.5（おすすめ）` / `4.6`
+- `2026-08-13`: ご意見の院向け文言から Issue を外す（挨拶・受付番号/GitHubリンク非表示・公開エラー・安全性ページ）を §6.54 / §10.30 / §12 に追記（`/project-memory-learn`）
+- `2026-08-14`: 未反映48件を反映。自動提案ハブ改定（§6.45/§6.46）・Grok版スライダー（§6.38/§6.53）・ご意見FAB UI（§6.54）・お知らせ対象環境（§6.55）・安全性ページ枠（§6.56）・Select長いラベル（§6.26）・再発防止（§10.31〜10.36）・§12（`/project-memory-learn`）
+- `2026-08-14`: UI Polish に参照の正体（Nani!?）・対象枠ロック・借り契約を §2.15 / §2.10 / §2.14 / §10.29 / §10.37 / §12 に追記（`/project-memory-learn`）。Cursor Cloud と決めつけない。業務ハブの DashboardLayout は残す。欠落は `borrow-inventory` で stop
+- `2026-08-14`: UI Polish に操作観察（`observe-edge`）を §2.14 / §2.15 / §2.10 / §6.56 / §10.38 / §11 / §12 に追記（`/project-memory-learn`）。端の▼は開いてから観察。見本の下開きは借りない。枠幅を変えたら本文幅も見る
 

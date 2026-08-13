@@ -37,6 +37,18 @@
       "signals": ["hasChromeCompare"]
     },
     {
+      "id": "borrow-inventory",
+      "label": "借り契約（参照の正体・対象枠・借りてよい/借りない）がある",
+      "required": true,
+      "signals": ["hasBorrowContract"]
+    },
+    {
+      "id": "observe-edge",
+      "label": "操作観察（端の開閉。無しならなし（端の開閉なし））がある",
+      "required": true,
+      "signals": ["hasEdgeOverlayObserve"]
+    },
+    {
       "id": "interface-review",
       "label": "Interface Review（better-interface）に言及している",
       "required": false,

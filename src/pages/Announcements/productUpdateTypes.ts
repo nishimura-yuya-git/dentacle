@@ -1,6 +1,7 @@
 import type { Tables } from '@/types/database.types'
 import type {
   ProductUpdateKind,
+  ProductUpdatePlatform,
   ProductUpdateStatus,
   ProductUpdateSurface,
 } from '@/pages/Announcements/productUpdatePolicy'
@@ -15,6 +16,7 @@ export type ProductUpdateView = {
   body: string | null
   detailUrl: string | null
   surfaces: ProductUpdateSurface[]
+  platform: ProductUpdatePlatform
   updateNumber: number | null
   proposedAt: string
   publishedAt: string | null
@@ -24,6 +26,12 @@ export const KIND_OPTIONS: Array<{ value: ProductUpdateKind; label: string }> = 
   { value: 'feature', label: '新機能' },
   { value: 'improve', label: '改善' },
   { value: 'fix', label: '修正' },
+]
+
+export const PLATFORM_OPTIONS: Array<{ value: ProductUpdatePlatform; label: string }> = [
+  { value: 'web', label: 'Web' },
+  { value: 'mac', label: 'Mac' },
+  { value: 'windows', label: 'Windows' },
 ]
 
 export const SURFACE_OPTIONS: Array<{ value: ProductUpdateSurface; label: string }> = [

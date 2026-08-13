@@ -2,10 +2,12 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import {
   PRODUCT_UPDATE_KINDS,
+  PRODUCT_UPDATE_PLATFORMS,
   PRODUCT_UPDATE_STATUSES,
   PRODUCT_UPDATE_SURFACES,
   assertProductUpdateCreatedAsProposal,
   type ProductUpdateKind,
+  type ProductUpdatePlatform,
   type ProductUpdateStatus,
   type ProductUpdateSurface,
 } from '@/pages/Announcements/productUpdatePolicy'
@@ -23,8 +25,12 @@ function isSurface(value: string): value is ProductUpdateSurface {
   return (PRODUCT_UPDATE_SURFACES as readonly string[]).includes(value)
 }
 
+function isPlatform(value: string): value is ProductUpdatePlatform {
+  return (PRODUCT_UPDATE_PLATFORMS as readonly string[]).includes(value)
+}
+
 function toView(row: ProductUpdateRow): ProductUpdateView | null {
-  if (!isKind(row.kind) || !isStatus(row.status)) return null
+  if (!isKind(row.kind) || !isStatus(row.status) || !isPlatform(row.platform)) return null
   const surfaces = (row.surfaces ?? []).filter(isSurface)
   return {
     id: row.id,
@@ -34,6 +40,7 @@ function toView(row: ProductUpdateRow): ProductUpdateView | null {
     body: row.body,
     detailUrl: row.detail_url,
     surfaces,
+    platform: row.platform,
     updateNumber: row.update_number,
     proposedAt: row.proposed_at,
     publishedAt: row.published_at,
@@ -49,6 +56,9 @@ function toPublicError(message: string, fallback: string): string {
   }
   if (message.includes('見出しを入力')) {
     return '見出しを入力してください。'
+  }
+  if (message.includes('対象環境を選んで')) {
+    return '対象環境を選んでください。'
   }
   const lower = message.toLowerCase()
   if (lower.includes('row-level security') || lower.includes('permission denied')) {
@@ -71,7 +81,7 @@ export function useProductUpdates() {
       supabase
         .from('product_updates')
         .select(
-          'id, status, kind, title, body, detail_url, surfaces, update_number, proposed_at, published_at, proposed_by, reviewed_at, reviewed_by, created_at, updated_at',
+          'id, status, kind, title, body, detail_url, surfaces, platform, update_number, proposed_at, published_at, proposed_by, reviewed_at, reviewed_by, created_at, updated_at',
         )
         .order('proposed_at', { ascending: false }),
       supabase.rpc('is_platform_admin'),
@@ -117,6 +127,7 @@ export function useProductUpdates() {
       body: string
       detailUrl: string
       surfaces: ProductUpdateSurface[]
+      platform: ProductUpdatePlatform
     }) => {
       assertProductUpdateCreatedAsProposal({ status: 'proposed' })
       const { error: rpcError } = await supabase.rpc('propose_product_update', {
@@ -125,6 +136,7 @@ export function useProductUpdates() {
         p_body: input.body.trim() === '' ? undefined : input.body,
         p_detail_url: input.detailUrl.trim() === '' ? undefined : input.detailUrl,
         p_surfaces: input.surfaces,
+        p_platform: input.platform,
       })
       if (rpcError) {
         return { ok: false as const, message: toPublicError(rpcError.message, '提案の保存に失敗しました。') }

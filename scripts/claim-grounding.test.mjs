@@ -123,11 +123,17 @@ function assertTrue(value, message) {
   - 種別: snapshot
   - パス: \`browser_snapshot:home\`
   - Read済み: はい（見出しと CTA の階層が一致）
+- 参照の正体: Nani!?（文書シェル）。対象は業務ハブ
+- 対象枠: ロック（DashboardLayout）
+- 借りてよい: 白い面の静けさ
+- 借りない: 専用レール、max-w-4xl、導入文、Cursor Cloud 枠
 - ページ枠照合:
   - 見本: なし（指示のみ）
   - 実装: \`/opt/cursor/artifacts/screenshots/home-full.png\`
-  - 差分: 業務サイドバーとご意見FABは見本に無く、実装のページ全体からも外れている
+  - 差分: 対象は業務ハブのためサイドバー・FABを残した。見本の文書シェル枠は移植していない
   - Read済み: はい
+- 操作観察:
+  - 対象: なし（端の開閉なし）
 - Stop非該当の根拠: PROJECT_MEMORY.md §2.9 と差分 \`src/pages/Home.tsx\`
 `,
     goal: 'ui-polish',
@@ -180,6 +186,44 @@ function assertTrue(value, message) {
 }
 
 {
+  // 期待値根拠: ユーザー報告 — 見本を Cursor Cloud と決めつけ、借り契約なしで完成にした
+  const result = evaluateClaimGrounding({
+    declarationText: `
+## 完成宣言（UI Polish Loop）
+- Evaluation:
+  - コマンド: pnpm run loop:ui
+  - 結果: pass
+- Regression Guard: pass
+- 観察証拠:
+  - 種別: screenshot
+  - パス: \`/tmp/full.png\`
+  - Read済み: はい（ページ全体を確認）
+- ページ枠照合:
+  - 見本: \`/tmp/reference-full.png\`
+  - 実装: \`/tmp/full.png\`
+  - 差分: 左レールあり
+  - Read済み: はい
+- Stop非該当の根拠: \`src/pages/Home.tsx\`
+`,
+    goal: 'ui-polish',
+  });
+  assertEqual(result.status, 'stop', '借り契約なしの UI Polish は stop');
+  assertTrue(result.missing.includes('borrow-inventory'), 'borrow-inventory 欠落');
+}
+
+{
+  const parsed = parseCompletionDeclaration(`
+## 完成宣言（UI Polish Loop）
+- 参照の正体: Nani!?
+- 対象枠: ロック（DashboardLayout）
+- 借りてよい: ピル型スライダー
+- 借りない: 暗い面、3段階、詳細設定
+`);
+  assertEqual(parsed.hasBorrowContract, true, '借り契約を検出');
+  assertEqual(parsed.referenceIdentity, 'Nani!?', '参照の正体');
+}
+
+{
   const result = evaluateClaimGrounding({
     declarationText: `
 ## 完成宣言（UI Polish Loop）
@@ -201,6 +245,95 @@ function assertTrue(value, message) {
   });
   assertEqual(result.status, 'stop', 'ページ枠の差分が未確認なら stop');
   assertTrue(result.missing.includes('observe-chrome'), '未確認差分は chrome 未充足');
+}
+
+{
+  // 期待値根拠: ユーザー報告 — /security 左レール下端▼を開かず完成にした。静止スクショでは見切れを捕まえない。
+  const result = evaluateClaimGrounding({
+    declarationText: `
+## 完成宣言（UI Polish Loop）
+- Evaluation:
+  - コマンド: pnpm run loop:ui
+  - 結果: pass
+- Regression Guard: pass
+- 観察証拠:
+  - 種別: screenshot
+  - パス: \`/tmp/full.png\`
+  - Read済み: はい（ページ全体を確認）
+- 参照の正体: Nani!?
+- 対象枠: ロック（SecurityLayout）
+- 借りてよい: 緑キャンバス、白い article
+- 借りない: レール幅 298px、共有メニューの下開き
+- ページ枠照合:
+  - 見本: \`/tmp/nani-full.png\`
+  - 実装: \`/tmp/full.png\`
+  - 差分: 左レールは w-56。文書シェル枠は /security のみ
+  - Read済み: はい
+- Stop非該当の根拠: \`src/pages/Security/sections/SecurityRail.tsx\`
+`,
+    goal: 'ui-polish',
+  });
+  assertEqual(result.status, 'stop', '操作観察なしの UI Polish は stop');
+  assertTrue(result.missing.includes('observe-edge'), 'observe-edge 欠落');
+}
+
+{
+  const parsedSkip = parseCompletionDeclaration(`
+## 完成宣言（UI Polish Loop）
+- 操作観察:
+  - 対象: なし（端の開閉なし）
+`);
+  assertEqual(parsedSkip.hasEdgeOverlayObserve, true, '端の開閉なしは操作観察を充足');
+}
+
+{
+  const parsedOpen = parseCompletionDeclaration(`
+## 完成宣言（UI Polish Loop）
+- 操作観察:
+  - 対象: アカウントメニュー（左レール下端▼）
+  - 種別: screenshot
+  - パス: \`/tmp/account-menu-open.png\`
+  - Read済み: はい（上開き、ログアウト可視、レールは動かない）
+`);
+  assertEqual(parsedOpen.hasEdgeOverlayObserve, true, '端の開閉観察を検出');
+  assertEqual(parsedOpen.edgeTarget, 'アカウントメニュー（左レール下端▼）', '操作観察の対象');
+  assertTrue(parsedOpen.edgePaths.includes('/tmp/account-menu-open.png'), '操作観察パス');
+}
+
+{
+  const result = evaluateClaimGrounding({
+    declarationText: `
+## 完成宣言（UI Polish Loop）
+- iteration: 1 / 3
+- Evaluation:
+  - コマンド: pnpm run loop:evaluator
+  - 結果: pass
+- Regression Guard: pass
+- Interface Review: quick / Approve
+- 観察証拠:
+  - 種別: snapshot
+  - パス: \`browser_snapshot:security\`
+  - Read済み: はい（見出しとレール幅が一致）
+- 参照の正体: Nani!?（文書シェル）
+- 対象枠: ロック（SecurityLayout）
+- 借りてよい: 緑キャンバス、白い article
+- 借りない: レール幅 298px、共有メニューの下開き
+- ページ枠照合:
+  - 見本: なし（指示のみ）
+  - 実装: \`/tmp/security-full.png\`
+  - 差分: 左レールは w-56。本文は max-w-4xl
+  - Read済み: はい
+- 操作観察:
+  - 対象: アカウントメニュー（左レール下端▼）
+  - 種別: screenshot
+  - パス: \`/tmp/account-menu-open.png\`
+  - Read済み: はい（上開き、ログアウト可視、レールは動かない）
+- Stop非該当の根拠: PROJECT_MEMORY.md §6.56 と差分 \`src/components/layout/AccountMenu.tsx\`
+`,
+    goal: 'ui-polish',
+    changedFiles: ['src/components/layout/AccountMenu.tsx'],
+  });
+  assertEqual(result.status, 'pass', '操作観察ありの UI Polish は pass');
 }
 
 {

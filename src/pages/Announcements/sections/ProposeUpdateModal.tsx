@@ -3,8 +3,12 @@ import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Modal } from '@/components/ui/Modal'
 import { Select } from '@/components/ui/Select'
-import { KIND_OPTIONS, SURFACE_OPTIONS } from '@/pages/Announcements/productUpdateTypes'
-import type { ProductUpdateKind, ProductUpdateSurface } from '@/pages/Announcements/productUpdatePolicy'
+import { KIND_OPTIONS, PLATFORM_OPTIONS, SURFACE_OPTIONS } from '@/pages/Announcements/productUpdateTypes'
+import type {
+  ProductUpdateKind,
+  ProductUpdatePlatform,
+  ProductUpdateSurface,
+} from '@/pages/Announcements/productUpdatePolicy'
 
 type Draft = {
   kind: ProductUpdateKind
@@ -12,6 +16,7 @@ type Draft = {
   body: string
   detailUrl: string
   surfaces: ProductUpdateSurface[]
+  platform: ProductUpdatePlatform
 }
 
 const EMPTY_DRAFT: Draft = {
@@ -20,6 +25,7 @@ const EMPTY_DRAFT: Draft = {
   body: '',
   detailUrl: '',
   surfaces: [],
+  platform: 'web',
 }
 
 export function ProposeUpdateModal({
@@ -94,6 +100,17 @@ export function ProposeUpdateModal({
           value={draft.kind}
           onChange={(event) =>
             setDraft((current) => ({ ...current, kind: event.target.value as ProductUpdateKind }))
+          }
+        />
+        <Select
+          label="対象環境"
+          options={PLATFORM_OPTIONS}
+          value={draft.platform}
+          onChange={(event) =>
+            setDraft((current) => ({
+              ...current,
+              platform: event.target.value as ProductUpdatePlatform,
+            }))
           }
         />
         <Input

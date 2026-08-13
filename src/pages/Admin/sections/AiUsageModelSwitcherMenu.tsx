@@ -1,12 +1,11 @@
-import { Select } from '@/components/ui/Select'
 import {
   COMPOSER_PLATFORM_CURSOR_MODEL_ID,
-  GROK_VERSION_SELECT_OPTIONS,
   PLATFORM_CURSOR_MODEL_OPTIONS,
   grokVersionValue,
   isGrokPlatformCursorModelId,
   type PlatformCursorModelId,
 } from '@/config/aiModelOptions'
+import { GrokVersionSlider } from '@/pages/Admin/sections/GrokVersionSlider'
 
 function ModelGlyph({ kind }: { kind: 'grok' | 'composer' }) {
   const src = kind === 'composer' ? '/icon/cursor_composer.png' : '/icon/grok.svg'
@@ -49,7 +48,7 @@ type Props = {
   onSelectComposer: () => void
 }
 
-/** Grok は1行＋版セレクト。Composer は単独行 */
+/** Grok は1行＋版スライダー。Composer は単独行 */
 export function AiUsageModelSwitcherMenu({
   loading,
   saving,
@@ -78,36 +77,19 @@ export function AiUsageModelSwitcherMenu({
       >
         <ModelGlyph kind="grok" />
         <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <p className="text-sm font-bold text-slate-900">Grok</p>
-            <div
-              className="ml-auto w-[12.5rem]"
-              onMouseDown={(event) => event.stopPropagation()}
-              onClick={(event) => event.stopPropagation()}
-            >
-              <div className="flex items-center gap-1.5">
-                <label
-                  htmlFor="grok-version"
-                  className="shrink-0 text-[11px] font-bold text-slate-500"
-                >
-                  版
-                </label>
-                <Select
-                  id="grok-version"
-                  size="sm"
-                  className="min-w-0 flex-1"
-                  disabled={saving}
-                  options={[...GROK_VERSION_SELECT_OPTIONS]}
-                  value={grokValue}
-                  onChange={(event) => {
-                    const next = event.target.value
-                    if (isGrokPlatformCursorModelId(next)) onSelectGrok(next)
-                  }}
-                />
-              </div>
-            </div>
+          <p className="text-sm font-bold text-slate-900">Grok</p>
+          <div
+            className="mt-2"
+            onMouseDown={(event) => event.stopPropagation()}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <GrokVersionSlider
+              value={grokValue}
+              disabled={saving}
+              onChange={(next) => onSelectGrok(next)}
+            />
           </div>
-          <p className="mt-1 text-[11px] font-medium leading-relaxed text-slate-400">
+          <p className="mt-1.5 text-[11px] font-medium leading-relaxed text-slate-400">
             {grokDescription}
           </p>
         </div>

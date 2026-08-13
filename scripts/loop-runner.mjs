@@ -137,17 +137,18 @@ function printSsotDebtGuide() {
 function printUiPolishGuide({ evaluation }) {
   console.log('');
   console.log('ui polish loop:');
-  console.log('- 機械ゲート: loops/goals/ui-polish-gate.md（ページ枠照合が無い完成は stop）');
-  console.log('- コードを書く前に、添付画像からページ枠・negative inventory・構造・余白・色・重心・視線誘導を抽出する');
+  console.log('- 機械ゲート: loops/goals/ui-polish-gate.md（ページ枠照合・借り契約が無い完成は stop）');
+  console.log('- コードを書く前に、参照の正体・対象枠ロック・借りてよい/借りない・構造・余白・色を抽出する');
+  console.log('- 文書シェル見本は Nani!? 。Cursor Cloud と決めつけない。ウィジェット見本は部品だけ');
   console.log('- ユーザーが何を良いと感じているか、意図と文脈を言語化する');
-  console.log('- 画面種別: 業務UI / HP-LP / 文書シェル（専用ページ枠）');
-  console.log('- 業務UIなら ui-design.mdc / ui-language.mdc を優先する。原子（Button/Modal）は再利用し、ページ枠は見本に合わせる');
+  console.log('- 画面種別: 業務UI / HP-LP / 文書シェル（その画面だけ）');
+  console.log('- 業務UIなら ui-design.mdc / ui-language.mdc を優先する。原子（Button/Modal）は再利用し、対象枠はロックする');
   console.log('- HP/LPなら ui-design-hp-lp.mdc を参照する');
-  console.log('- 見本が専用シェルなら対象画面を DashboardLayout で包んだまま完成にしない');
+  console.log('- 見本が専用シェルでも、業務ハブの DashboardLayout は外さない。SecurityLayout は /security だけ');
   console.log('- 見本画像の再現とプロジェクト禁止事項が衝突する場合は停止して確認する');
   console.log('- 完成ゲート: 「実装した」だけでは完成にしない（loops/goals/ui-polish.md）');
   console.log('- 判定が stop / 完成条件未達なら差し戻し（完成報告禁止）。maxIterations=3');
-  console.log('- Iteration順: ページ枠 → 面の階層 → タイポ → 主ボタン → 余白・見切れ');
+  console.log('- Iteration順: 対象枠ロック → 借り一覧 → 面の階層 → タイポ → 主ボタン → 余白・見切れ');
   console.log('- 観察: 見本キャプチャと実装キャプチャ（ページ全体）のペア。内側パネルだけは完成無効');
   console.log('- 判定ノードで Interface Review: /better-interface quick|full（.cursor/skills/better-interface）');
   console.log('- UI細部レシピ: .cursor/skills/better-ui（同心円角丸・optical・motion restraint）');
@@ -155,7 +156,8 @@ function printUiPolishGuide({ evaluation }) {
 
   console.log('');
   console.log('completion criteria:');
-  console.log('- ページ枠が見本と一致している（見本に無い業務枠が残っていない）');
+  console.log('- 対象枠がロックされている（見本の文書シェルを業務ハブに移植していない）');
+  console.log('- 借りない物（暗い面・段階数・詳細設定・幅px・コピー）が入っていない');
   console.log('- 主要操作や主情報が1秒で分かる');
   console.log('- 見本画像と同じ余白・重心・視線誘導になっている');
   console.log('- モバイル/PCで見切れや横スクロール事故がない');

@@ -8,7 +8,7 @@ export const PUBLIC_FEEDBACK_ERROR = {
   forbidden: 'このクリニックへのご意見送信はできません',
   bad_request: 'リクエストの内容が正しくありません',
   rate_limited: '連続送信はできません。しばらくしてからお試しください。',
-  not_configured: 'Issue連携がまだ設定されていません。運営に連絡してください。',
+  not_configured: 'ご意見の受付準備がまだ完了していません。運営に連絡してください。',
   internal: 'ご意見の受付に失敗しました',
 } as const
 

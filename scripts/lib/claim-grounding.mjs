@@ -9,6 +9,8 @@
  * UI Polish では Observe Loop 原則を適用する:
  * 見た目・画面変化の完成主張は、キャプチャ／snapshot を Read した証拠が無いと stop。
  * 加えてページ枠照合（見本キャプチャと実装キャプチャのペア）が無いと stop。
+ * 借り契約（参照の正体 / 対象枠 / 借りてよい / 借りない）が無いと stop。
+ * 操作観察（端の開閉。無しなら「なし（端の開閉なし）」）が無いと stop。
  */
 
 import { existsSync, readFileSync } from 'node:fs';
@@ -28,6 +30,7 @@ const OBSERVE_READ_RE = /(?:Read済み|read(?:\s*済み)?|read)\s*[:：]\s*(は�
 const PLACEHOLDER_RE = /^(…|\.\.\.|なし|n\/a|-)?$/i;
 const UNCONFIRMED_NOTE_RE = /^(未確認|未観察|空欄)$/i;
 const NONE_LIKE_RE = /^(なし|n\/a|指示のみ)(（指示のみ）)?$/i;
+const EDGE_SKIP_RE = /端の開閉なし/;
 
 /**
  * @param {string} value
@@ -46,6 +49,17 @@ function isNoneLike(value) {
     .trim()
     .replace(/^`|`$/g, '');
   return NONE_LIKE_RE.test(text) || /指示のみ/.test(text);
+}
+
+/**
+ * 端の開閉が無い画面は「なし（端の開閉なし）」で操作観察を充足する。
+ * @param {string} value
+ */
+function isEdgeSkip(value) {
+  const text = String(value ?? '')
+    .trim()
+    .replace(/^`|`$/g, '');
+  return isNoneLike(text) || EDGE_SKIP_RE.test(text);
 }
 
 /**
@@ -84,21 +98,38 @@ export function parseCompletionDeclaration(text) {
   let observeReadNote = '';
   let inObserveSection = false;
   let inChromeSection = false;
+  let inEdgeSection = false;
+  let edgeTarget = null;
+  let edgeKind = null;
+  const edgePaths = [];
+  let edgeReadConfirmed = false;
+  let edgeReadNote = '';
   let chromeReference = null;
   const chromeImplementationPaths = [];
   let chromeDiff = '';
   let chromeReadConfirmed = false;
+  let referenceIdentity = null;
+  let targetChrome = null;
+  let borrowAllow = null;
+  let borrowDeny = null;
 
   for (const line of lines) {
-    if (/ページ枠照合|chrome\s*compare/i.test(line)) {
+    if (/操作観察|edge\s*overlay|edge\s*observe/i.test(line)) {
+      inEdgeSection = true;
+      inChromeSection = false;
+      inObserveSection = false;
+    } else if (/ページ枠照合|chrome\s*compare/i.test(line)) {
       inChromeSection = true;
       inObserveSection = false;
+      inEdgeSection = false;
     } else if (/観察証拠|Observe\s*evidence/i.test(line)) {
       inObserveSection = true;
       inChromeSection = false;
+      inEdgeSection = false;
     } else if (/^\s*#{1,6}\s+/.test(line)) {
       inObserveSection = false;
       inChromeSection = false;
+      inEdgeSection = false;
     }
 
     const commandMatch = line.match(COMMAND_RE);
@@ -123,6 +154,9 @@ export function parseCompletionDeclaration(text) {
       evidencePaths.push(pathMatch[1]);
       if (inObserveSection) {
         observePaths.push(pathMatch[1]);
+      }
+      if (inEdgeSection) {
+        edgePaths.push(pathMatch[1]);
       }
     }
 
@@ -151,6 +185,23 @@ export function parseCompletionDeclaration(text) {
           observeReadNote = note;
         }
       }
+    }
+
+    const identityMatch = line.match(/(?:参照の正体)\s*[:：]\s*(.+)/i);
+    if (identityMatch) {
+      referenceIdentity = stripPathTicks(identityMatch[1]);
+    }
+    const targetMatch = line.match(/(?:対象枠)\s*[:：]\s*(.+)/i);
+    if (targetMatch) {
+      targetChrome = stripPathTicks(targetMatch[1]);
+    }
+    const allowMatch = line.match(/(?:借りてよい)\s*[:：]\s*(.+)/i);
+    if (allowMatch) {
+      borrowAllow = stripPathTicks(allowMatch[1]);
+    }
+    const denyMatch = line.match(/(?:借りない)\s*[:：]\s*(.+)/i);
+    if (denyMatch) {
+      borrowDeny = stripPathTicks(denyMatch[1]);
     }
 
     if (inChromeSection) {
@@ -187,6 +238,38 @@ export function parseCompletionDeclaration(text) {
         }
       }
     }
+
+    if (inEdgeSection) {
+      const edgeTargetMatch = line.match(/(?:対象)\s*[:：]\s*(.+)/i);
+      if (edgeTargetMatch) {
+        edgeTarget = stripPathTicks(edgeTargetMatch[1]);
+      }
+
+      const kindMatch = line.match(OBSERVE_KIND_RE);
+      if (kindMatch) {
+        edgeKind = kindMatch[1].toLowerCase();
+      }
+
+      const pathLineMatch = line.match(OBSERVE_PATH_LINE_RE);
+      if (pathLineMatch) {
+        const raw = pathLineMatch[1].trim().replace(/^`|`$/g, '');
+        if (isMeaningful(raw)) {
+          edgePaths.push(raw);
+        }
+      }
+
+      const readMatch = line.match(OBSERVE_READ_RE);
+      if (readMatch) {
+        edgeReadConfirmed = true;
+        const note = String(readMatch[2] ?? '')
+          .replace(/^[（(]\s*/, '')
+          .replace(/[）)]\s*$/, '')
+          .trim();
+        if (isMeaningful(note)) {
+          edgeReadNote = note;
+        }
+      }
+    }
   }
 
   // Evaluation コマンド行の pnpm は「実行した」記録にはなるが、根拠リンク充足には使わない
@@ -210,6 +293,22 @@ export function parseCompletionDeclaration(text) {
       isConfirmedNote(chromeDiff) &&
       chromeReadConfirmed,
   );
+  const hasBorrowContract = Boolean(
+    (isMeaningful(referenceIdentity) || isNoneLike(referenceIdentity)) &&
+      isMeaningful(targetChrome) &&
+      /ロック|変更承認/.test(String(targetChrome)) &&
+      (isMeaningful(borrowAllow) || isNoneLike(borrowAllow)) &&
+      isMeaningful(borrowDeny),
+  );
+  const uniqueEdgePaths = [...new Set(edgePaths.filter((path) => isMeaningful(path)))];
+  const hasEdgeOverlayObserve = Boolean(
+    isEdgeSkip(edgeTarget) ||
+      (isMeaningful(edgeTarget) &&
+        edgeKind &&
+        uniqueEdgePaths.length > 0 &&
+        edgeReadConfirmed &&
+        isMeaningful(edgeReadNote)),
+  );
 
   return {
     evaluationCommand,
@@ -226,6 +325,17 @@ export function parseCompletionDeclaration(text) {
     chromeDiff,
     chromeReadConfirmed,
     hasChromeCompare,
+    referenceIdentity,
+    targetChrome,
+    borrowAllow,
+    borrowDeny,
+    hasBorrowContract,
+    edgeTarget,
+    edgeKind,
+    edgePaths: uniqueEdgePaths,
+    edgeReadConfirmed,
+    edgeReadNote,
+    hasEdgeOverlayObserve,
     hasEvaluationCommand: Boolean(
       (evaluationCommand && evaluationCommand.length > 1 && evaluationCommand !== '…') || hasPnpmCommand,
     ),
@@ -271,6 +381,24 @@ export function requiresObserveEvidence({ goal = null, declarationText = '' } = 
  * @param {{ goal?: string | null, declarationText?: string }} input
  */
 export function requiresChromeCompare(input = {}) {
+  return requiresObserveEvidence(input);
+}
+
+/**
+ * UI Polish 完成ゲートが借り契約を要求するか。
+ * 観察証拠と同じ条件（ui-polish goal または宣言見出し）。
+ * @param {{ goal?: string | null, declarationText?: string }} input
+ */
+export function requiresBorrowContract(input = {}) {
+  return requiresObserveEvidence(input);
+}
+
+/**
+ * UI Polish 完成ゲートが端の開閉観察を要求するか。
+ * 観察証拠と同じ条件（ui-polish goal または宣言見出し）。
+ * @param {{ goal?: string | null, declarationText?: string }} input
+ */
+export function requiresEdgeOverlayObserve(input = {}) {
   return requiresObserveEvidence(input);
 }
 
@@ -345,11 +473,19 @@ export function evaluateClaimGrounding({
 
   const needsObserve = requiresObserveEvidence({ goal, declarationText: text });
   const needsChrome = requiresChromeCompare({ goal, declarationText: text });
+  const needsBorrow = requiresBorrowContract({ goal, declarationText: text });
+  const needsEdge = requiresEdgeOverlayObserve({ goal, declarationText: text });
   if (needsObserve && !parsed.hasObserveEvidence) {
     missing.push('observe-evidence');
   }
   if (needsChrome && !parsed.hasChromeCompare) {
     missing.push('observe-chrome');
+  }
+  if (needsBorrow && !parsed.hasBorrowContract) {
+    missing.push('borrow-inventory');
+  }
+  if (needsEdge && !parsed.hasEdgeOverlayObserve) {
+    missing.push('observe-edge');
   }
 
   const evidenceResolution = resolveEvidencePaths(parsed.evidencePaths, { changedFiles });
@@ -398,6 +534,32 @@ export function evaluateClaimGrounding({
     };
   }
 
+  if (missing.includes('borrow-inventory')) {
+    return {
+      status: 'stop',
+      reason:
+        'UI Polish 完成宣言に借り契約がありません（参照の正体・対象枠ロック・借りてよい/借りないを書くまで完成にしない）。',
+      nextAction:
+        '参照の正体（Nani!? 等。Cursor Cloud と決めつけない）・対象枠（ロック または 変更承認）・借りてよい・借りない を記入してください。',
+      parsed,
+      missing,
+      evidenceResolution,
+    };
+  }
+
+  if (missing.includes('observe-edge')) {
+    return {
+      status: 'stop',
+      reason:
+        'UI Polish 完成宣言に操作観察がありません（端の開閉を動かして見切れ・固定枠のガクつきを確認するまで完成にしない）。',
+      nextAction:
+        '操作観察に 対象（下端▼等、または なし（端の開閉なし））・種別・パス・Read済み: はい（見切れなし／固定枠は動かない） を記入してください。',
+      parsed,
+      missing,
+      evidenceResolution,
+    };
+  }
+
   if (missing.includes('evidence-link') || missing.includes('evidence-path-unresolved')) {
     return {
       status: 'warn',
@@ -413,7 +575,7 @@ export function evaluateClaimGrounding({
   return {
     status: 'pass',
     reason: needsObserve
-      ? '完成宣言の主張は観察証拠・ページ枠照合・根拠リンク・Evaluation 結果にグラウンディングされています。'
+      ? '完成宣言の主張は観察証拠・ページ枠照合・操作観察・根拠リンク・Evaluation 結果にグラウンディングされています。'
       : '完成宣言の主張は根拠リンクと Evaluation 結果にグラウンディングされています。',
     nextAction: null,
     parsed,

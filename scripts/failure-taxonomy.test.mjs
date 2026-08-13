@@ -32,6 +32,7 @@ assertEqual(classifyText('変更契約が pending のまま編集'), 'contract-g
 assertEqual(classifyText('SSoT再実装の疑い'), 'ssot-debt', 'SSoT 文言');
 assertEqual(classifyText('同じ失敗シグネチャが 2 回連続'), 'no-progress', 'No progress 文言');
 assertEqual(classifyText('ページ枠照合がありません observe-chrome'), 'claim-grounding', 'ページ枠欠落は claim-grounding');
+assertEqual(classifyText('操作観察がありません observe-edge'), 'claim-grounding', '端の開閉欠落は claim-grounding');
 
 {
   const finding = classifyFinding({

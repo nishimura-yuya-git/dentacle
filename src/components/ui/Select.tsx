@@ -8,6 +8,7 @@ import {
   type ChangeEvent,
 } from 'react'
 import { createPortal } from 'react-dom'
+import { placeSelectMenu } from '@/components/ui/placeSelectMenu'
 
 export type SelectOption = { value: string; label: string }
 
@@ -73,20 +74,20 @@ export function Select({
       const trigger = triggerRef.current
       if (!trigger) return
       const rect = trigger.getBoundingClientRect()
-      const gap = 6
-      const estimatedHeight = Math.min(options.length * 40 + 16, 280)
-      const spaceBelow = window.innerHeight - rect.bottom - gap
-      const openUp = spaceBelow < estimatedHeight && rect.top > spaceBelow
-
-      setMenuStyle({
-        position: 'fixed',
-        top: openUp ? undefined : rect.bottom + gap,
-        bottom: openUp ? window.innerHeight - rect.top + gap : undefined,
-        left: Math.min(rect.left, window.innerWidth - Math.max(rect.width, 140) - 8),
-        minWidth: Math.max(rect.width, 120),
-        maxWidth: Math.min(360, window.innerWidth - 16),
-        zIndex: 70,
-      })
+      setMenuStyle(
+        placeSelectMenu(
+          {
+            left: rect.left,
+            right: rect.right,
+            top: rect.top,
+            bottom: rect.bottom,
+            width: rect.width,
+          },
+          { width: window.innerWidth, height: window.innerHeight },
+          options.length,
+          options.map((option) => option.label),
+        ),
+      )
     }
 
     place()
@@ -96,7 +97,7 @@ export function Select({
       window.removeEventListener('resize', place)
       window.removeEventListener('scroll', place, true)
     }
-  }, [open, options.length])
+  }, [open, options])
 
   useEffect(() => {
     if (!open) return
@@ -192,7 +193,7 @@ export function Select({
           if (!disabled) setOpen((current) => !current)
         }}
       >
-        <span className={selected ? 'truncate' : 'truncate text-slate-400'}>
+        <span className={selected ? 'min-w-0 truncate' : 'min-w-0 truncate text-slate-400'}>
           {selected?.label ?? placeholder}
         </span>
         <ChevronIcon className={['shrink-0 text-slate-500 transition', open ? 'rotate-180' : ''].join(' ')} />
@@ -214,15 +215,13 @@ export function Select({
                   <li key={option.value} role="option" aria-selected={isSelected}>
                     <button
                       type="button"
-                      className={[
-                        'flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-sm font-medium text-slate-800 transition hover:bg-slate-50',
-                      ].join(' ')}
+                      className="flex w-full items-start gap-2.5 px-4 py-2.5 text-left text-sm font-medium text-slate-800 transition hover:bg-slate-50"
                       onClick={() => choose(option.value)}
                     >
-                      <span className="flex h-4 w-4 shrink-0 items-center justify-center text-slate-800">
+                      <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center text-slate-800">
                         {isSelected ? <CheckIcon /> : null}
                       </span>
-                      <span className="truncate">{option.label}</span>
+                      <span className="min-w-0 whitespace-normal break-words">{option.label}</span>
                     </button>
                   </li>
                 )

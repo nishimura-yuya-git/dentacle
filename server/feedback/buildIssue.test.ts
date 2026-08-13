@@ -75,11 +75,17 @@ describe('buildFeedbackReceivedMessage', () => {
   it('新規と追記で文言を分ける', () => {
     assert.equal(
       buildFeedbackReceivedMessage({ issueNumber: 12, isNewIssue: true }),
-      '受け付けました（#12）。続きのメッセージは同じ Issue に追記します。',
+      '受け付けました。続きは同じ会話に書いてください。',
     )
     assert.equal(
       buildFeedbackReceivedMessage({ issueNumber: 12, isNewIssue: false }),
-      '追記しました（#12）。',
+      '追記しました。',
+    )
+    assert.equal(
+      /issue/i.test(
+        buildFeedbackReceivedMessage({ issueNumber: 12, isNewIssue: true }),
+      ),
+      false,
     )
   })
 })

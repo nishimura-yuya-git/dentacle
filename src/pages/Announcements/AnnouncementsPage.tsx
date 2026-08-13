@@ -3,7 +3,11 @@ import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { Button } from '@/components/ui/Button'
 import { useToast } from '@/components/ui/Toast'
 import { useProductUpdates } from '@/pages/Announcements/hooks/useProductUpdates'
-import type { ProductUpdateKind, ProductUpdateSurface } from '@/pages/Announcements/productUpdatePolicy'
+import type {
+  ProductUpdateKind,
+  ProductUpdatePlatform,
+  ProductUpdateSurface,
+} from '@/pages/Announcements/productUpdatePolicy'
 import { ProposalQueueSection } from '@/pages/Announcements/sections/ProposalQueueSection'
 import { ProposeUpdateModal } from '@/pages/Announcements/sections/ProposeUpdateModal'
 import { PublishedTimeline } from '@/pages/Announcements/sections/PublishedTimeline'
@@ -25,6 +29,7 @@ export function AnnouncementsPage() {
     body: string
     detailUrl: string
     surfaces: ProductUpdateSurface[]
+    platform: ProductUpdatePlatform
   }) {
     setProposing(true)
     const result = await propose(draft)

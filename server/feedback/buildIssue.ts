@@ -71,7 +71,7 @@ export function buildFeedbackReceivedMessage(input: {
   isNewIssue: boolean
 }): string {
   if (input.isNewIssue) {
-    return `受け付けました（#${input.issueNumber}）。続きのメッセージは同じ Issue に追記します。`
+    return '受け付けました。続きは同じ会話に書いてください。'
   }
-  return `追記しました（#${input.issueNumber}）。`
+  return '追記しました。'
 }

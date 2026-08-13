@@ -80,7 +80,7 @@ function assertTrue(value, message) {
 }
 
 {
-  // 期待値根拠: UI Polish 完成ゲート — 観察証拠とページ枠照合は必須、Interface Review は任意
+  // 期待値根拠: UI Polish 完成ゲート — 観察・ページ枠・借り契約は必須、Interface Review は任意
   const template = loadEvalTemplate('loops/evals/ui-polish.completion.json');
   const withoutObserve = buildScoreContext({
     declarationText: 'Evaluation: コマンド: pnpm run loop:ui\n結果: pass\n根拠: `src/pages/X.tsx`',
@@ -103,11 +103,17 @@ function assertTrue(value, message) {
   - 種別: screenshot
   - パス: \`/tmp/ui.png\`
   - Read済み: はい（余白は一致、ボタン階層を確認）
+- 参照の正体: なし（指示のみ）
+- 対象枠: ロック（DashboardLayout）
+- 借りてよい: なし（指示のみ）
+- 借りない: 見本のページ枠、暗い面、段階数
 - ページ枠照合:
   - 見本: なし（指示のみ）
   - 実装: \`/tmp/ui-full.png\`
-  - 差分: ページ全体に業務サイドバーは無く、見本指示の専用枠もない
+  - 差分: 対象は業務ハブのためサイドバーを残した。文書シェル枠は移植していない
   - Read済み: はい
+- 操作観察:
+  - 対象: なし（端の開閉なし）
 - 根拠: \`src/pages/X.tsx\`
 `;
   const withObserve = buildScoreContext({
@@ -142,6 +148,66 @@ function assertTrue(value, message) {
   );
   assertEqual(scoredInner.status, 'stop', '内側パネルだけの観察は chrome-compare で stop');
   assertTrue(scoredInner.missingRequired.includes('chrome-compare'), 'chrome-compare 必須欠落');
+
+  const withoutBorrow = `
+## 完成宣言（UI Polish Loop）
+- Evaluation:
+  - コマンド: pnpm run loop:ui
+  - 結果: pass
+- 観察証拠:
+  - 種別: screenshot
+  - パス: \`/tmp/ui.png\`
+  - Read済み: はい（余白は一致）
+- ページ枠照合:
+  - 見本: なし（指示のみ）
+  - 実装: \`/tmp/ui-full.png\`
+  - 差分: 対象枠は業務ハブのまま
+  - Read済み: はい
+- 根拠: \`src/pages/X.tsx\`
+`;
+  const scoredBorrow = scoreEvalTemplate(
+    template,
+    buildScoreContext({
+      declarationText: withoutBorrow,
+      parsed: parseCompletionDeclaration(withoutBorrow),
+      evaluationResult: 'pass',
+      verdictStatus: 'pass',
+    }),
+  );
+  assertEqual(scoredBorrow.status, 'stop', '借り契約なしは stop');
+  assertTrue(scoredBorrow.missingRequired.includes('borrow-inventory'), 'borrow-inventory 必須欠落');
+
+  const withoutEdge = `
+## 完成宣言（UI Polish Loop）
+- Evaluation:
+  - コマンド: pnpm run loop:ui
+  - 結果: pass
+- 観察証拠:
+  - 種別: screenshot
+  - パス: \`/tmp/ui.png\`
+  - Read済み: はい（余白は一致）
+- 参照の正体: Nani!?
+- 対象枠: ロック（SecurityLayout）
+- 借りてよい: 緑キャンバス
+- 借りない: レール幅 298px
+- ページ枠照合:
+  - 見本: なし（指示のみ）
+  - 実装: \`/tmp/ui-full.png\`
+  - 差分: 対象枠は文書シェルのまま
+  - Read済み: はい
+- 根拠: \`src/pages/X.tsx\`
+`;
+  const scoredEdge = scoreEvalTemplate(
+    template,
+    buildScoreContext({
+      declarationText: withoutEdge,
+      parsed: parseCompletionDeclaration(withoutEdge),
+      evaluationResult: 'pass',
+      verdictStatus: 'pass',
+    }),
+  );
+  assertEqual(scoredEdge.status, 'stop', '操作観察なしは stop');
+  assertTrue(scoredEdge.missingRequired.includes('observe-edge'), 'observe-edge 必須欠落');
 }
 
 {

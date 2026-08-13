@@ -3,6 +3,9 @@ import {
   DEFAULT_PLATFORM_CURSOR_MODEL_ID,
   GROK_VERSION_SELECT_OPTIONS,
   PLATFORM_CURSOR_MODEL_IDS,
+  grokVersionFromStepIndex,
+  grokVersionFromTrackRatio,
+  grokVersionStepIndex,
   grokVersionValue,
   isGrokPlatformCursorModelId,
   isPlatformCursorModelId,
@@ -37,5 +40,12 @@ assert.equal(
 )
 assert.equal(grokVersionValue('grok-4.6'), 'grok-4.6')
 assert.equal(grokVersionValue('composer-2.5'), 'grok-4.5')
+assert.equal(grokVersionStepIndex('grok-4.5'), 0)
+assert.equal(grokVersionStepIndex('grok-4.6'), 1)
+assert.equal(grokVersionStepIndex('composer-2.5'), 0)
+assert.equal(grokVersionFromStepIndex(0), 'grok-4.5')
+assert.equal(grokVersionFromStepIndex(1), 'grok-4.6')
+assert.equal(grokVersionFromTrackRatio(0.2), 'grok-4.5')
+assert.equal(grokVersionFromTrackRatio(0.8), 'grok-4.6')
 
 console.log('src/config/aiModelOptions.test.ts: ok')

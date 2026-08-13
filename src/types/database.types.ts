@@ -1055,6 +1055,7 @@ export type Database = {
           detail_url: string | null
           id: string
           kind: string
+          platform: string
           proposed_at: string
           proposed_by: string | null
           published_at: string | null
@@ -1072,6 +1073,7 @@ export type Database = {
           detail_url?: string | null
           id?: string
           kind: string
+          platform?: string
           proposed_at?: string
           proposed_by?: string | null
           published_at?: string | null
@@ -1089,6 +1091,7 @@ export type Database = {
           detail_url?: string | null
           id?: string
           kind?: string
+          platform?: string
           proposed_at?: string
           proposed_by?: string | null
           published_at?: string | null
@@ -1846,6 +1849,7 @@ export type Database = {
           p_body?: string
           p_detail_url?: string
           p_kind: string
+          p_platform?: string
           p_surfaces?: string[]
           p_title: string
         }

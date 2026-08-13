@@ -172,10 +172,14 @@ pnpm run working-graph -- summary
 
 UI Polish Loop は、一発出しのUI品質を上げるためのLoopである。
 
-特に重視するのは「コードを書く前に画像から抽出し、実装可能なトークン表まで落とす」こと。外部ブランドの DESIGN.md は置き換えず、書き方（トークン・定型・Iteration）だけ借りる。正本は `ui-design.mdc` / `ui-language.mdc` / `ui-design-hp-lp.mdc`。
+特に重視するのは「コードを書く前に参照の正体・対象枠・借り一覧を書き、実装可能なトークン表まで落とす」こと。外部ブランドの DESIGN.md や Cursor Cloud は置き換えず、書き方（トークン・定型・Iteration）だけ借りる。文書シェル見本は **Nani!?**。正本は `ui-design.mdc` / `ui-language.mdc` / `ui-design-hp-lp.mdc`。
 
 抽出する内容:
 
+- 参照の正体（Nani!? / 添付ウィジェット / 指示のみ。Cursor Cloud と決めつけない）
+- 対象枠ロック（業務ハブは DashboardLayout。SecurityLayout は /security だけ）
+- 借りてよい / 借りない（ページ枠・幅px・暗い面・段階数・詳細設定・見本文言・共有メニューの下開きは既定で借りない。既存ナビ幅 `w-56` が正）
+- 端の開閉（下端▼等。静止スクショだけでは見切れを捕まえない）
 - レイアウト構造
 - 余白
 - 色
@@ -188,13 +192,15 @@ UI Polish Loop は、一発出しのUI品質を上げるためのLoopである�
 - 禁止事項との衝突
 - 今回使うトークン表（5〜15行。canvas / surface / elevated、ink階層、primaryの役割など）
 
-完成判定も実装前に作る。Evaluation前は次の順で小さく回す: 面の階層 → タイポ → 主ボタン → 余白・見切れ。
+完成判定も実装前に作る。Evaluation前は次の順で小さく回す: 対象枠ロック → 借り一覧 → 面の階層 → タイポ → 主ボタン → 余白・見切れ → 端の開閉。
 
 例:
 
 ```text
+対象枠がロックされている（見本の文書シェルを業務ハブに移植していない）
+借りない物（暗い面・段階数・詳細設定・幅px）が入っていない
 主要操作が1秒で分かる
-見本画像と同じ余白・重心・視線誘導になっている
+見本から借りてよい余白・重心だけが一致している
 トークン表どおりの面階層・文字階層になっている
 モバイルで見切れない
 日本語文言だけで意味が伝わる
@@ -426,7 +432,7 @@ node scripts/loop-discover.mjs --write-state
 | SSoT | `scripts/lib/claim-grounding.mjs` |
 | 入力 | `state/completion-declaration.md`（`LOOP_DECLARATION_FILE` で変更可） |
 | skip | 宣言ファイルなし |
-| stop | Evaluation コマンドまたは結果の欠落、空宣言、**UI Polish の観察証拠欠落**、**ページ枠照合欠落（observe-chrome）** |
+| stop | Evaluation コマンドまたは結果の欠落、空宣言、**UI Polish の観察証拠欠落**、**ページ枠照合欠落（observe-chrome）**、**借り契約欠落（borrow-inventory）**、**操作観察欠落（observe-edge）** |
 | warn | 根拠リンク不足（パス / MEMORY 節 / 根拠ノート） |
 | 検証 | `pnpm run test:claim-grounding` |
 
@@ -440,9 +446,12 @@ node scripts/loop-discover.mjs --write-state
 
 - 完成宣言の `観察証拠`（種別・パス・Read済み差分）が無い UI Polish は `stop`
 - 完成宣言の `ページ枠照合`（見本 / 実装ページ全体 / 差分 / Read済み）が無い UI Polish は `stop`（欠落コード `observe-chrome`）
-- 内側パネルだけのスクショは観察として数えない。見本キャプチャと実装キャプチャ（ページ全体）のペアが必要
-- Eval template `ui-polish.completion` の `observe-evidence` と `chrome-compare` も必須
-- 敵対シナリオ: `ui-complete-without-observe` / `ui-complete-inner-panel-only`
+- 完成宣言の借り契約（参照の正体 / 対象枠 / 借りてよい / 借りない）が無い UI Polish は `stop`（欠落コード `borrow-inventory`）
+- 完成宣言の `操作観察`（対象 / 種別 / パス / Read済み、または「なし（端の開閉なし）」）が無い UI Polish は `stop`（欠落コード `observe-edge`）
+- 内側パネルだけのスクショは観察として数えない。見本キャプチャと実装キャプチャ（ページ全体）のペアが必要。端の▼は開いてから撮る
+- 既存ナビ幅（業務ナビ `w-56`）と共有メニューの開く方向は案件SSoT。Nani の 298px や下開きを丸コピーしない。枠幅を変えたら本文幅も見る
+- Eval template `ui-polish.completion` の `observe-evidence` と `chrome-compare` と `borrow-inventory` と `observe-edge` も必須
+- 敵対シナリオ: `ui-complete-without-observe` / `ui-complete-inner-panel-only` / `ui-complete-without-borrow-inventory` / `ui-complete-without-edge-observe`
 - 知覚優先: 構造 snapshot → 見た目 screenshot（ページ全体） → vision は最終手段
 - 出典の原則名: Verify, don't assume / Observe loop
 - Hard Gate 文書: `loops/goals/ui-polish-gate.md`（Context Budget で must。長い goal 文書の後半は窓から落ちる）

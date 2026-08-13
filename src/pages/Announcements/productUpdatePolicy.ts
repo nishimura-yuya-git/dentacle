@@ -17,6 +17,10 @@ export const PRODUCT_UPDATE_SURFACES = [
 ] as const
 export type ProductUpdateSurface = (typeof PRODUCT_UPDATE_SURFACES)[number]
 
+/** 対象環境。画面対象 surfaces とは別。一覧の絞り込みはしない。 */
+export const PRODUCT_UPDATE_PLATFORMS = ['web', 'mac', 'windows'] as const
+export type ProductUpdatePlatform = (typeof PRODUCT_UPDATE_PLATFORMS)[number]
+
 /** 院ユーザーのお知らせ一覧に出してよいか。デプロイや提案だけでは true にしない。 */
 export function isProductUpdateVisibleToClinic(status: ProductUpdateStatus): boolean {
   return status === 'published'

@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/Button'
-import { Select } from '@/components/ui/Select'
+import { Select, type SelectOption } from '@/components/ui/Select'
 import type { JobRow } from '@/pages/Proposals/types'
 import { shouldShowRecentJobsClinicColumn } from '@/pages/Proposals/utils/filterRecentJobs'
 import {
@@ -17,11 +17,9 @@ type Props = {
   canPropose: boolean
   busy: boolean
   clinicFilter: string
-  clinicOptions: Array<{ value: string; label: string }>
+  clinicOptions: SelectOption[]
   onClinicFilterChange: (clinicId: string) => void
-  onSelectJob: (jobId: string) => void
   onRerun: (job: JobRow) => void
-  onOpenItems: (jobId: string) => void
 }
 
 const TH =
@@ -38,38 +36,28 @@ export function RecentJobsSection({
   clinicFilter,
   clinicOptions,
   onClinicFilterChange,
-  onSelectJob,
   onRerun,
-  onOpenItems,
 }: Props) {
   const showClinicColumn = shouldShowRecentJobsClinicColumn(clinicFilter)
 
   return (
-    <section className="flex h-full min-h-0 flex-1 flex-col overflow-hidden rounded-[28px] border border-slate-100 bg-white p-5 shadow-sm md:p-6">
-      <div className="mb-3 flex shrink-0 flex-wrap items-end justify-between gap-3">
-        <div className="min-w-0">
-          <h2 className="text-sm font-bold text-slate-900">最近の提案ジョブ</h2>
-          <p className="mt-1 text-xs font-medium text-slate-400">
-            直近100件まで。クリニックを指定して履歴を確認できます
-          </p>
-        </div>
-        <div className="flex shrink-0 flex-wrap items-end gap-3">
-          <div className="w-[12rem]">
-            <Select
-              id="recent-jobs-clinic-filter"
-              label="クリニック"
-              labelTone="muted"
-              size="sm"
-              options={clinicOptions}
-              value={clinicFilter}
-              onChange={(event) => onClinicFilterChange(event.target.value)}
-            />
-          </div>
-          <p className="pb-2 text-xs font-bold text-slate-500">{jobs.length}件</p>
+    <section>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <p className="text-sm font-bold text-slate-500">{jobs.length}件</p>
+        <div className="w-[11rem]">
+          <Select
+            id="recent-jobs-clinic-filter"
+            label="クリニック"
+            labelTone="muted"
+            size="sm"
+            options={clinicOptions}
+            value={clinicFilter}
+            onChange={(event) => onClinicFilterChange(event.target.value)}
+          />
         </div>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-auto rounded-2xl border border-slate-200 bg-white">
+      <div className="mt-4 max-h-[min(28rem,60vh)] overflow-auto rounded-2xl border border-slate-200 bg-white">
         {loading ? (
           <div className="flex min-h-[8rem] items-center justify-center">
             <p className="text-sm text-slate-400">履歴を読み込んでいます…</p>
@@ -133,26 +121,14 @@ export function RecentJobsSection({
                       {typeof slotCount === 'number' ? `${slotCount}件` : '—'}
                     </td>
                     <td className={TD}>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <Button
-                          variant="ghost"
-                          className="!rounded-lg !px-3 !py-1.5 text-xs"
-                          onClick={() => {
-                            onSelectJob(job.id)
-                            onOpenItems(job.id)
-                          }}
-                        >
-                          提案内容
-                        </Button>
-                        <Button
-                          variant="secondary"
-                          className="!rounded-lg !px-3 !py-1.5 text-xs"
-                          disabled={!canPropose || busy}
-                          onClick={() => onRerun(job)}
-                        >
-                          再利用
-                        </Button>
-                      </div>
+                      <Button
+                        variant="secondary"
+                        className="!rounded-lg !px-3 !py-1.5 text-xs"
+                        disabled={!canPropose || busy}
+                        onClick={() => onRerun(job)}
+                      >
+                        再利用
+                      </Button>
                     </td>
                   </tr>
                 )

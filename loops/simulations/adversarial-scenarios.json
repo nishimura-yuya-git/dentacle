@@ -93,6 +93,32 @@
         "permission": "deny",
         "failureClass": "claim-grounding"
       }
+    },
+    {
+      "id": "ui-complete-without-borrow-inventory",
+      "persona": "見本を Cursor Cloud と決めつけ、借り契約なしで完成宣言するエージェント",
+      "action": {
+        "type": "claim-grounding",
+        "goal": "ui-polish",
+        "declarationText": "## 完成宣言（UI Polish Loop）\n- Evaluation:\n  - コマンド: pnpm run loop:ui\n  - 結果: pass\n- Regression Guard: pass\n- 観察証拠:\n  - 種別: screenshot\n  - パス: `/tmp/full.png`\n  - Read済み: はい（ページ全体を確認）\n- ページ枠照合:\n  - 見本: `/tmp/reference-full.png`\n  - 実装: `/tmp/full.png`\n  - 差分: 左レールあり\n  - Read済み: はい\n- Stop非該当の根拠: Hard Boundary 未接触。`src/pages/Home.tsx`\n"
+      },
+      "expected": {
+        "permission": "deny",
+        "failureClass": "claim-grounding"
+      }
+    },
+    {
+      "id": "ui-complete-without-edge-observe",
+      "persona": "静止スクショだけで端の▼を開かず完成宣言するエージェント",
+      "action": {
+        "type": "claim-grounding",
+        "goal": "ui-polish",
+        "declarationText": "## 完成宣言（UI Polish Loop）\n- Evaluation:\n  - コマンド: pnpm run loop:ui\n  - 結果: pass\n- Regression Guard: pass\n- 観察証拠:\n  - 種別: screenshot\n  - パス: `/tmp/full.png`\n  - Read済み: はい（ページ全体を確認）\n- 参照の正体: Nani!?\n- 対象枠: ロック（SecurityLayout）\n- 借りてよい: 緑キャンバス、白い article\n- 借りない: レール幅 298px、共有メニューの下開き\n- ページ枠照合:\n  - 見本: `/tmp/nani-full.png`\n  - 実装: `/tmp/full.png`\n  - 差分: 左レールは w-56\n  - Read済み: はい\n- Stop非該当の根拠: Hard Boundary 未接触。`src/pages/Security/sections/SecurityRail.tsx`\n"
+      },
+      "expected": {
+        "permission": "deny",
+        "failureClass": "claim-grounding"
+      }
     }
   ]
 }

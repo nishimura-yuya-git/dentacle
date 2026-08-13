@@ -29,35 +29,29 @@ export function FeedbackChatLauncher() {
       ) : null}
       <button
         type="button"
-        className="pointer-events-auto inline-flex h-14 w-14 items-center justify-center rounded-full bg-[#008C01] text-white shadow-sm transition hover:bg-[#007201] hover:scale-[1.02] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#008C01]/35"
+        className="pointer-events-auto inline-flex h-14 w-14 items-center justify-center rounded-full border border-[#C5E5C5] bg-[#E7F4E7] text-[#008C01] shadow-sm transition-colors hover:bg-[#D5EDD5] hover:scale-[1.02] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#008C01]/35"
         aria-label={open ? 'ご意見チャットを閉じる' : 'ご意見・不具合を送る'}
         aria-expanded={open}
         aria-controls={open ? panelId : undefined}
         onClick={() => setOpen((current) => !current)}
       >
-        {open ? <CloseGlyph /> : <ChatGlyph />}
+        {open ? <CloseGlyph /> : <ChatIcon />}
       </button>
     </div>,
     document.body,
   )
 }
 
-function ChatGlyph() {
+function ChatIcon() {
   return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path
-        d="M5 6.5A2.5 2.5 0 0 1 7.5 4h9A2.5 2.5 0 0 1 19 6.5v7A2.5 2.5 0 0 1 16.5 16H10l-4.2 3.2A.8.8 0 0 1 4.5 18.6V6.5Z"
-        stroke="currentColor"
-        strokeWidth="1.8"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M8 9h8M8 12.5h5"
-        stroke="currentColor"
-        strokeWidth="1.8"
-        strokeLinecap="round"
-      />
-    </svg>
+    <img
+      src="/icon/chat.png"
+      alt=""
+      width={32}
+      height={32}
+      className="h-8 w-8 object-contain"
+      draggable={false}
+    />
   )
 }
 

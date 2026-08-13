@@ -275,6 +275,7 @@ DB上の確定・集計テーブル
 | `[配置/ロール]` | `[table.column]` | `[table.column]` | `[保存時/承認時]` | `[全体失敗にする]` |
 | `[ステータス]` | `[table.column]` | `[table.column]` | `[確定時]` | `[ロールバック/再試行]` |
 | `[金額]` | `[table.column]` | `[table.column]` | `[締め時]` | `[再計算禁止/警告]` |
+| ご意見の正記録 | GitHub Issue（本体／コメント） | `feedback_threads` / `feedback_messages`（履歴） | Issue またはコメント作成成功後 | GitHub 失敗時は履歴も作らない。履歴保存失敗はログのみ（Issue は残す）。§6.54 |
 
 ### 禁止例
 
@@ -681,6 +682,7 @@ DB上の確定・集計テーブル
 - **その他ナビアイコン（2026-08-11 / 2026-08-12）**: 診療カレンダー=`/icon/calendar.png`、設定=`/icon/gears.png`、患者管理=`/icon/patient.png`、操作ログ=`/icon/windows.png`、ログイン監査=`/icon/audit.png`（運営のみ・§6.15 / §6.29）。選択時緑・通常灰のマスク着色は既存 `NavIcon` と同じ。
 - **サイドバー「自動提案」（`/proposals`）は運営（`platform_admins`）のみ表示**（`requiresPlatformAdmin`。§6.34 / §6.35）。AI利用状況は別ナビにせず、同ハブ内で切替（§6.46）。
 - ナビ項目定義の正は `navConfig.ts`（`APP_NAV` / `isNavItemActive`）。描画は `AppSidebar.tsx` / `SidebarNav.tsx`。
+- **ご意見・不具合（2026-08-13）**: 業務ナビには置かない。入口は右下 FAB・アカウントメニュー・`/feedback`（§6.54）。
 - `NavDropdown.tsx` は上部ナビ廃止により未参照。`safety.mdc` に従い承認なしでは削除しない（削除はユーザー明示時のみ）。
 - 関連: `DashboardLayout.tsx`, `AppSidebar.tsx`, `SidebarNav.tsx`, `navConfig.ts`, `CalendarPage.tsx`, `public/icon/grid.png`, `public/icon/ai.png`, `public/icon/calendar.png`, `public/icon/gears.png`, `public/icon/patient.png`, `public/icon/windows.png`, `public/icon/audit.png`, §6.15, §6.24, §6.29, §6.31, §6.34, §6.35, §10.9
 
@@ -932,6 +934,19 @@ DB上の確定・集計テーブル
 - 環境変数 `CURSOR_MODEL_ID` はフォールバック既定（`grok-4.5`）。runtime の正は運営切替。
 - 関連: `AiUsageModelSwitcher.tsx`, `loadPlatformCursorModel.ts`, `aiModelPricing.ts`, §6.14, §6.36, §6.38
 
+### 6.54 ご意見チャット → GitHub Issue（2026-08-13 決定）
+
+アプリ内の「ご意見・不具合」チャットを、開発用の GitHub Issue にする。
+
+- **入口**: 右下 FAB、アカウントメニュー「ご意見・不具合」、専用ページ `/feedback`。**業務サイドバー（`APP_NAV`）には置かない**（§6.33）。
+- **正の記録は GitHub Issue**。同一スレッドの続きは Issue コメント。「新しいご意見」で別 Issue を作る。`feedback_threads` / `feedback_messages` はアプリ内履歴のみ。
+- **API**: `POST /api/feedback/send`。ログイン JWT 必須。公開エラーは固定日本語（内部の GitHub / Postgres 生文言は出さない。§6.40）。
+- **トークン**: サーバ専用 `GITHUB_FEEDBACK_TOKEN`（未設定時は `GITHUB_TOKEN`）。リポジトリは `GITHUB_FEEDBACK_REPO`。`VITE_` 接頭辞は禁止（§6.36 と同じ）。
+- **レート制限**: 同一ユーザー 15 秒に 1 通。
+- **RLS**: 本人または運営のみ SELECT。INSERT のみ（UPDATE/DELETE ポリシーは付けない）。
+- **個人情報**: 患者氏名・カルテ番号は Issue 本文に載せない（§6.20 と同一）。画面に注意文を出す。MEMORY・コミットにも転記しない。
+- 関連: `api/feedback/send.ts`, `server/feedback/`, `src/components/features/feedback/`, `src/pages/Feedback/FeedbackPage.tsx`, `AccountMenu.tsx`, §5, §6.20, §6.33, §7
+
 ---
 
 ## 7. 🔐 RLS・権限・セキュリティ
@@ -944,6 +959,9 @@ DB上の確定・集計テーブル
 | `GET /api/cursor/health` | Bearer=`CURSOR_HEALTH_SECRET` | — | — | — | 未設定は401。公開は ok/service/ready のみ（§6.36 / §10.10） |
 | `clinic_members` | 所属メンバー | bootstrap（非運営 owner）/ admin（owner以外・非運営） | admin（owner行以外） | admin（owner行以外・grantなし） | UIロックだけでは不可。§6.40 |
 | `POST /api/schedule/propose` | — | 認可済みロール | — | — | JWT必須。60秒クールダウン＋同時1本。公開エラーは固定文言（§6.40） |
+| `feedback_threads` | 本人または運営 | 本人（所属クリニックまたは運営） | 原則不可 | 原則不可 | アプリ内履歴。正の記録は GitHub Issue（§6.54） |
+| `feedback_messages` | 本人または運営 | 本人 | 原則不可 | 原則不可 | INSERT のみ。UPDATE/DELETE ポリシーなし（§6.54） |
+| `POST /api/feedback/send` | — | ログイン済み | — | — | JWT必須。トークンはサーバ専用。15秒クールダウン。公開エラーは固定文言（§6.54） |
 | `[table_a]` | `[role]` | `[role]` | `[role]` | `[role]` | `[制約]` |
 | `[table_b]` | `[role]` | `[role]` | `[role]` | `[role]` | `[制約]` |
 
@@ -1354,6 +1372,7 @@ AIは作業開始時に以下を確認する。
 □ 運営AIハブなら §6.45 / §6.46（見出しSelectで画面切替・提案内もセクションSelect・fillViewport+sticky表・最近のジョブはクリニック絞り込み・再利用はジョブの clinic_id・サイドバーは自動提案1項目・旧 `/admin/ai-usage` はリダイレクト）を守った
 □ 自動提案スナップショットなら §6.39（住所必須・距離行列・頻度/期限緊急度・schema v2・生住所非渡与）を守った
 □ セキュリティ是正なら §6.40 / §10.11（clinic_members RLS 分割・運営除外・propose 60秒クールダウン・待機時間明示のレート制限文言・公開エラーは固定文言）を守った
+□ ご意見チャットなら §6.54 / §6.20 / §6.33（入口は FAB・アカウントメニュー・`/feedback`。業務ナビ禁止。正は GitHub Issue。トークンはサーバ専用。`VITE_` 禁止。患者PIIは載せない。公開エラーは固定文言）を守った
 □ Cloud 送信のコンプライアンスなら §6.12（UUID・制約中心。氏名・電話・生住所非渡与。DPA/同意を文書化）を守った
 □ ナビ▼メニューなら §10.8（overflow で消さない。portal＋fixed。主導線はサイドバーアコーディオン）を守った
 □ Cloud 起動時は `cloud` を明示したか（未指定で local に黙って落ちない）を確認した
@@ -1431,4 +1450,5 @@ AIは作業開始時に以下を確認する。
 - `2026-08-12`: ログイン監査の地図UI・Select切替・地方ズーム・clinic紐付け・IPブロックを §6.15 / §7 / §10.27 / §12 に追記（`/project-memory-learn`）
 - `2026-08-12`: 在席ハートビート・件数テキスト配置・九州ズーム再発防止・IP回線共有文言を §6.15 / §7 / §10.28 / §12 に追記（`/project-memory-learn`）
 - `2026-08-13`: 運営モデル切替に grok-4.6 を追加（既定は grok-4.5、カスケード未変更）を §6.14 / §6.36 / §6.38 / §6.53 / §12 に追記（`/project-memory-learn`）
+- `2026-08-13`: ご意見チャット→GitHub Issue を §6.54 / §5 / §6.33 / §7 / §12 に追記（`/project-memory-learn`）。入口は FAB・アカウントメニュー・`/feedback`。正の記録は Issue。トークンはサーバ専用。患者PIIは載せない（§6.20）
 

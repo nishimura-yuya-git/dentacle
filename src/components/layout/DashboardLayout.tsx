@@ -3,6 +3,7 @@ import { NavLink } from 'react-router-dom'
 import { AccountMenu } from '@/components/layout/AccountMenu'
 import { AppSidebar } from '@/components/layout/AppSidebar'
 import { ClinicSwitcher } from '@/components/layout/ClinicSwitcher'
+import { FeedbackChatLauncher } from '@/components/features/feedback/FeedbackChatLauncher'
 import { env } from '@/config/env'
 import { useAuth } from '@/features/auth/useAuth'
 import { useClinic } from '@/features/clinic/useClinic'
@@ -200,6 +201,7 @@ export function DashboardLayout({
         >
           {children}
         </main>
+        <FeedbackChatLauncher />
       </div>
     </div>
   )

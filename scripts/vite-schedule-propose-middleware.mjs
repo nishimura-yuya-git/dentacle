@@ -54,7 +54,8 @@ export function scheduleProposeMiddleware() {
         const url = req.url?.split('?')[0] ?? ''
         const isPropose = url === '/api/schedule/propose'
         const isGapFill = url === '/api/schedule/gap-fill'
-        if (!isPropose && !isGapFill) {
+        const isFeedback = url === '/api/feedback/send'
+        if (!isPropose && !isGapFill && !isFeedback) {
           next()
           return
         }
@@ -82,7 +83,18 @@ export function scheduleProposeMiddleware() {
 
           const body = await readJsonBody(req)
           let outcome
-          if (isGapFill) {
+          if (isFeedback) {
+            const mod = await server.ssrLoadModule(
+              '/server/feedback/submitFeedbackWithEnv.ts',
+            )
+            outcome = await mod.submitFeedbackWithEnv({
+              accessToken,
+              body: typeof body.body === 'string' ? body.body : '',
+              clinicId: typeof body.clinicId === 'string' ? body.clinicId : '',
+              pagePath: typeof body.pagePath === 'string' ? body.pagePath : '',
+              threadId: typeof body.threadId === 'string' ? body.threadId : '',
+            })
+          } else if (isGapFill) {
             const mod = await server.ssrLoadModule('/server/schedule/runGapFillJob.ts')
             outcome = await mod.runGapFillJob({
               accessToken,
@@ -122,7 +134,9 @@ export function scheduleProposeMiddleware() {
                     ? 429
                     : outcome.code === 'empty'
                       ? 422
-                      : 500
+                      : outcome.code === 'not_configured'
+                        ? 503
+                        : 500
 
           if (outcome.code === 'rate_limited' && outcome.retryAfterSec) {
             res.setHeader('Retry-After', String(outcome.retryAfterSec))
@@ -140,9 +154,11 @@ export function scheduleProposeMiddleware() {
           res.end(
             JSON.stringify({
               ok: false,
-              error: isGapFill
-                ? '空き枠埋めの処理に失敗しました'
-                : '自動提案の処理に失敗しました',
+              error: isFeedback
+                ? 'ご意見の受付に失敗しました'
+                : isGapFill
+                  ? '空き枠埋めの処理に失敗しました'
+                  : '自動提案の処理に失敗しました',
             }),
           )
         }

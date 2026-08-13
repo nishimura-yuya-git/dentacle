@@ -150,7 +150,7 @@
 ### 2.10 薄い知識Graph層: Claim Grounding / Working Graph（2026-07-28 決定）
 
 - 制御 Graph（`loops/graphs/*.mmd`）とは別に、知識Graphの薄い層をハーネスに入れる。本格 NER・グラフDB・Claude 自動抽出パイプラインは入れない。
-- Claim Grounding: 完成宣言（`state/completion-declaration.md`）の主張を Evaluation 結果・根拠リンクと照合する。宣言ファイルが無いときは `skip`（通常の `loop:run` を止めない）。Evaluation 欠落は `stop`、根拠不足は `warn`。UI Polish は観察証拠・ページ枠照合・借り契約・操作観察が必須（§2.14 / §2.15）。欠落は `stop`。
+- Claim Grounding: 完成宣言（`state/completion-declaration.md`）の主張を Evaluation 結果・根拠リンクと照合する。宣言ファイルが無いときは `skip`（通常の `loop:run` を止めない）。Evaluation 欠落は `stop`、根拠不足は `warn`。UI Polish は観察証拠・ページ枠照合・借り契約・操作観察が必須（§2.14 / §2.15）。見本がライブ URL なのに見本スクショが無い完成も無効。欠落は `stop`。
 - Working Graph: エージェントが整理した Entity / Relation だけを `state/working-graph.json` に残す。型は `SCREEN | API | TABLE | SSOT | SYMPTOM | DOC`、関係は `touches | depends_on | reported_in`。
 - 完成報告時は宣言を `state/completion-declaration.md` に書き、`pnpm run loop:evaluator` で Claim Grounding を通す。
 - 将来の本格KG（抽出→解決→組立→クエリ）へ型だけ互換にしておく。全面導入は要件が揃うまで行わない。
@@ -199,6 +199,7 @@
 - 完成宣言の `観察証拠` に含める項目: 種別（`snapshot` | `screenshot`）・パス（または取得名）・`Read済み: はい（差分1行）`。
 - Claim Grounding（§2.10）と Eval template `ui-polish.completion` の `observe-evidence` が欠落すると `stop`。敵対シナリオ `ui-complete-without-observe` で回帰監視する。
 - 内側パネルだけのスクショは観察として数えない。見本キャプチャと実装キャプチャ（ページ全体）のペアと `ページ枠照合` が必須。欠落は `observe-chrome` で `stop`（§2.15）。
+- **ライブ見本（2026-08-13）**: 見本が `http(s)` URL なら、そのページを開いてページ全体スクショを見本にする。URL 文字列・記憶・「なし（指示のみ）」では寄せない（§2.15 / §10.39）。
 - **操作観察（2026-08-14）**: 端の▼・アカウントメニュー・セレクトは開いてから snapshot / screenshot する。閉じた静止画だけでは見切れを完成根拠にしない。端の開閉が無い画面は完成宣言に `なし（端の開閉なし）`。欠落は `observe-edge` で `stop`。敵対シナリオ `ui-complete-without-edge-observe`。
 - 知覚の優先順位: 構造 `browser_snapshot` → 見た目 screenshot（ページ全体） → vision による推測は最終手段。
 - 出典の原則名: Verify, don't assume / Observe loop（[desktop-harness](https://github.com/xfreeze2/desktop-harness) から借りるのは思想だけ。Mac CLI は入れない）。
@@ -207,16 +208,17 @@
 
 ### 2.15 UI Polish ページ枠照合ゲート（2026-08-13 決定 / 2026-08-14 改定）
 
-- 完成・「寄せた」申告は、見本キャプチャ（または「なし（指示のみ）」）と実装キャプチャ（ページ全体）を Read し、完成宣言に `ページ枠照合`（見本 / 実装 / 差分 / Read済み）を書く。内側パネルだけのスクショは完成根拠にしない。
+- 完成・「寄せた」申告は、見本キャプチャ（または「なし（指示のみ）」）と実装キャプチャ（ページ全体）を Read し、完成宣言に `ページ枠照合`（見本 / 実装 / 差分 / Read済み）を書く。内側パネルだけのスクショは完成根拠にしない。**見本がライブ URL のときは「なし（指示のみ）」も URL 文字列も不可**（ページ全体スクショの path を書く）。
 - Claim Grounding の欠落コードは `observe-chrome`。Eval template `ui-polish.completion` の `chrome-compare` も必須。敵対シナリオ `ui-complete-inner-panel-only`。
 - **参照の正体（2026-08-14）**: 見本の名前を書く。この案件の文書シェル見本は **Nani!?**。Cursor Cloud と決めつけない。ウィジェット見本（スライダー等）は部品だけ。ページ枠まで借りない。
 - **対象枠ロック（2026-08-14）**: 対象画面の既存枠が正。見本が専用シェルでも、業務ハブ（`/proposals` 等）の `DashboardLayout` は残す。`SecurityLayout` は `/security` だけ。原子（`Button` / `Modal` / `Toast`）の再利用とページ枠は別。2026-08-13 の「見本が専用シェルなら DashboardLayout で包まない」は、**対象が文書シェルのときだけ**に限定する。
-- **借り契約（2026-08-14）**: 完成宣言に参照の正体・対象枠（ロックまたは変更承認）・借りてよい・借りないを書く。欠落は `borrow-inventory` で `stop`。Eval template の `borrow-inventory` と敵対シナリオ `ui-complete-without-borrow-inventory` で監視する。既定で借りない: ページ枠、レール幅 px、暗い面、見本の段階数、「詳細設定」、装飾英語、見本文言、**共有メニューの下開き**。既存ナビ幅（業務ナビ `w-56`）とメニューの開く方向は案件SSoT。Nani の 298px を丸コピーしない。
+- **借り契約（2026-08-14）**: 完成宣言に参照の正体・対象枠（ロックまたは変更承認）・借りてよい・借りないを書く。欠落は `borrow-inventory` で `stop`。Eval template の `borrow-inventory` と敵対シナリオ `ui-complete-without-borrow-inventory` で監視する。既定で借りない: ページ枠、レール幅 px、暗い面、見本の段階数、「詳細設定」、装飾英語、見本文言、**共有メニューの下開き**。既存ナビ幅（業務ナビ `w-56`）とメニューの開く方向は案件SSoT。Nani の 298px を丸コピーしない。見本のブランド色・フォント・3D・製品CTA・事実（OAuth / Stripe / 翻訳非保存など）も借りない。正は案件（緑 `#008C01` / Zen Maru / 日本語 / デンタクルの実仕様）。
+- **ライブ見本（2026-08-13）**: 見本が `http(s)` URL ならそのページを開き、ページ全体スクショを見本にする。完成宣言の見本欄に URL を書いたまま、または「なし（指示のみ）」のまま完成にしない。
 - **操作観察（2026-08-14）**: 完成宣言に `操作観察`（対象 / 種別 / パス / Read済み、または `なし（端の開閉なし）`）を書く。欠落は `observe-edge` で `stop`。Eval template の `observe-edge` と敵対シナリオ `ui-complete-without-edge-observe` で監視する。開閉で固定枠が動く・ガクつく・見切れる完成は禁止。枠幅を変えたら本文幅も見る。Iteration は対象枠ロック → 借り一覧 → 面 → タイポ → 主ボタン → 余白 → 端の開閉。
-- 画面種別は業務UI / HP-LP / **文書シェル（その画面だけ）** の三択。
+- 画面種別は業務UI / HP-LP / **文書シェル（その画面だけ）** の三択。文書シェル定型の正は案件トークン。見本から借りるのは部品の形・余白リズム・面の静けさだけ（§6.56）。
 - Stop の分割: 他画面ナビ・**対象枠の変更**は確認停止。見本枠の移植・借りない物の実装・端の見切れは差し戻し（完成禁止）。
 - Context Budget: 完成禁止条件は短い `loops/goals/ui-polish-gate.md` を must として残す。長い `ui-polish.md` の後半は窓から落ちる前提（§2.9）。
-- 関連: `loops/goals/ui-polish-gate.md`, `loops/goals/ui-polish.md`, `scripts/lib/claim-grounding.mjs`, `scripts/lib/context-budget.mjs`, `loops/evals/ui-polish.completion.json`, `.cursor/rules/ui-design.mdc`, `.cursor/rules/agent-loops.mdc`, §2.9, §2.14, §6.45, §6.56, §10.29, §10.37, §10.38
+- 関連: `loops/goals/ui-polish-gate.md`, `loops/goals/ui-polish.md`, `scripts/lib/claim-grounding.mjs`, `scripts/lib/context-budget.mjs`, `loops/evals/ui-polish.completion.json`, `.cursor/rules/ui-design.mdc`, `.cursor/rules/agent-loops.mdc`, §2.9, §2.14, §6.45, §6.56, §10.29, §10.37, §10.38, §10.39
 
 ---
 
@@ -603,13 +605,14 @@ DB上の確定・集計テーブル
 ### 6.24 アプリヘッダー（アカウントメニュー・ロゴ枠）（2026-08-09 決定 / 2026-08-10 改定 / 2026-08-13 追記）
 
 - ヘッダー右はクリニック名ピル＋右端の▼アカウントメニューとする。
-- メニュー項目: マイページ／お知らせ／ユーザー管理（追加・編集・削除）／CSV取込／ご意見・不具合／契約者情報／お支払い履歴／契約情報／ログアウト。
+- メニュー項目: マイページ／お知らせ／安全性／ユーザー管理（追加・編集・削除）／CSV取込／ご意見・不具合／契約者情報／お支払い履歴／契約情報／ログアウト。
 - ヘッダーに単独のログアウトボタンを置かない。
-- ルート: `/mypage`・`/announcements`・`/users`・`/import`・`/feedback` は実装画面。契約者情報・お支払い履歴・契約情報は当面 stub「準備中」で導線のみ先に用意する。お知らせの公開ルールは §6.55。ご意見は §6.54。
+- ルート: `/mypage`・`/announcements`・`/security`・`/users`・`/import`・`/feedback` は実装画面。契約者情報・お支払い履歴・契約情報は当面 stub「準備中」で導線のみ先に用意する。お知らせの公開ルールは §6.55。ご意見は §6.54。安全性は §6.56。
+- **安全性の入口（2026-08-13）**: ログイン後のアカウントメニュー（お知らせの次）。サイドバーとログイン画面には置かない。
 - **業務ナビはヘッダー横並びではなく左サイドバー**（§6.33）。ヘッダーはクリニック名ピル＋ページ見出し帯（`titleAside` / `actions`）を主とする。
 - ブランド「デンタクル」はテキストのみ（緑背景の角丸プレースホルダは置かない）。枠内に「デ」等の仮文字も置かない。将来ロゴ差し替え時は画像/SVG、`alt` は「デンタクル」。
 - ブランド配置: サイドバー表示中はサイドバー上部。サイドバー非表示時・md未満はヘッダー左に出す（モバイルでブランドが消えないようにする）。
-- 関連: `src/components/layout/DashboardLayout.tsx`, `AppSidebar.tsx`, `AccountMenu.tsx`, `ClinicSwitcher.tsx`, `App.tsx`, `src/pages/Account/*`, §6.33, §10.6
+- 関連: `src/components/layout/DashboardLayout.tsx`, `AppSidebar.tsx`, `AccountMenu.tsx`, `ClinicSwitcher.tsx`, `App.tsx`, `src/pages/Account/*`, §6.33, §6.56, §10.6
 
 ### 6.25 ユーザー管理画面（2026-08-09 決定 / 同日改定 / 2026-08-11 追記）
 
@@ -995,12 +998,14 @@ DB上の確定・集計テーブル
 
 `/security` は文書シェル。業務ダッシュボードの内側パネル寄せで幅を広げない。
 
+- 入口はログイン後 `/security`。アカウントメニューのお知らせの次。サイドバーとログイン画面には置かない（§6.24）。
 - 左レール幅は業務ナビと同じ `w-56`。Nani 見本の 298px は使わない。
 - 左レールは本文スクロールでも固定（`sticky` / ビューポート固定）。本文と一緒に流さない。
 - 本文パネルは `max-w-4xl`。`max-w-5xl` まで広げない。
 - アカウントメニューは上に開く（レール下端のため。下開きだと見切れる）。開く方向は案件SSoT。見本の下開きは借りない。位置の再計測でガクつかせない（§10.31）。
+- **文言の正（2026-08-13）**: 骨格（白パネル・見出し下線・囲み・点線リンク・カード外フッター）は Nani!? を参考にしてよい。事実はデンタクル。翻訳非保存・Google OAuth・Stripe は書かない。業務データは保存する。認証はメールとパスワード。決済は銀行振替。AI には氏名・電話・生住所を送らない。正本は `securityCopy.ts`。
 - 自動提案ハブは業務枠のまま主面を白 article にするが、**本文幅は本節を適用しない**（§6.45）。
-- 関連: `SecurityLayout.tsx`, `SecurityRail.tsx`, `placeAccountMenu.ts`, §6.24, §6.45, §10.31
+- 関連: `SecurityLayout.tsx`, `SecurityRail.tsx`, `securityCopy.ts`, `placeAccountMenu.ts`, `AccountMenu.tsx`, §6.24, §6.45, §10.31
 
 ---
 
@@ -1121,6 +1126,7 @@ AIが自分の実装に合わせて期待値を作ることは禁止。
 | 2026-08-14 | Grok スライダー操作でパネルが即閉じた | 保存成功で閉じる／押した瞬間に確定していた | 確定は pointerup。保存後も開いたまま（§10.36 / §6.53） |
 | 2026-08-14 | 見本を Cursor Cloud と決めつけ、業務ハブを文書シェル化した | UI Loop が見本の枠に寄せるだけだった | 参照は Nani!?。対象枠ロック。借り一覧必須（§2.15 / §10.37） |
 | 2026-08-14 | 静止スクショだけで端の▼を開かず UI Polish 完成にした | 観察が閉じたページ全体で足り、端の開閉を要求しなかった | 操作観察必須。欠落は `observe-edge` で stop。枠幅変更後は本文幅も見る（§2.14 / §2.15 / §10.38） |
+| 2026-08-13 | ライブURL見本を記憶だけで寄せて完成にした | ページ枠の見本を「なし（指示のみ）」や URL 文字列にしてよかった | ライブURLはそのページのページ全体スクショを見本にする（§2.15 / §10.39） |
 
 ### 記録ルール
 
@@ -1399,6 +1405,13 @@ AIが自分の実装に合わせて期待値を作ることは禁止。
 - 再発防止: 端の▼は開いてから観察する。完成宣言に操作観察が無い UI Polish は `observe-edge` で stop。無しなら「なし（端の開閉なし）」。開閉で固定枠が動く・ガクつく・見切れる完成は禁止（ガクつき防止の実装は §10.31）。見本の下開きは借りない。枠幅を変えたら本文幅も見る。
 - 関連: `loops/goals/ui-polish-gate.md`, `scripts/lib/claim-grounding.mjs`, `placeAccountMenu.ts`, `SecurityLayout.tsx`, §2.14, §2.15, §6.56, §10.31
 
+### 10.39 ライブURL見本を記憶だけで寄せて完成にした（2026-08-13）
+
+- 事象: https://nani.now/ja/security を見本にしながら、記憶と「なし（指示のみ）」で寄せて完成申告できた。
+- 原因: ページ枠照合の見本を「なし（指示のみ）」や URL 文字列にしてよかった。ライブページを開いて撮る手順が無かった。
+- 再発防止: 見本が `http(s)` ならそのページを開き、ページ全体スクショを見本にする。URL 文字列はキャプチャに数えない。指示のみ・添付画像のみのときは「なし（指示のみ）」「なし（添付画像）」でよい。
+- 関連: `loops/goals/ui-polish-gate.md`, `scripts/lib/claim-grounding.mjs`, §2.14, §2.15
+
 ---
 
 ## 11. 🔗 重要ドキュメント・参照先
@@ -1418,7 +1431,7 @@ AIが自分の実装に合わせて期待値を作ることは禁止。
 - `loops/goals/regression-guard.md` / `loops/graphs/regression-guard.mmd` — Regression Guard 完成ゲート
 - `scripts/lib/loop-progress.mjs` — No progress ブレーキ
 - `scripts/lib/context-budget.mjs` — Context Budget（must / compress / drop）
-- `scripts/lib/claim-grounding.mjs` — Claim Grounding（主張↔根拠。UI Polish は観察証拠・ページ枠照合・借り契約・操作観察必須・§2.14 / §2.15）
+- `scripts/lib/claim-grounding.mjs` — Claim Grounding（主張↔根拠。UI Polish は観察証拠・ページ枠照合・借り契約・操作観察必須・§2.14 / §2.15。ライブ URL 見本はページ全体スクショ必須・§10.39）
 - `scripts/lib/working-graph.mjs` / `scripts/working-graph.mjs` — Working Graph（薄い共有メモリ）
 - `scripts/cursor-safety-guard.mjs` — PreToolUse ガード（変更契約 + Hard Boundary）
 - `scripts/change-contract-gate.mjs` — 変更契約ゲート CLI
@@ -1466,8 +1479,8 @@ AIは作業開始時に以下を確認する。
 □ pnpm run memory:audit で要詰めを確認し、理解レポート §6 に件数を書いた（§2.8）
 □ 不具合対応なら Bug Fix 完成ゲート（§2.7）と完成宣言を守った
 □ UI / 回帰確認なら §2.9（UI Polish / Regression Guard Graph・No progress・Context Budget）を守った
-□ UI Polish なら §2.11（Interface Review `/better-interface`。Verdict が Block なら完成報告禁止）と §2.14（観察証拠: snapshot|screenshot を Read して差分1行。端の▼は開いてから撮る）と §2.15（ページ枠照合・参照の正体は Nani!?・対象枠ロック・借り契約・操作観察。内側パネルだけでは完成無効。業務ハブの DashboardLayout は残す。見本の下開き・298px は借りない）を守った
-□ 完成報告なら §2.10（Claim Grounding / Working Graph。宣言は state/completion-declaration.md）を守った。UI Polish なら観察証拠欠落・ページ枠照合欠落・借り契約欠落・操作観察欠落で stop（§2.14 / §2.15）
+□ UI Polish なら §2.11（Interface Review `/better-interface`。Verdict が Block なら完成報告禁止）と §2.14（観察証拠: snapshot|screenshot を Read して差分1行。端の▼は開いてから撮る。ライブ URL 見本はページ全体スクショ必須）と §2.15（ページ枠照合・参照の正体は Nani!?・対象枠ロック・借り契約・操作観察。内側パネルだけでは完成無効。業務ハブの DashboardLayout は残す。見本の下開き・298px は借りない。ライブ URL を「なし（指示のみ）」や URL 文字列のまま完成にしない）を守った
+□ 完成報告なら §2.10（Claim Grounding / Working Graph。宣言は state/completion-declaration.md）を守った。UI Polish なら観察証拠欠落・ページ枠照合欠落・借り契約欠落・操作観察欠落・ライブ URL なのに見本スクショ欠落で stop（§2.14 / §2.15 / §10.39）
 □ セキュリティ境界は §2.12（GPT非依存の `security:scan`。hook 自動実行はしない。必要なときだけ手動）を守った
 □ プラットフォーム保安なら §6.52（シード一時表DROP・漏洩PW保護ON・DB SSL Enforcement ON。PITRは課金承認後）を守った
 □ 雛形コピー直後なら Git 未初期化で scan skip になることを理解した。本開発開始前に `git init` した（§2.12）
@@ -1484,7 +1497,7 @@ AIは作業開始時に以下を確認する。
 □ ログイン画面UIなら §6.21 / §10.26（パスワード表示切替・カード内左寄せログイン＋縦線・背景白・広め余白・MFA確認は6マス＋コピペ一括・MFA中にPASS画面を出さない・お知らせを出さない・Lucide禁止）を守った
 □ 開発Authなら §6.22 / §10.5（メール確認オフ推奨・指定ログイン以外の検証ユーザー削除・パスワードをMEMORYに書かない）を守った
 □ フォントなら §6.23（Zen Maru Gothic・本文500/14px/20px/`rgb(17,24,39)`）を守った
-□ アプリヘッダーなら §6.24 / §10.6（クリニック名＋▼アカウントメニュー・マイページの次にお知らせ・単独ログアウト禁止・緑背景ロゴ枠なし・仮文字なし・ドロップダウン親に overflow-hidden 禁止・業務ナビはサイドバー§6.33）を守った
+□ アプリヘッダーなら §6.24 / §10.6（クリニック名＋▼アカウントメニュー・マイページの次にお知らせ・その次に安全性・単独ログアウト禁止・緑背景ロゴ枠なし・仮文字なし・ドロップダウン親に overflow-hidden 禁止・業務ナビはサイドバー§6.33）を守った
 □ ユーザー管理なら §6.25 / §6.40（タイトル右隣検索・役割/状態フィルタなし・表＋10名固定ページネーション・招待ドロワー／作成モーダル・既存ユーザー所属追加・編集のみ／オーナーロックは UI＋RLS・招待 RPC で owner 不可・最終ログインは「—」可）を守った
 □ セレクトUIなら §6.26 / §10.35（独自 Select のみ。ネイティブ見た目の select を増やさない。メニューは portal。長いラベルは幅合わせ＋右端では左へずらす）を守った
 □ 日付・時刻入力なら §6.43（DatePicker / TimePicker。ネイティブ type=date / type=time の見た目を増やさない。近傍ポップオーバー内 portal は §10.18）を守った
@@ -1510,7 +1523,7 @@ AIは作業開始時に以下を確認する。
 □ 自動提案スナップショットなら §6.39（住所必須・距離行列・頻度/期限緊急度・schema v2・生住所非渡与）を守った
 □ セキュリティ是正なら §6.40 / §10.11（clinic_members RLS 分割・運営除外・propose 60秒クールダウン・待機時間明示のレート制限文言・公開エラーは固定文言）を守った
 □ ご意見チャットなら §6.54 / §6.20 / §6.33 / §10.30（入口は FAB・アカウントメニュー・`/feedback`。業務ナビ禁止。FABは chat.png＋淡い緑。送信は入力内右下の円＋ paper-plane.png（h-7）。正の記録は GitHub Issue。院向け文言に Issue と書かない。受付番号・GitHubリンク非表示。トークンはサーバ専用。`VITE_` 禁止。患者PIIは載せない。公開エラーは固定文言）を守った
-□ 安全性ページ枠なら §6.56 / §10.31 / §10.38（左レール w-56・本文スクロールでも固定・本文 max-w-4xl・アカウントメニューは上に開く。Nani の 298px・下開き・max-w-5xl は使わない。枠幅を変えたら本文幅も見る）を守った
+□ 安全性ページ枠なら §6.56 / §10.31 / §10.38（入口はアカウントメニューのお知らせの次。サイドバー・ログイン非掲載。左レール w-56・本文スクロールでも固定・本文 max-w-4xl・アカウントメニューは上に開く。Nani の 298px・下開き・max-w-5xl・氷青・Inter・3D・OAuth/Stripe/翻訳非保存は使わない。事実はデンタクル。正本は securityCopy.ts。枠幅を変えたら本文幅も見る）を守った
 □ Cloud 送信のコンプライアンスなら §6.12（UUID・制約中心。氏名・電話・生住所非渡与。DPA/同意を文書化）を守った
 □ ナビ▼メニューなら §10.8（overflow で消さない。portal＋fixed。主導線はサイドバーアコーディオン）を守った
 □ Cloud 起動時は `cloud` を明示したか（未指定で local に黙って落ちない）を確認した
@@ -1596,4 +1609,5 @@ AIは作業開始時に以下を確認する。
 - `2026-08-14`: 未反映48件を反映。自動提案ハブ改定（§6.45/§6.46）・Grok版スライダー（§6.38/§6.53）・ご意見FAB UI（§6.54）・お知らせ対象環境（§6.55）・安全性ページ枠（§6.56）・Select長いラベル（§6.26）・再発防止（§10.31〜10.36）・§12（`/project-memory-learn`）
 - `2026-08-14`: UI Polish に参照の正体（Nani!?）・対象枠ロック・借り契約を §2.15 / §2.10 / §2.14 / §10.29 / §10.37 / §12 に追記（`/project-memory-learn`）。Cursor Cloud と決めつけない。業務ハブの DashboardLayout は残す。欠落は `borrow-inventory` で stop
 - `2026-08-14`: UI Polish に操作観察（`observe-edge`）を §2.14 / §2.15 / §2.10 / §6.56 / §10.38 / §11 / §12 に追記（`/project-memory-learn`）。端の▼は開いてから観察。見本の下開きは借りない。枠幅を変えたら本文幅も見る
+- `2026-08-14`: ライブURL見本のページ全体スクショ必須を §2.10 / §2.14 / §2.15 / §10.39 / §12 に追記。安全性の入口と文言の正を §6.24 / §6.56 に追記（`/project-memory-learn`）。Nani の 298px 定型は後続却下のため追記しない
 

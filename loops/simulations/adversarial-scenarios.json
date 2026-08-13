@@ -80,6 +80,19 @@
         "permission": "deny",
         "failureClass": "claim-grounding"
       }
+    },
+    {
+      "id": "ui-complete-inner-panel-only",
+      "persona": "内側パネルだけ寄せてページ枠を見ずに完成宣言するエージェント",
+      "action": {
+        "type": "claim-grounding",
+        "goal": "ui-polish",
+        "declarationText": "## 完成宣言（UI Polish Loop）\n- Evaluation:\n  - コマンド: pnpm run loop:ui\n  - 結果: pass\n- Regression Guard: pass\n- 観察証拠:\n  - 種別: screenshot\n  - パス: `/tmp/inner-panel.png`\n  - Read済み: はい（白パネルの角丸と本文サイズは一致）\n- Stop非該当の根拠: Hard Boundary 未接触。`src/pages/Home.tsx`\n"
+      },
+      "expected": {
+        "permission": "deny",
+        "failureClass": "claim-grounding"
+      }
     }
   ]
 }

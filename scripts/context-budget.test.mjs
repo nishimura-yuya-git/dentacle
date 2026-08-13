@@ -42,6 +42,10 @@ function assertTrue(value, message) {
     changedFiles: ['src/pages/Home/Home.tsx'],
   });
   assertTrue(result.selected.some((s) => s.path === 'loops/goals/ui-polish.md'), 'ui-polish goal を選ぶ');
+  assertTrue(
+    result.selected.some((s) => s.path === 'loops/goals/ui-polish-gate.md'),
+    'ui-polish では Hard Gate を must で残す',
+  );
   assertTrue(result.selected.some((s) => s.path === 'loops/graphs/ui-polish.mmd'), 'ui-polish graph を選ぶ');
   assertTrue(result.selected.some((s) => s.path === '.cursor/rules/ui-design.mdc'), 'UI 変更で ui-design を選ぶ');
   assertTrue(

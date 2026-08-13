@@ -31,6 +31,12 @@
       "signals": ["hasObserveEvidence"]
     },
     {
+      "id": "chrome-compare",
+      "label": "ページ枠照合（見本と実装のページ全体キャプチャ）がある",
+      "required": true,
+      "signals": ["hasChromeCompare"]
+    },
+    {
       "id": "interface-review",
       "label": "Interface Review（better-interface）に言及している",
       "required": false,

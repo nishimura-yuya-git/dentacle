@@ -8,6 +8,7 @@
  *
  * UI Polish では Observe Loop 原則を適用する:
  * 見た目・画面変化の完成主張は、キャプチャ／snapshot を Read した証拠が無いと stop。
+ * 加えてページ枠照合（見本キャプチャと実装キャプチャのペア）が無いと stop。
  */
 
 import { existsSync, readFileSync } from 'node:fs';
@@ -25,6 +26,8 @@ const OBSERVE_KIND_RE = /(?:種別|type)\s*[:：]\s*(snapshot|screenshot)/i;
 const OBSERVE_PATH_LINE_RE = /(?:パス|path)\s*[:：]\s*(.+)/i;
 const OBSERVE_READ_RE = /(?:Read済み|read(?:\s*済み)?|read)\s*[:：]\s*(はい|yes|true)\s*(.*)/i;
 const PLACEHOLDER_RE = /^(…|\.\.\.|なし|n\/a|-)?$/i;
+const UNCONFIRMED_NOTE_RE = /^(未確認|未観察|空欄)$/i;
+const NONE_LIKE_RE = /^(なし|n\/a|指示のみ)(（指示のみ）)?$/i;
 
 /**
  * @param {string} value
@@ -32,6 +35,35 @@ const PLACEHOLDER_RE = /^(…|\.\.\.|なし|n\/a|-)?$/i;
 function isMeaningful(value) {
   const text = String(value ?? '').trim();
   return text.length > 1 && !PLACEHOLDER_RE.test(text);
+}
+
+/**
+ * 「なし（指示のみ）」は見本キャプチャ欠落として許可する。
+ * @param {string} value
+ */
+function isNoneLike(value) {
+  const text = String(value ?? '')
+    .trim()
+    .replace(/^`|`$/g, '');
+  return NONE_LIKE_RE.test(text) || /指示のみ/.test(text);
+}
+
+/**
+ * 差分ノートとして使えるか（未確認は不可）。
+ * @param {string} value
+ */
+function isConfirmedNote(value) {
+  const text = String(value ?? '').trim();
+  return isMeaningful(text) && !UNCONFIRMED_NOTE_RE.test(text);
+}
+
+/**
+ * @param {string} raw
+ */
+function stripPathTicks(raw) {
+  return String(raw ?? '')
+    .trim()
+    .replace(/^`|`$/g, '');
 }
 
 /**
@@ -51,13 +83,22 @@ export function parseCompletionDeclaration(text) {
   let observeReadConfirmed = false;
   let observeReadNote = '';
   let inObserveSection = false;
+  let inChromeSection = false;
+  let chromeReference = null;
+  const chromeImplementationPaths = [];
+  let chromeDiff = '';
+  let chromeReadConfirmed = false;
 
   for (const line of lines) {
-    if (/^\s*#{1,6}\s+/.test(line) && !/観察証拠|Observe/i.test(line)) {
+    if (/ページ枠照合|chrome\s*compare/i.test(line)) {
+      inChromeSection = true;
       inObserveSection = false;
-    }
-    if (/観察証拠|Observe\s*evidence/i.test(line)) {
+    } else if (/観察証拠|Observe\s*evidence/i.test(line)) {
       inObserveSection = true;
+      inChromeSection = false;
+    } else if (/^\s*#{1,6}\s+/.test(line)) {
+      inObserveSection = false;
+      inChromeSection = false;
     }
 
     const commandMatch = line.match(COMMAND_RE);
@@ -111,6 +152,41 @@ export function parseCompletionDeclaration(text) {
         }
       }
     }
+
+    if (inChromeSection) {
+      const refMatch = line.match(/(?:見本|reference)\s*[:：]\s*(.+)/i);
+      if (refMatch) {
+        chromeReference = stripPathTicks(refMatch[1]);
+      }
+
+      const implMatch = line.match(/(?:実装|implementation)\s*[:：]\s*(.+)/i);
+      if (implMatch) {
+        const raw = stripPathTicks(implMatch[1]);
+        if (isMeaningful(raw)) {
+          chromeImplementationPaths.push(raw);
+        }
+        for (const pathMatch of implMatch[1].matchAll(PATH_RE)) {
+          chromeImplementationPaths.push(pathMatch[1]);
+        }
+      }
+
+      const diffMatch = line.match(/(?:差分|diff)\s*[:：]\s*(.+)/i);
+      if (diffMatch && isConfirmedNote(diffMatch[1])) {
+        chromeDiff = diffMatch[1].trim();
+      }
+
+      const chromeReadMatch = line.match(OBSERVE_READ_RE);
+      if (chromeReadMatch) {
+        chromeReadConfirmed = true;
+        const note = String(chromeReadMatch[2] ?? '')
+          .replace(/^[（(]\s*/, '')
+          .replace(/[）)]\s*$/, '')
+          .trim();
+        if (!chromeDiff && isConfirmedNote(note)) {
+          chromeDiff = note;
+        }
+      }
+    }
   }
 
   // Evaluation コマンド行の pnpm は「実行した」記録にはなるが、根拠リンク充足には使わない
@@ -124,6 +200,16 @@ export function parseCompletionDeclaration(text) {
   const hasObserveEvidence = Boolean(
     observeKind && uniqueObservePaths.length > 0 && observeReadConfirmed && isMeaningful(observeReadNote),
   );
+  const uniqueChromeImplPaths = [
+    ...new Set(chromeImplementationPaths.filter((path) => isMeaningful(path))),
+  ];
+  const hasChromeReference = chromeReference != null && (isMeaningful(chromeReference) || isNoneLike(chromeReference));
+  const hasChromeCompare = Boolean(
+    hasChromeReference &&
+      uniqueChromeImplPaths.length > 0 &&
+      isConfirmedNote(chromeDiff) &&
+      chromeReadConfirmed,
+  );
 
   return {
     evaluationCommand,
@@ -135,6 +221,11 @@ export function parseCompletionDeclaration(text) {
     observeReadConfirmed,
     observeReadNote,
     hasObserveEvidence,
+    chromeReference,
+    chromeImplementationPaths: uniqueChromeImplPaths,
+    chromeDiff,
+    chromeReadConfirmed,
+    hasChromeCompare,
     hasEvaluationCommand: Boolean(
       (evaluationCommand && evaluationCommand.length > 1 && evaluationCommand !== '…') || hasPnpmCommand,
     ),
@@ -172,6 +263,15 @@ export function requiresObserveEvidence({ goal = null, declarationText = '' } = 
     .toLowerCase();
   if (normalizedGoal === 'ui-polish') return true;
   return /UI Polish Loop/i.test(String(declarationText ?? ''));
+}
+
+/**
+ * UI Polish 完成ゲートがページ枠照合を要求するか。
+ * 観察証拠と同じ条件（ui-polish goal または宣言見出し）。
+ * @param {{ goal?: string | null, declarationText?: string }} input
+ */
+export function requiresChromeCompare(input = {}) {
+  return requiresObserveEvidence(input);
 }
 
 /**
@@ -244,8 +344,12 @@ export function evaluateClaimGrounding({
   }
 
   const needsObserve = requiresObserveEvidence({ goal, declarationText: text });
+  const needsChrome = requiresChromeCompare({ goal, declarationText: text });
   if (needsObserve && !parsed.hasObserveEvidence) {
     missing.push('observe-evidence');
+  }
+  if (needsChrome && !parsed.hasChromeCompare) {
+    missing.push('observe-chrome');
   }
 
   const evidenceResolution = resolveEvidencePaths(parsed.evidencePaths, { changedFiles });
@@ -281,6 +385,19 @@ export function evaluateClaimGrounding({
     };
   }
 
+  if (missing.includes('observe-chrome')) {
+    return {
+      status: 'stop',
+      reason:
+        'UI Polish 完成宣言にページ枠照合がありません（見本キャプチャと実装キャプチャのペアを Read するまで完成にしない）。',
+      nextAction:
+        'ページ枠照合に 見本（path または なし）・実装（ページ全体）・差分（sidebar/header/FAB 等）・Read済み: はい を記入してください。内側パネルだけのスクショは不可です。',
+      parsed,
+      missing,
+      evidenceResolution,
+    };
+  }
+
   if (missing.includes('evidence-link') || missing.includes('evidence-path-unresolved')) {
     return {
       status: 'warn',
@@ -296,7 +413,7 @@ export function evaluateClaimGrounding({
   return {
     status: 'pass',
     reason: needsObserve
-      ? '完成宣言の主張は観察証拠・根拠リンク・Evaluation 結果にグラウンディングされています。'
+      ? '完成宣言の主張は観察証拠・ページ枠照合・根拠リンク・Evaluation 結果にグラウンディングされています。'
       : '完成宣言の主張は根拠リンクと Evaluation 結果にグラウンディングされています。',
     nextAction: null,
     parsed,

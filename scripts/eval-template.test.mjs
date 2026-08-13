@@ -80,7 +80,7 @@ function assertTrue(value, message) {
 }
 
 {
-  // 期待値根拠: UI Polish 完成ゲート — 観察証拠は必須、Interface Review は任意
+  // 期待値根拠: UI Polish 完成ゲート — 観察証拠とページ枠照合は必須、Interface Review は任意
   const template = loadEvalTemplate('loops/evals/ui-polish.completion.json');
   const withoutObserve = buildScoreContext({
     declarationText: 'Evaluation: コマンド: pnpm run loop:ui\n結果: pass\n根拠: `src/pages/X.tsx`',
@@ -103,6 +103,11 @@ function assertTrue(value, message) {
   - 種別: screenshot
   - パス: \`/tmp/ui.png\`
   - Read済み: はい（余白は一致、ボタン階層を確認）
+- ページ枠照合:
+  - 見本: なし（指示のみ）
+  - 実装: \`/tmp/ui-full.png\`
+  - 差分: ページ全体に業務サイドバーは無く、見本指示の専用枠もない
+  - Read済み: はい
 - 根拠: \`src/pages/X.tsx\`
 `;
   const withObserve = buildScoreContext({
@@ -114,6 +119,29 @@ function assertTrue(value, message) {
   const scoredWarn = scoreEvalTemplate(template, withObserve);
   assertEqual(scoredWarn.status, 'warn', 'Interface Review 未記載は warn（任意）');
   assertEqual(scoredWarn.missingRequired.length, 0, '必須欠落なし');
+
+  const innerPanelOnly = `
+## 完成宣言（UI Polish Loop）
+- Evaluation:
+  - コマンド: pnpm run loop:ui
+  - 結果: pass
+- 観察証拠:
+  - 種別: screenshot
+  - パス: \`/tmp/inner-panel.png\`
+  - Read済み: はい（白パネルの角丸は一致）
+- 根拠: \`src/pages/X.tsx\`
+`;
+  const scoredInner = scoreEvalTemplate(
+    template,
+    buildScoreContext({
+      declarationText: innerPanelOnly,
+      parsed: parseCompletionDeclaration(innerPanelOnly),
+      evaluationResult: 'pass',
+      verdictStatus: 'pass',
+    }),
+  );
+  assertEqual(scoredInner.status, 'stop', '内側パネルだけの観察は chrome-compare で stop');
+  assertTrue(scoredInner.missingRequired.includes('chrome-compare'), 'chrome-compare 必須欠落');
 }
 
 {

@@ -11,6 +11,7 @@ alwaysApply: true
 ## 大原則
 
 - ユーザーが「loopして」「UI Polish Loopで」などと明示しなくても、AIがタスク内容から適切なLoopを自動判定する。
+- UI Polish ではページ枠照合が必須。内側パネルだけの観察は完成無効。正本: `loops/goals/ui-polish-gate.md`
 - 作業は「一度コードを書いて終わり」ではなく、Goal / Context / Evaluation / Stop を満たすまで進める。
 - `PROJECT_MEMORY.md`、`.cursor/rules/`、関連コード、差分、検証結果をContextとして扱う。
 - 自動続行できない根拠が出た場合は、曖昧なまま実装せず停止して確認する。
@@ -21,7 +22,7 @@ alwaysApply: true
 |---|---|---|
 | 通常の実装・修正・差分確認 | Main Doctor Loop | `loops/goals/main-doctor.md` |
 | お客さんの問題文、表示不具合、動かない、壊れた、期待と違う | Bug Fix Loop + Regression Guard Loop | `loops/goals/bug-fix.md`, `loops/goals/regression-guard.md` |
-| UI改善、デザイン修正、見本画像、スクショ、余白、ボタン、見た目 | UI Polish Loop + Regression Guard Loop | `loops/goals/ui-polish.md` |
+| UI改善、デザイン修正、見本画像、スクショ、余白、ボタン、見た目 | UI Polish Loop + Regression Guard Loop | `loops/goals/ui-polish-gate.md`, `loops/goals/ui-polish.md` |
 | `check:ssot` の警告、計算再実装、SSoT違反の解消 | SSoT Debt Hunter Loop + Regression Guard Loop | `loops/goals/ssot-debt-hunter.md` |
 | 修正完了後の安全確認、回帰確認、テスト確認 | Regression Guard Loop | `loops/goals/regression-guard.md` |
 
@@ -47,12 +48,14 @@ alwaysApply: true
 
 この場合、コードを書く前に必ず以下を出す。
 
-- 画像から抽出したレイアウト、余白、色、重心、視線誘導、ボタン、画像位置。
+- 画像から抽出したレイアウト、**ページ枠（chrome）**、余白、色、重心、視線誘導、ボタン、画像位置。
+- **negative inventory**: 見本が持たない枠（業務サイドバー、FAB、クリニック名ピル等）を言語化する。
 - 今回使うトークン表（色・余白・角丸・影・文字サイズを5〜15行。既存ルールの値を正とする）。
 - ユーザーが何を「良い」と感じているか。
-- 業務UIかHP/LPかの判定。
-- 完成判定 3〜7個。
-- Evaluation前のIteration順: 面の階層 → タイポ → 主ボタン → 余白・見切れ。
+- 業務UIか HP/LP か、**文書シェル（専用ページ枠）**かの判定。見本が専用シェルなら業務 `DashboardLayout` で包まない。
+- 完成判定 3〜7個。ページ枠一致を含める。
+- Evaluation前のIteration順: **ページ枠** → 面の階層 → タイポ → 主ボタン → 余白・見切れ。
+- 観察は見本キャプチャと実装キャプチャ（ページ全体）のペア。内側パネルだけのスクショでは完成申告しない。
 
 外部ブランドの DESIGN.md は構造・書き方の参考のみ。rootへのコピーや既存トークンの上書きはしない。
 

@@ -1,6 +1,5 @@
-import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { SecurityTextLink } from '@/pages/Security/sections/SecuritySectionBlock'
-import { SecurityDocShell } from '@/pages/Security/sections/SecurityDocShell'
+import { SecurityLayout } from '@/pages/Security/sections/SecurityLayout'
 import { SecurityNetworkTable } from '@/pages/Security/sections/SecurityNetworkTable'
 import {
   SECURITY_NETWORK_INTRO,
@@ -12,16 +11,14 @@ import {
 /** 企業ネットワーク向けの許可ドメイン。面は安全性ページと同じ。 */
 export function SecurityNetworkPage() {
   return (
-    <DashboardLayout title={SECURITY_NETWORK_TITLE} hidePageHeading>
-      <SecurityDocShell>
-        <h1 className="text-2xl font-bold text-slate-900">{SECURITY_NETWORK_TITLE}</h1>
-        <p className="mt-6 leading-[1.7] text-slate-900">{SECURITY_NETWORK_INTRO}</p>
-        <SecurityNetworkTable rows={SECURITY_NETWORK_ROWS} />
-        <p className="mt-6 leading-[1.7] text-slate-600">{SECURITY_NETWORK_NOTE}</p>
-        <p className="mt-8">
-          <SecurityTextLink href="/security" label="安全性に戻る" />
-        </p>
-      </SecurityDocShell>
-    </DashboardLayout>
+    <SecurityLayout>
+      <h1 className="text-2xl font-bold text-slate-900">{SECURITY_NETWORK_TITLE}</h1>
+      <p className="mt-6 leading-[1.7] text-slate-900">{SECURITY_NETWORK_INTRO}</p>
+      <SecurityNetworkTable rows={SECURITY_NETWORK_ROWS} />
+      <p className="mt-6 leading-[1.7] text-slate-600">{SECURITY_NETWORK_NOTE}</p>
+      <p className="mt-8">
+        <SecurityTextLink href="/security" label="安全性に戻る" />
+      </p>
+    </SecurityLayout>
   )
 }

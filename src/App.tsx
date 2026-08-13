@@ -43,6 +43,12 @@ function App() {
         <BrowserRouter>
           <Routes>
             <Route path="/login" element={<LoginPage />} />
+            {import.meta.env.DEV ? (
+              <>
+                <Route path="/__preview__/security" element={<SecurityPage />} />
+                <Route path="/__preview__/security/network" element={<SecurityNetworkPage />} />
+              </>
+            ) : null}
             <Route element={<ProtectedRoute />}>
               <Route element={<MfaGateRoute />}>
                 <Route element={<ClinicShell />}>

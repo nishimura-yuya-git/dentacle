@@ -1,9 +1,15 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
+import { readFileSync } from 'node:fs'
+import { dirname, join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import {
+  SECURITY_FOOTER_COLUMNS,
   SECURITY_INTRO,
   SECURITY_NETWORK_NOTE,
   SECURITY_NETWORK_ROWS,
+  SECURITY_RAIL_BLURBS,
+  SECURITY_RAIL_CTA,
   SECURITY_SECTIONS,
 } from './securityCopy.ts'
 
@@ -22,7 +28,19 @@ function allCopy(): string {
     sectionText,
     SECURITY_NETWORK_NOTE,
     ...SECURITY_NETWORK_ROWS.map((row) => `${row.endpoint} ${row.purpose} ${row.when}`),
+    SECURITY_RAIL_CTA.label,
+    ...SECURITY_RAIL_BLURBS,
+    ...SECURITY_FOOTER_COLUMNS.flatMap((column) => [
+      column.title,
+      ...column.links.map((link) => link.label),
+    ]),
   ].join('\n')
+}
+
+const here = dirname(fileURLToPath(import.meta.url))
+
+function readSecuritySource(relativePath: string): string {
+  return readFileSync(join(here, relativePath), 'utf8')
 }
 
 describe('安全性ページの文言', () => {
@@ -57,5 +75,35 @@ describe('安全性ページの文言', () => {
     assert.equal(/github\.com/.test(joined), false)
     assert.equal(/api\.cursor/.test(joined), false)
     assert.match(SECURITY_NETWORK_NOTE, /サーバー側/)
+  })
+
+  it('Nani の翻訳コピーや装飾英語をレールに置かない', () => {
+    const copy = allCopy()
+    assert.equal(/あたらしく翻訳/.test(copy), false)
+    assert.equal(/端末上に保存/.test(copy), false)
+    assert.equal(SECURITY_RAIL_CTA.label, 'カレンダーへ戻る')
+  })
+})
+
+describe('安全性ページの面', () => {
+  it('業務ダッシュボード枠を使わない', () => {
+    for (const file of ['SecurityPage.tsx', 'SecurityNetworkPage.tsx']) {
+      const source = readSecuritySource(file)
+      assert.equal(source.includes('DashboardLayout'), false, file)
+    }
+  })
+
+  it('298px レールと白パネルを使う', () => {
+    const layout = readSecuritySource('sections/SecurityLayout.tsx')
+    assert.match(layout, /w-\[298px\]/)
+    assert.match(layout, /rounded-\[32px\]/)
+    assert.match(layout, /#F8FBF8/)
+    assert.equal(layout.includes('FeedbackChatLauncher'), false)
+  })
+
+  it('見た目確認用プレビューは開発時だけ公開する', () => {
+    const app = readFileSync(join(here, '../../App.tsx'), 'utf8')
+    assert.match(app, /import\.meta\.env\.DEV/)
+    assert.match(app, /\/__preview__\/security/)
   })
 })

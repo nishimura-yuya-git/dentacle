@@ -1,6 +1,5 @@
 /** 安全性ページの文言 SSoT。Nani の骨格に合わせ、事実はデンタクルの実装に合わせる。 */
 
-export const SECURITY_PAGE_TITLE = '安全性'
 export const SECURITY_HEADING = 'デンタクルの安全性'
 export const SECURITY_NETWORK_TITLE = 'ネットワーク許可設定'
 
@@ -29,12 +28,6 @@ export type SecuritySection = {
 }
 
 export const SECURITY_NETWORK_CALLOUT_TITLE = '企業ネットワークで利用する場合'
-
-export const SECURITY_FOOTER_LINKS: SecurityLink[] = [
-  { href: '/announcements', label: 'お知らせ' },
-  { href: '/feedback', label: 'ご意見・不具合' },
-  { href: '/security/network', label: 'ネットワーク許可設定' },
-]
 
 export const SECURITY_SECTIONS: SecuritySection[] = [
   {
@@ -143,3 +136,48 @@ export const SECURITY_NETWORK_ROWS: NetworkAllowRow[] = [
 
 export const SECURITY_NETWORK_NOTE =
   '自動提案（Cursor）とご意見（GitHub Issue）の外部連携はサーバー側で行います。院内ブラウザの許可リストへ追加する必要はありません。'
+
+/** 左レール（Nani の 298px サイドバー骨格。文言はデンタクル） */
+export const SECURITY_RAIL_CTA: SecurityLink = {
+  href: '/calendar',
+  label: 'カレンダーへ戻る',
+}
+
+export const SECURITY_RAIL_BLURBS = [
+  '患者情報と予約情報は、クリニック単位で保存します。',
+  '画面から見える範囲は、所属クリニックの権限で制限します。',
+] as const
+
+export const SECURITY_RAIL_NAV: SecurityLink[] = [
+  { href: '/security', label: '安全性' },
+  { href: '/security/network', label: 'ネットワーク許可設定' },
+]
+
+export const SECURITY_TAGLINE = '訪問歯科のスケジュールを、安全に扱うためのシステムです。'
+
+export type SecurityFooterColumn = {
+  title: string
+  links: SecurityLink[]
+}
+
+export const SECURITY_FOOTER_COLUMNS: SecurityFooterColumn[] = [
+  {
+    title: 'デンタクル',
+    links: [
+      { href: '/calendar', label: 'カレンダー' },
+      { href: '/mypage', label: 'マイページ' },
+    ],
+  },
+  {
+    title: 'サポート',
+    links: [
+      { href: '/announcements', label: 'お知らせ' },
+      { href: '/feedback', label: 'ご意見・不具合' },
+      { href: '/security', label: '安全性' },
+    ],
+  },
+  {
+    title: '関連',
+    links: [{ href: '/security/network', label: 'ネットワーク許可設定' }],
+  },
+]

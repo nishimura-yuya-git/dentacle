@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 import type { SecurityCallout, SecurityLink, SecuritySection } from '@/pages/Security/securityCopy'
 
 const LINK_CLASS =
-  'inline-flex underline decoration-dotted decoration-current/50 underline-offset-[3px] text-slate-900 transition-colors hover:text-[#008C01]'
+  'inline-flex text-slate-600 underline decoration-dotted decoration-current/50 underline-offset-[3px] transition-colors hover:text-slate-900'
 
 export function SecurityTextLink({ href, label, external }: SecurityLink) {
   if (external) {
@@ -23,7 +23,7 @@ export function SecurityTextLink({ href, label, external }: SecurityLink) {
 function SecurityCalloutBox({ callout }: { callout: SecurityCallout }) {
   return (
     <div className="-mx-1 mt-2 rounded-2xl border border-slate-200 px-4 py-3">
-      <p className="text-[11px] font-bold text-slate-500">{callout.title}</p>
+      <p className="text-[13px] font-bold text-slate-500">{callout.title}</p>
       <p className="mt-1 text-sm leading-[1.7] text-slate-900">{callout.body}</p>
       <p className="mt-2">
         <SecurityTextLink {...callout.link} />
@@ -32,29 +32,39 @@ function SecurityCalloutBox({ callout }: { callout: SecurityCallout }) {
   )
 }
 
+function SecurityLinkGroup({
+  label,
+  links,
+}: {
+  label?: string
+  links: SecurityLink[]
+}) {
+  return (
+    <div className="-mx-1 mt-2 rounded-2xl border border-slate-200 px-4 py-3">
+      {label ? <p className="text-[13px] font-bold text-slate-500">{label}</p> : null}
+      <p className={`${label ? 'mt-1' : ''} flex flex-wrap gap-x-4 gap-y-2`}>
+        {links.map((link) => (
+          <SecurityTextLink key={link.href} {...link} />
+        ))}
+      </p>
+    </div>
+  )
+}
+
 export function SecuritySectionBlock({ section }: { section: SecuritySection }) {
   return (
-    <section className="flex flex-col gap-2.5">
+    <section>
       <h2 className="mb-1 mt-10 border-b border-slate-200 pb-1.5 text-lg font-bold text-slate-900">
         {section.title}
       </h2>
       {section.paragraphs.map((paragraph) => (
-        <p key={paragraph} className="leading-[1.7] text-slate-900">
+        <p key={paragraph} className="mt-2.5 leading-[1.7] text-slate-900">
           {paragraph}
         </p>
       ))}
       {section.callout ? <SecurityCalloutBox callout={section.callout} /> : null}
       {section.links?.length ? (
-        <div className="flex flex-col items-start gap-1">
-          {section.linkGroupLabel ? (
-            <p className="text-[11px] font-bold text-slate-500">{section.linkGroupLabel}</p>
-          ) : null}
-          <p className="flex flex-wrap gap-x-4 gap-y-2">
-            {section.links.map((link) => (
-              <SecurityTextLink key={link.href} {...link} />
-            ))}
-          </p>
-        </div>
+        <SecurityLinkGroup label={section.linkGroupLabel} links={section.links} />
       ) : null}
     </section>
   )

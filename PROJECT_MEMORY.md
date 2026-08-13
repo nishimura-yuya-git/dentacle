@@ -457,7 +457,8 @@ DB上の確定・集計テーブル
 - 閾値の「%」は Cursor モデルプラン相当の使用率を指す。取得元（Dashboard API 等）が公式で読めるかは要確認。読めない場合は自前の月次トークン/金額メータで閾値を再現する。
 - **切替はアプリ側のモデルルーター**で行い、`Agent.create` / `prompt` 前に `model` を選ぶ。Cursor IDE/SDK の limit 時自動フォールバックに任せない（公式にこのカスケード設定はない）。
 - モデル ID はハードコード前に `Cursor.models.list()` で実 ID を確認してから固定する。
-- 関連: §6.10、Cursor SDK Cloud、スケジュール自動提案
+- **手動切替（2026-08-13）**: カスケード実装前は運営画面で 1 モデルを選ぶ。許容と既定は §6.53。`grok-4.6` を本節の帯（0〜50% 等）に組み込まない。
+- 関連: §6.10、Cursor SDK Cloud、スケジュール自動提案、§6.53
 
 ### 6.15 ログインIP・認証監査（2026-08-08 決定 / 2026-08-12 改定）
 
@@ -721,7 +722,8 @@ DB上の確定・集計テーブル
 - アプリ側入口: `server/cursor/*`（設定・runtime・`runCursorAgentPrompt`）と Vercel / 開発用 API（`api/cursor/health.ts`、割付は `api/schedule/propose.ts`）。
 - **Private のあいだ** `CURSOR_RUNTIME=local`。本番でお客さんがボタンを押すときは **Cloud**（§6.10）。Private でも GitHub 連携があれば Cloud は使える（公開必須ではない）。
 - Cloud 用リポジトリ URL の正: `https://github.com/nishimura-yuya-git/dentacle`（`CURSOR_CLOUD_REPO_URL`）。`CURSOR_*` と Supabase 特権キーはフロント（`VITE_`）に出さない。
-- ベースモデル ID の既定は `grok-4.5`（§6.14）。実 ID は `Cursor.models.list()` で確認してから固定する。
+- ベースモデル ID の既定は `grok-4.5`（§6.14 / §6.53）。実 ID は `Cursor.models.list()` で確認してから固定する。
+- 手動切替の許容 ID は §6.53（`grok-4.5` / `grok-4.6` / `composer-2.5`）。環境変数 `CURSOR_MODEL_ID` はフォールバック。
 - **`GET /api/cursor/health`**: `Authorization: Bearer <CURSOR_HEALTH_SECRET>` 必須。未設定時は常に 401。公開 JSON は `ok` / `service` / `ready` のみ。設定エラー詳細はサーバーログのみ（クライアントに `err.message` を返さない）。
 - CLI 用の詳細（`describeCursorEnv`）と HTTP 公開 DTO（`healthGate.ts`）は分離する。`localCwd` / `hasApiKey` / `modelId` / 環境変数名入り note を無認証ヘルスで返さない（§10.10）。
 - **本番（Vercel）**: `CURSOR_HEALTH_SECRET` を Environment Variables にローカルと同名で設定する（`VITE_` は付けない）。値自体は MEMORY / Git に書かない。あわせて `CURSOR_API_KEY` 等のサーバー専用 `CURSOR_*` も本番へ入れる。
@@ -745,7 +747,8 @@ DB上の確定・集計テーブル
 - **料金表示は円**: `USD_TO_JPY = 160`（`aiModelPricing.ts`）。確定課金と参照概算を円換算。実請求の正は Cursor 課金。
 - **絞り込み**: 「AI利用状況」見出し右端（`actions`）にクリニック・開始日・終了日を**横1行**で置く（`DatePicker inline`・`flex-nowrap`。§10.12）。既定は直近30日。
 - **合計**: 同行の `/icon/coin.png` アイコン → 連絡者リストと同型の近傍ポップオーバー（`useAnchoredPopover`）。中身は**料金合計のみ**（確定＋参照概算の合算円）。
-- 関連: `ProposalsPage.tsx`, `useAiUsageDashboard.tsx`, `AiUsageFilters.tsx`, `AiUsageTotals.tsx`, `public/icon/coin.png`, §6.14, §6.29, §6.36, §6.37, §6.46, §10.12
+- **モデル切替（2026-08-13）**: 全院共通。許容・既定は §6.53。自動カスケードではない。
+- 関連: `ProposalsPage.tsx`, `useAiUsageDashboard.tsx`, `AiUsageFilters.tsx`, `AiUsageTotals.tsx`, `AiUsageModelSwitcher.tsx`, `public/icon/coin.png`, §6.14, §6.29, §6.36, §6.37, §6.46, §6.53, §10.12
 
 ### 6.39 自動提案スナップショット（住所必須・距離・頻度）（2026-08-11 決定）
 
@@ -916,6 +919,18 @@ DB上の確定・集計テーブル
 - **S-07**: 外部DB接続の **SSL Enforcement を ON**（`supabase ssl-enforcement update --enable-db-ssl-enforcement --experimental`）。
 - **S-09（未完）**: PITR は Pro 以上の有料アドオンで、現状コンピュートが Micro のため **Small 以上への変更が前提**。課金承認後に `pitr_7` 等を有効化する（勝手に課金変更しない）。
 - 関連: Advisors、§6.40、§7
+
+### 6.53 運営モデル切替（Grok 4.6・2026-08-13 決定）
+
+自動提案の実行モデルは運営画面で全院共通に切り替える。§6.14 の自動カスケードは未実装のまま。
+
+- **許容 ID**: `grok-4.5` / `grok-4.6` / `composer-2.5`
+- **既定・おすすめ**: `grok-4.5`（未切替・行が読めない場合もこれ）
+- Composer 2.5 は残す。既定を 4.6 に上げない。4.5 を外さない。
+- `grok-4.6` は手動切替の選択肢。カスケード帯（0〜50% 等）にはまだ載せない。
+- 選択肢の正: `src/config/aiModelOptions.ts`。DB 制約: `platform_ai_settings.cursor_model_id`
+- 環境変数 `CURSOR_MODEL_ID` はフォールバック既定（`grok-4.5`）。runtime の正は運営切替。
+- 関連: `AiUsageModelSwitcher.tsx`, `loadPlatformCursorModel.ts`, `aiModelPricing.ts`, §6.14, §6.36, §6.38
 
 ---
 
@@ -1306,7 +1321,7 @@ AIは作業開始時に以下を確認する。
 □ 評価契約・失敗分類・敵対シナリオは §2.13（Future AGI 製品ではなく薄い型だけ。LLM-as-judge を司法の主にしない）を守った
 □ 自動提案・ルート最適化の裏処理なら §6.10 / §6.11 / §6.12（Cursor SDK・開発local/本番Cloud・DB直結禁止・Adapter・HTTP MCP・self-hosted当面不要）を守った
 □ 精度・導入ナレッジなら §6.13（構造化制約が正・電話確認から昇格・自然文の無確認ハード制約化禁止）を守った
-□ SDK モデル選択なら §6.14（Grok 4.5 → 50%超 Composer 2.5 → 100% GPT 5.6 Sol。自前ルーター。IDは list 確認）を守った
+□ SDK モデル選択なら §6.14 / §6.53（カスケードは後続。手動切替は grok-4.5 / grok-4.6 / composer-2.5。既定は grok-4.5。IDは list 確認）を守った
 □ 認証・監査なら §6.15（サーバー側IP＝回線出口・clinic/memberships・端末UA要約・運営のみ `/auth-audit`・地図は件数をチップ行右端・九州は zoomSelector・在席はハートビート・IPブロックは回線共有前提文言・運営バイパス・§10.27/§10.28）を守った
 □ ルート距離なら §6.16 / §6.39（`travelDistance.ts` で行列、生住所非渡与、住所必須、地図鍵を渡さない）を守った
 □ サービス名・画面コピーなら §6.17（対外名はデンタクル。内部識別子は Detacle。装飾英語見出しを増やさない。SEOはサブタイトル側）を守った
@@ -1415,4 +1430,5 @@ AIは作業開始時に以下を確認する。
 - `2026-08-12`: 未反映4件を整理。ログイン監査2件は既反映を確認。ハーネス差分は §2.5 / §2.14 で充足。HB差分で §2.1 業務コア／共通判定のパスを固定。ログイン監査ナビアイコンを §6.33 に追記（`/project-memory-learn`）
 - `2026-08-12`: ログイン監査の地図UI・Select切替・地方ズーム・clinic紐付け・IPブロックを §6.15 / §7 / §10.27 / §12 に追記（`/project-memory-learn`）
 - `2026-08-12`: 在席ハートビート・件数テキスト配置・九州ズーム再発防止・IP回線共有文言を §6.15 / §7 / §10.28 / §12 に追記（`/project-memory-learn`）
+- `2026-08-13`: 運営モデル切替に grok-4.6 を追加（既定は grok-4.5、カスケード未変更）を §6.14 / §6.36 / §6.38 / §6.53 / §12 に追記（`/project-memory-learn`）
 

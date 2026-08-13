@@ -1,22 +1,19 @@
-/** 安全性ページ先頭の確認マーク。Lucide は使わない。 */
+/** Nani 先頭アイコン相当。3D素材は使わず、角丸の確認マークにする。Lucide 禁止。 */
 export function SecurityMark() {
   return (
-    <svg
-      width="96"
-      height="96"
-      viewBox="0 0 96 96"
-      fill="none"
+    <div
+      className="mx-auto mt-3 flex h-24 w-24 items-center justify-center rounded-[22px] bg-gradient-to-b from-[#2DB84D] to-[#008C01] shadow-[0_10px_24px_rgba(0,140,1,0.28)]"
       aria-hidden="true"
-      className="mx-auto block"
     >
-      <circle cx="48" cy="48" r="46" fill="#F0F9F0" stroke="#008C01" strokeWidth="2" />
-      <path
-        d="M30 49.5 42 61.5 67 35.5"
-        stroke="#008C01"
-        strokeWidth="5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
+      <svg width="52" height="52" viewBox="0 0 52 52" fill="none">
+        <path
+          d="M10 27.5 21.5 39 42 16"
+          stroke="white"
+          strokeWidth="6"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    </div>
   )
 }

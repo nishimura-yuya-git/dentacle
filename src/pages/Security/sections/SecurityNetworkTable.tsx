@@ -2,8 +2,8 @@ import type { NetworkAllowRow } from '@/pages/Security/securityCopy'
 
 export function SecurityNetworkTable({ rows }: { rows: NetworkAllowRow[] }) {
   return (
-    <div className="mt-6 overflow-x-auto rounded-2xl border border-slate-100 bg-white">
-      <table className="min-w-full text-left text-sm">
+    <div className="mt-6 overflow-x-auto rounded-2xl border border-slate-200">
+      <table className="min-w-full text-left text-[15px]">
         <thead className="bg-slate-50 text-xs font-bold text-slate-500">
           <tr>
             <th className="px-4 py-3">接続先</th>

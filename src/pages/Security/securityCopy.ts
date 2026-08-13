@@ -13,13 +13,28 @@ export type SecurityLink = {
   external?: boolean
 }
 
+export type SecurityCallout = {
+  title: string
+  body: string
+  link: SecurityLink
+}
+
 export type SecuritySection = {
   id: string
   title: string
   paragraphs: string[]
-  note?: string
+  callout?: SecurityCallout
+  linkGroupLabel?: string
   links?: SecurityLink[]
 }
+
+export const SECURITY_NETWORK_CALLOUT_TITLE = '企業ネットワークで利用する場合'
+
+export const SECURITY_FOOTER_LINKS: SecurityLink[] = [
+  { href: '/announcements', label: 'お知らせ' },
+  { href: '/feedback', label: 'ご意見・不具合' },
+  { href: '/security/network', label: 'ネットワーク許可設定' },
+]
 
 export const SECURITY_SECTIONS: SecuritySection[] = [
   {
@@ -40,8 +55,11 @@ export const SECURITY_SECTIONS: SecuritySection[] = [
       '画面とサーバーの通信は HTTPS で暗号化します。',
       'データベースは Supabase を使い、保存時の暗号化と外部接続の SSL 強制を有効にしています。',
     ],
-    note: 'VPN、プロキシ、URL フィルタリング環境で遮断される場合は、セキュリティ機能を切らず、IT 担当者向けの許可設定を確認してください。',
-    links: [{ href: '/security/network', label: 'ネットワーク許可設定を見る' }],
+    callout: {
+      title: SECURITY_NETWORK_CALLOUT_TITLE,
+      body: 'VPN、プロキシ、EDR、URL フィルタリング環境でデンタクルを利用する場合は、IT 担当者向けのネットワーク許可設定をご確認ください。',
+      link: { href: '/security/network', label: 'ネットワーク許可設定を見る' },
+    },
   },
   {
     id: 'ops',
@@ -60,6 +78,7 @@ export const SECURITY_SECTIONS: SecuritySection[] = [
       '送信内容は割付に必要な識別子と制約に限定します。氏名・電話・生住所は含めません。',
       '処理の過程で、利用先のプラットフォームに一時的な記録が残ることがあります。',
     ],
+    linkGroupLabel: '利用先の方針',
     links: [
       {
         href: 'https://cursor.com/privacy',

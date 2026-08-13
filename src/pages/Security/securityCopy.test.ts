@@ -11,7 +11,10 @@ function allCopy(): string {
   const sectionText = SECURITY_SECTIONS.flatMap((section) => [
     section.title,
     ...section.paragraphs,
-    section.note ?? '',
+    section.callout?.title ?? '',
+    section.callout?.body ?? '',
+    section.callout?.link.label ?? '',
+    section.linkGroupLabel ?? '',
     ...(section.links ?? []).map((link) => link.label),
   ]).join('\n')
   return [
@@ -39,6 +42,12 @@ describe('安全性ページの文言', () => {
     assert.match(copy, /Authenticator/)
     assert.match(copy, /氏名・電話番号・生住所を AI へ送りません/)
     assert.match(copy, /Cursor SDK/)
+  })
+
+  it('企業ネットワークの囲み見出しを持つ', () => {
+    const infra = SECURITY_SECTIONS.find((section) => section.id === 'infra')
+    assert.equal(infra?.callout?.title, '企業ネットワークで利用する場合')
+    assert.match(infra?.callout?.body ?? '', /EDR/)
   })
 
   it('院内許可リストはブラウザが直接話す先だけにする', () => {

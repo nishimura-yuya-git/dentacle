@@ -17,6 +17,7 @@ import { OperationsTracesPage } from '@/pages/Operations/OperationsTracesPage'
 import { AuthAuditPage } from '@/pages/AuthAudit/AuthAuditPage'
 import { PatientImportPage } from '@/pages/Import/PatientImportPage'
 import { AiUsagePage } from '@/pages/Admin/AiUsagePage'
+import { FeedbackPage } from '@/pages/Feedback/FeedbackPage'
 import {
   ContractInfoPage,
   ContractorInfoPage,
@@ -61,6 +62,7 @@ function App() {
                   </Route>
                   <Route path="/contacts" element={<ContactsPage />} />
                   <Route path="/operations" element={<OperationsTracesPage />} />
+                  <Route path="/feedback" element={<FeedbackPage />} />
                 </Route>
               </Route>
             </Route>

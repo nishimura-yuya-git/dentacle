@@ -1,7 +1,10 @@
 import assert from 'node:assert/strict'
 import {
   DEFAULT_PLATFORM_CURSOR_MODEL_ID,
+  GROK_VERSION_SELECT_OPTIONS,
   PLATFORM_CURSOR_MODEL_IDS,
+  grokVersionValue,
+  isGrokPlatformCursorModelId,
   isPlatformCursorModelId,
   normalizePlatformCursorModelId,
 } from './aiModelOptions.ts'
@@ -18,5 +21,21 @@ assert.equal(isPlatformCursorModelId('unknown'), false)
 assert.equal(normalizePlatformCursorModelId('grok-4.6'), 'grok-4.6')
 assert.equal(normalizePlatformCursorModelId('invalid'), 'grok-4.5')
 assert.equal(normalizePlatformCursorModelId(null), 'grok-4.5')
+
+assert.equal(isGrokPlatformCursorModelId('grok-4.5'), true)
+assert.equal(isGrokPlatformCursorModelId('grok-4.6'), true)
+assert.equal(isGrokPlatformCursorModelId('composer-2.5'), false)
+assert.deepEqual(
+  GROK_VERSION_SELECT_OPTIONS.map((option) => option.value),
+  ['grok-4.5', 'grok-4.6'],
+)
+assert.equal(GROK_VERSION_SELECT_OPTIONS[0]?.label, '4.5（おすすめ）')
+assert.equal(GROK_VERSION_SELECT_OPTIONS[1]?.label, '4.6')
+assert.equal(
+  GROK_VERSION_SELECT_OPTIONS.every((option) => !option.label.includes('Grok')),
+  true,
+)
+assert.equal(grokVersionValue('grok-4.6'), 'grok-4.6')
+assert.equal(grokVersionValue('composer-2.5'), 'grok-4.5')
 
 console.log('src/config/aiModelOptions.test.ts: ok')

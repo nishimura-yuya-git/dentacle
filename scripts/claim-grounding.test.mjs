@@ -5,6 +5,7 @@
  */
 import {
   evaluateClaimGrounding,
+  hasUnresolvedObserveProblems,
   parseCompletionDeclaration,
   resolveEvidencePaths,
 } from './lib/claim-grounding.mjs';
@@ -98,9 +99,11 @@ function assertTrue(value, message) {
   - 種別: screenshot
   - パス: \`/opt/cursor/artifacts/screenshots/ui-polish.png\`
   - Read済み: はい（主ボタン余白が不足、面階層は一致）
+- 観察で残した阻害: なし
 - Stop非該当の根拠: \`src/pages/X.tsx\`
 `);
   assertEqual(parsed.hasObserveEvidence, true, '観察証拠を検出');
+  assertEqual(parsed.hasObserveBlockersCleared, true, '観察阻害なしを検出');
   assertEqual(parsed.observeKind, 'screenshot', '種別 screenshot');
   assertTrue(
     parsed.observePaths.includes('/opt/cursor/artifacts/screenshots/ui-polish.png'),
@@ -122,12 +125,82 @@ function assertTrue(value, message) {
   - 種別: snapshot
   - パス: \`browser_snapshot:home\`
   - Read済み: はい（見出しと CTA の階層が一致）
+- 観察で残した阻害: なし
 - Stop非該当の根拠: PROJECT_MEMORY.md §2.9 と差分 \`src/pages/Home.tsx\`
 `,
     goal: 'ui-polish',
     changedFiles: ['src/pages/Home.tsx'],
   });
   assertEqual(result.status, 'pass', '観察証拠ありの UI Polish は pass');
+}
+
+{
+  // 期待値根拠: ご意見チャット観察で見出し二重・FAB衝突を書いて完成にした失敗
+  const result = evaluateClaimGrounding({
+    declarationText: `
+## 完成宣言（UI Polish Loop）
+- Evaluation:
+  - コマンド: pnpm run loop:ui
+  - 結果: pass
+- Regression Guard: pass
+- 観察証拠:
+  - 種別: screenshot
+  - パス: \`/tmp/feedback.png\`
+  - Read済み: はい（見出しが二重で、FABが送信に重なる）
+- 観察で残した阻害: なし
+- Stop非該当の根拠: \`src/pages/Feedback/FeedbackPage.tsx\`
+`,
+    goal: 'ui-polish',
+  });
+  assertEqual(result.status, 'stop', '観察に未解消の重複・衝突を残した完成は stop');
+  assertTrue(result.missing.includes('observe-blockers-cleared'), 'observe-blockers-cleared 欠落');
+}
+
+{
+  const result = evaluateClaimGrounding({
+    declarationText: `
+## 完成宣言（UI Polish Loop）
+- Evaluation:
+  - コマンド: pnpm run loop:ui
+  - 結果: pass
+- Regression Guard: pass
+- 観察証拠:
+  - 種別: screenshot
+  - パス: \`/tmp/feedback.png\`
+  - Read済み: はい（見出し重複は解消。FAB衝突なし）
+- 観察で残した阻害: なし
+- Stop非該当の根拠: \`src/pages/Feedback/FeedbackPage.tsx\`
+`,
+    goal: 'ui-polish',
+  });
+  assertEqual(result.status, 'pass', '阻害を解消した観察は pass');
+}
+
+{
+  assertEqual(hasUnresolvedObserveProblems('見出しが二重で、FABが送信に重なる'), true, '未解消の重複・重なり');
+  assertEqual(hasUnresolvedObserveProblems('見出し重複は解消。FAB衝突なし'), false, '解消済みは未解消ではない');
+  assertEqual(hasUnresolvedObserveProblems('FAB衝突なし'), false, '衝突なしは解消表現');
+  assertEqual(hasUnresolvedObserveProblems('余白は一致、ボタン階層を確認'), false, '阻害語なし');
+}
+
+{
+  const result = evaluateClaimGrounding({
+    declarationText: `
+## 完成宣言（UI Polish Loop）
+- Evaluation:
+  - コマンド: pnpm run loop:ui
+  - 結果: pass
+- Regression Guard: pass
+- 観察証拠:
+  - 種別: screenshot
+  - パス: \`/tmp/ui.png\`
+  - Read済み: はい（余白は一致、ボタン階層を確認）
+- Stop非該当の根拠: \`src/pages/X.tsx\`
+`,
+    goal: 'ui-polish',
+  });
+  assertEqual(result.status, 'stop', '観察阻害欄なしは stop');
+  assertTrue(result.missing.includes('observe-blockers-cleared'), '観察阻害欄欠落');
 }
 
 {

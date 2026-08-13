@@ -26,5 +26,6 @@ pnpm run loop:evaluator -- --json
 
 - 1 template = 1 goal（または 1 完成ゲート）
 - criteria は「自己申告」ではなく、既存パーサが取れる信号に紐づける
+- UI Polish は `observe-evidence` と `observe-blockers-cleared` が必須。観察で重複・衝突を書いたまま完成にしない
 - 新しい測り方を増やすときは、先にテスト期待値の根拠（goals / MEMORY）を書く
 - Future AGI クラウドや `ai-evaluation` SDK への依存は禁止

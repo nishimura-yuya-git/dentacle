@@ -144,8 +144,11 @@ function printUiPolishGuide({ evaluation }) {
   console.log('- 見本画像の再現とプロジェクト禁止事項が衝突する場合は停止して確認する');
   console.log('- 完成ゲート: 「実装した」だけでは完成にしない（loops/goals/ui-polish.md）');
   console.log('- 判定が stop / 完成条件未達なら差し戻し（完成報告禁止）。maxIterations=3');
-  console.log('- Iteration順: 面の階層 → タイポ → 主ボタン → 余白・見切れ');
+  console.log('- Iteration順: 面の階層 → タイポ → 主ボタン → 余白・見切れ → 情報の重複 → FAB衝突');
   console.log('- 判定ノードで Interface Review: /better-interface quick|full（.cursor/skills/better-interface）');
+  console.log('- Overlay / Chat 検査: 見出し1箇所、注意の非重複、主ボタン階層、FABが送信を覆わない、専用ページでは入口FABなし');
+  console.log('- 観察で残した阻害: なし（未解消の重複・重なりを書いたまま完成禁止）');
+  console.log('- 参考思想: Nani!? は思想だけ（楽なUI・説明に頼らない・操作をブロックしない）。見た目はコピーしない');
   console.log('- UI細部レシピ: .cursor/skills/better-ui（同心円角丸・optical・motion restraint）');
   console.log('- 図: loops/graphs/ui-polish.mmd');
 
@@ -154,6 +157,8 @@ function printUiPolishGuide({ evaluation }) {
   console.log('- 主要操作や主情報が1秒で分かる');
   console.log('- 見本画像と同じ余白・重心・視線誘導になっている');
   console.log('- モバイル/PCで見切れや横スクロール事故がない');
+  console.log('- 見出しと注意文が二重になっていない');
+  console.log('- FABが送信・入力を覆っていない。専用ページでは入口FABを出さない');
   console.log('- 画像やキャラクターの重要要素が見えている');
   console.log('- 日本語文言だけで意味が伝わる');
   console.log('- 禁止アイコンライブラリや装飾英語を追加していない');

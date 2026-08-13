@@ -31,6 +31,12 @@
       "signals": ["hasObserveEvidence"]
     },
     {
+      "id": "observe-blockers-cleared",
+      "label": "観察で残した阻害がなし（重複・FAB衝突などを残して完成にしない）",
+      "required": true,
+      "signals": ["hasObserveBlockersCleared"]
+    },
+    {
       "id": "interface-review",
       "label": "Interface Review（better-interface）に言及している",
       "required": false,

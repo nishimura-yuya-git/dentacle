@@ -24,7 +24,33 @@ const PNPM_RE = /pnpm\s+run\s+[\w:-]+/;
 const OBSERVE_KIND_RE = /(?:種別|type)\s*[:：]\s*(snapshot|screenshot)/i;
 const OBSERVE_PATH_LINE_RE = /(?:パス|path)\s*[:：]\s*(.+)/i;
 const OBSERVE_READ_RE = /(?:Read済み|read(?:\s*済み)?|read)\s*[:：]\s*(はい|yes|true)\s*(.*)/i;
+const OBSERVE_BLOCKER_LINE_RE = /観察で残した阻害\s*[:：]\s*(.+)/i;
+const CLEAR_BLOCKER_RE = /^(なし|none|n\/a|-|無し)([。．.]*)?$/i;
+const UNRESOLVED_PROBLEM_RE = /重複|重なり|隠蔽|見切れ|二重|衝突/;
+const PROBLEM_RESOLVED_RE =
+  /解消|修正済|直した|なくなった|残っていない|阻害なし|衝突なし|重なりなし|重複なし|見切れなし|隠蔽なし/;
 const PLACEHOLDER_RE = /^(…|\.\.\.|なし|n\/a|-)?$/i;
+
+/**
+ * 観察差分に未解消の阻害が残っているか。
+ * 「重複は解消した」は未解消ではない。
+ * @param {string} note
+ */
+export function hasUnresolvedObserveProblems(note) {
+  const text = String(note ?? '').trim();
+  if (!text) return false;
+  if (!UNRESOLVED_PROBLEM_RE.test(text)) return false;
+  return !PROBLEM_RESOLVED_RE.test(text);
+}
+
+/**
+ * 「観察で残した阻害」欄が完成してよいか。
+ * @param {string | null} raw
+ */
+export function isObserveBlockersCleared(raw) {
+  const text = String(raw ?? '').trim();
+  return Boolean(text) && CLEAR_BLOCKER_RE.test(text);
+}
 
 /**
  * @param {string} value
@@ -50,6 +76,7 @@ export function parseCompletionDeclaration(text) {
   const observePaths = [];
   let observeReadConfirmed = false;
   let observeReadNote = '';
+  let observeBlockersRaw = null;
   let inObserveSection = false;
 
   for (const line of lines) {
@@ -76,6 +103,11 @@ export function parseCompletionDeclaration(text) {
     const evidenceMatch = line.match(EVIDENCE_LINE_RE);
     if (evidenceMatch) {
       evidenceNotes.push(evidenceMatch[1].trim());
+    }
+
+    const blockerMatch = line.match(OBSERVE_BLOCKER_LINE_RE);
+    if (blockerMatch) {
+      observeBlockersRaw = blockerMatch[1].trim();
     }
 
     for (const pathMatch of line.matchAll(PATH_RE)) {
@@ -124,6 +156,16 @@ export function parseCompletionDeclaration(text) {
   const hasObserveEvidence = Boolean(
     observeKind && uniqueObservePaths.length > 0 && observeReadConfirmed && isMeaningful(observeReadNote),
   );
+  const blockersText = String(observeBlockersRaw ?? '').trim();
+  const hasObserveBlockersField = Boolean(
+    observeBlockersRaw != null && blockersText && blockersText !== '…' && blockersText !== '...',
+  );
+  const observeHasUnresolvedProblems = hasUnresolvedObserveProblems(observeReadNote);
+  const hasObserveBlockersCleared = Boolean(
+    hasObserveBlockersField &&
+      isObserveBlockersCleared(observeBlockersRaw) &&
+      !observeHasUnresolvedProblems,
+  );
 
   return {
     evaluationCommand,
@@ -134,6 +176,10 @@ export function parseCompletionDeclaration(text) {
     observePaths: uniqueObservePaths,
     observeReadConfirmed,
     observeReadNote,
+    observeBlockersRaw,
+    hasObserveBlockersField,
+    observeHasUnresolvedProblems,
+    hasObserveBlockersCleared,
     hasObserveEvidence,
     hasEvaluationCommand: Boolean(
       (evaluationCommand && evaluationCommand.length > 1 && evaluationCommand !== '…') || hasPnpmCommand,
@@ -247,6 +293,9 @@ export function evaluateClaimGrounding({
   if (needsObserve && !parsed.hasObserveEvidence) {
     missing.push('observe-evidence');
   }
+  if (needsObserve && parsed.hasObserveEvidence && !parsed.hasObserveBlockersCleared) {
+    missing.push('observe-blockers-cleared');
+  }
 
   const evidenceResolution = resolveEvidencePaths(parsed.evidencePaths, { changedFiles });
   const badPaths = evidenceResolution.filter((item) => !item.ok);
@@ -275,6 +324,19 @@ export function evaluateClaimGrounding({
         'UI Polish 完成宣言に観察証拠がありません（Observe Loop: キャプチャ／snapshot を Read するまで完成にしない）。',
       nextAction:
         '観察証拠に 種別（snapshot|screenshot）・パス・Read済み: はい（差分1行） を記入してください。',
+      parsed,
+      missing,
+      evidenceResolution,
+    };
+  }
+
+  if (missing.includes('observe-blockers-cleared')) {
+    return {
+      status: 'stop',
+      reason:
+        '観察で見出し重複・説明重複・FAB衝突などの阻害が残っている、または「観察で残した阻害: なし」が無い。',
+      nextAction:
+        '阻害を直してから再観察する。完成時は「観察で残した阻害: なし」。Read差分に未解消の重複・重なりを残したまま なし と書かない。',
       parsed,
       missing,
       evidenceResolution,

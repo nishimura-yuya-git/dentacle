@@ -103,6 +103,7 @@ function assertTrue(value, message) {
   - 種別: screenshot
   - パス: \`/tmp/ui.png\`
   - Read済み: はい（余白は一致、ボタン階層を確認）
+- 観察で残した阻害: なし
 - 根拠: \`src/pages/X.tsx\`
 `;
   const withObserve = buildScoreContext({
@@ -114,6 +115,34 @@ function assertTrue(value, message) {
   const scoredWarn = scoreEvalTemplate(template, withObserve);
   assertEqual(scoredWarn.status, 'warn', 'Interface Review 未記載は warn（任意）');
   assertEqual(scoredWarn.missingRequired.length, 0, '必須欠落なし');
+}
+
+{
+  const withoutBlockersText = `
+## 完成宣言（UI Polish Loop）
+- Evaluation:
+  - コマンド: pnpm run loop:ui
+  - 結果: pass
+- 観察証拠:
+  - 種別: screenshot
+  - パス: \`/tmp/ui.png\`
+  - Read済み: はい（余白は一致、ボタン階層を確認）
+- 根拠: \`src/pages/X.tsx\`
+`;
+  const scoredNoBlockers = scoreEvalTemplate(
+    loadEvalTemplate('loops/evals/ui-polish.completion.json'),
+    buildScoreContext({
+      declarationText: withoutBlockersText,
+      parsed: parseCompletionDeclaration(withoutBlockersText),
+      evaluationResult: 'pass',
+      verdictStatus: 'pass',
+    }),
+  );
+  assertEqual(scoredNoBlockers.status, 'stop', '観察阻害欄なしは stop');
+  assertTrue(
+    scoredNoBlockers.missingRequired.includes('observe-blockers-cleared'),
+    'observe-blockers-cleared 必須欠落',
+  );
 }
 
 {

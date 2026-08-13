@@ -31,6 +31,13 @@ assertEqual(classifyText('Hard Boundary を検知しました'), 'hard-boundary'
 assertEqual(classifyText('変更契約が pending のまま編集'), 'contract-gate', '契約文言');
 assertEqual(classifyText('SSoT再実装の疑い'), 'ssot-debt', 'SSoT 文言');
 assertEqual(classifyText('同じ失敗シグネチャが 2 回連続'), 'no-progress', 'No progress 文言');
+assertEqual(
+  classifyText(
+    '観察で見出し重複・説明重複・FAB衝突などの阻害が残っている、または「観察で残した阻害: なし」が無い。',
+  ),
+  'claim-grounding',
+  '観察阻害は claim-grounding',
+);
 
 {
   const finding = classifyFinding({

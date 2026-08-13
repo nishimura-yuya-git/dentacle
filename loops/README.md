@@ -42,7 +42,7 @@
 - Harness が “done” と言っても未検証。Completion check が通るまで完成にしない。
 - 正式適用:
   - Bug Fix: `loops/goals/bug-fix.md` / `loops/graphs/bug-fix.mmd`（`maxIterations: 3`）
-  - UI Polish: `loops/goals/ui-polish.md` / `loops/graphs/ui-polish.mmd`（`maxIterations: 3`）。判定ノードで `/better-interface`（`.cursor/skills/better-interface`）を回す
+  - UI Polish: `loops/goals/ui-polish.md` / `loops/graphs/ui-polish.mmd`（`maxIterations: 3`）。判定ノードで `/better-interface` と Overlay / Chat 検査。観察阻害未解消は完成禁止
   - Regression Guard: `loops/goals/regression-guard.md` / `loops/graphs/regression-guard.mmd`（`maxIterations: 2`）
 - 各 Graph は差し戻し条件と完成/通過宣言フォーマットを持つ。
 
@@ -68,7 +68,7 @@
 
 制御 Graph（`loops/graphs/*.mmd`）とは別に、共有メモリとグラウンディングを薄く持つ。
 
-- Claim Grounding: 完成宣言（`state/completion-declaration.md`）の主張を根拠と照合。無ければ skip。UI Polish は観察証拠（snapshot|screenshot を Read した記録）必須。
+- Claim Grounding: 完成宣言（`state/completion-declaration.md`）の主張を根拠と照合。無ければ skip。UI Polish は観察証拠（snapshot|screenshot を Read した記録）必須。観察阻害未解消も `stop`。
 - Working Graph: `SCREEN/API/TABLE/SSOT/SYMPTOM/DOC` と `touches/depends_on/reported_in` を `state/working-graph.json` に残す。
 - 全文書 NER・グラフDB・Claude 自動抽出は行わない。
 - コマンド: `pnpm run working-graph` / `pnpm run test:claim-grounding` / `pnpm run test:working-graph`

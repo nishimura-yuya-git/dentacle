@@ -105,6 +105,7 @@ Loop は「問題を解くための実行単位」である。
 通常実装・差分確認 → Main Doctor Loop
 不具合・問題文 → Bug Fix Loop + Regression Guard
 UI改善・画像・スクショ → UI Polish Loop + Regression Guard
+新規 FAB / オーバーレイ / アプリ内チャット → Main Doctor + UI Polish + Regression Guard
 SSoT警告 → SSoT Debt Hunter Loop + Regression Guard
 修正後確認 → Regression Guard Loop
 ```
@@ -174,6 +175,8 @@ UI Polish Loop は、一発出しのUI品質を上げるためのLoopである�
 
 特に重視するのは「コードを書く前に画像から抽出し、実装可能なトークン表まで落とす」こと。外部ブランドの DESIGN.md は置き換えず、書き方（トークン・定型・Iteration）だけ借りる。正本は `ui-design.mdc` / `ui-language.mdc` / `ui-design-hp-lp.mdc`。
 
+[Nani翻訳](https://nani.now/ja/blog/developing-nani-ai-translator) も **思想だけ**（desktop-harness と同じ扱い）。すごそうなUIより楽なUI、説明文に頼らない、操作をブロックしない、脇役が主役を奪わない。見た目・トークン・ブランドはコピーしない。
+
 抽出する内容:
 
 - レイアウト構造
@@ -188,7 +191,7 @@ UI Polish Loop は、一発出しのUI品質を上げるためのLoopである�
 - 禁止事項との衝突
 - 今回使うトークン表（5〜15行。canvas / surface / elevated、ink階層、primaryの役割など）
 
-完成判定も実装前に作る。Evaluation前は次の順で小さく回す: 面の階層 → タイポ → 主ボタン → 余白・見切れ。
+完成判定も実装前に作る。Evaluation前は次の順で小さく回す: 面の階層 → タイポ → 主ボタン → 余白・見切れ → 情報の重複 → FAB衝突。
 
 例:
 
@@ -196,7 +199,8 @@ UI Polish Loop は、一発出しのUI品質を上げるためのLoopである�
 主要操作が1秒で分かる
 見本画像と同じ余白・重心・視線誘導になっている
 トークン表どおりの面階層・文字階層になっている
-モバイルで見切れない
+モバイルで見切れない。FABが送信を覆わない
+見出しと注意文が二重になっていない
 日本語文言だけで意味が伝わる
 禁止アイコンライブラリを使っていない
 ```
@@ -212,6 +216,22 @@ UI Polish Loop は、一発出しのUI品質を上げるためのLoopである�
 | コマンド | `.cursor/commands/better-interface.md` | `/better-interface` |
 
 ドメインの色・文言・レイアウトの正本は既存 rules のまま。OKLCH強制移行・英語 writing の丸写し・禁止アイコンは取り込まない。出典: [jakubkrehel/skills](https://github.com/jakubkrehel/skills)（MIT）。
+
+### 7.2 Overlay / Chat 検査（Nani 思想の機械化）
+
+FAB・パネル・アプリ内チャット・専用ページでは、観察で次を書いたまま完成にしない。
+
+| 検査 | 失敗の例 |
+|---|---|
+| 見出しは1箇所 | レイアウト h1 とパネル h2 が同じ |
+| 注意を二重にしない | 見出し下と案内バブルが同じ注意 |
+| 主ボタン階層 | 「新しいご意見」がゴーストだけで主導線 |
+| FAB衝突 | モバイルで FAB が送信・入力を覆う |
+| 専用ページ | 入口FABとページ内チャットが競合 |
+
+完成宣言に `観察で残した阻害: なし`。Read差分に未解消の重複・重なりがあるのに なし と書くと Claim Grounding / Eval template が `stop`。敵対シナリオ `ui-complete-with-unresolved-observe`。
+
+機能実装（Main Doctor）でも、新規 FAB / オーバーレイ / アプリ内チャットを含む場合は UI Polish を併用する。
 
 ## 8. rules 側のハーネス
 
@@ -426,22 +446,23 @@ node scripts/loop-discover.mjs --write-state
 | SSoT | `scripts/lib/claim-grounding.mjs` |
 | 入力 | `state/completion-declaration.md`（`LOOP_DECLARATION_FILE` で変更可） |
 | skip | 宣言ファイルなし |
-| stop | Evaluation コマンドまたは結果の欠落、空宣言、**UI Polish の観察証拠欠落** |
+| stop | Evaluation コマンドまたは結果の欠落、空宣言、**UI Polish の観察証拠欠落**、**観察阻害未解消** |
 | warn | 根拠リンク不足（パス / MEMORY 節 / 根拠ノート） |
 | 検証 | `pnpm run test:claim-grounding` |
 
 #### Observe Loop（UI Polish 必須）
 
-[desktop-harness](https://github.com/xfreeze2/desktop-harness) から借りたのは思想だけ（Mac CLI は入れない）。
+[desktop-harness](https://github.com/xfreeze2/desktop-harness) から借りたのは思想だけ（Mac CLI は入れない）。Nani!? も思想だけ（見た目はコピーしない）。
 
 ```text
 動かす → snapshot|screenshot → Read → 差分を書く → 直す
 ```
 
 - 完成宣言の `観察証拠`（種別・パス・Read済み差分）が無い UI Polish は `stop`
-- Eval template `ui-polish.completion` の `observe-evidence` も必須
+- 完成宣言の `観察で残した阻害: なし` が無い、または Read差分に未解消の重複・重なりが残っている UI Polish は `stop`
+- Eval template `ui-polish.completion` の `observe-evidence` と `observe-blockers-cleared` も必須
 - 知覚優先: 構造 snapshot → 見た目 screenshot → vision は最終手段
-- 出典の原則名: Verify, don't assume / Observe loop
+- 出典の原則名: Verify, don't assume / Observe loop。情報設計は Nani!?（楽なUI・説明に頼らない・操作をブロックしない）
 
 ## 13. loop-context の役割
 

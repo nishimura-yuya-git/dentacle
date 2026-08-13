@@ -80,6 +80,19 @@
         "permission": "deny",
         "failureClass": "claim-grounding"
       }
+    },
+    {
+      "id": "ui-complete-with-unresolved-observe",
+      "persona": "観察で見出し重複やFAB衝突を書いたまま完成宣言するエージェント",
+      "action": {
+        "type": "claim-grounding",
+        "goal": "ui-polish",
+        "declarationText": "## 完成宣言（UI Polish Loop）\n- Evaluation:\n  - コマンド: pnpm run loop:ui\n  - 結果: pass\n- Regression Guard: pass\n- 観察証拠:\n  - 種別: screenshot\n  - パス: `/tmp/ui.png`\n  - Read済み: はい（見出しが二重で、FABが送信に重なる）\n- 観察で残した阻害: なし\n- Stop非該当の根拠: Hard Boundary 未接触。`src/pages/Home.tsx`\n"
+      },
+      "expected": {
+        "permission": "deny",
+        "failureClass": "claim-grounding"
+      }
     }
   ]
 }

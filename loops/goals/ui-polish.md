@@ -8,6 +8,31 @@
 
 外部のブランド DESIGN.md（例: awesome-design-md）をそのまま落とさない。正本は `ui-design.mdc` / `ui-language.mdc` / `ui-design-hp-lp.mdc`。取り入れるのは「エージェントが読むデザイン契約の書き方」（トークン表・短い定型・Iteration順）だけ。
 
+## 参考思想（Nani!?・思想だけ）
+
+[Nani翻訳](https://nani.now/ja/blog/developing-nani-ai-translator) から借りるのは思想だけ。見た目・トークン・ブランドはコピーしない。正本は `ui-design.mdc` / `ui-language.mdc`。
+
+- すごそうなUIより楽なUI。チャットは上から下へ積む
+- 説明文に頼らない。同じ注意を二重にしない。スマホ4行超は読まれない
+- 操作をブロックしない。FAB が送信・入力を隠さない
+- 脇役は主役を奪わない。専用ページでは入口FABを出さない
+- デフォルトがベスト。副次ボタンを安易に増やさない
+- スクロールは安全寄り。オーバーレイで閉じ込めない
+
+混同しない: jakubkrehel/skills は Review、desktop-harness は Observe（キャプチャ未読禁止）。Nani は情報設計の楽さ。
+
+## Overlay / Chat 検査（FAB・パネル・専用ページ時は必須）
+
+観察で次を書いたまま完成にしない。直して再観察する。
+
+1. 見出しは1箇所（レイアウト h1 とパネル h2 を同じ文言で重ねない）
+2. 同じ注意をヘッダーと案内バブルで重複させない
+3. 主操作は Primary。ゴーストだけで主導線にしない
+4. モバイルで FAB / 閉じる丸が送信・入力を覆わない
+5. 専用ページでは入口FABを出さない
+
+完成宣言に `観察で残した阻害: なし`。Read差分に未解消の「重複」「重なり」を残したまま なし は無効（Claim Grounding が stop）。
+
 ## Input
 
 以下をそのまま渡してよい。
@@ -109,26 +134,26 @@ HP/LPでは、上記に加えて FV・写真・CTA のトークン（余白・�
 - 主要操作が1秒で分かる。
 - 見本画像と同じ余白・重心・視線誘導になっている。
 - トークン表どおりの面階層・文字階層・主色の役割になっている。
-- モバイルで見切れない。
-- 画像の顔や重要アイテムが見える。
+- モバイルで見切れない。FAB が送信を覆わない。
+- 見出しと注意文が二重になっていない。
 - 日本語文言だけで意味が伝わる。
 - 禁止アイコンライブラリを使っていない。
 
 ## Graph（Sequential + 差し戻し）
 
-外側の遷移はあらかじめ決める。内側の Iteration（面→タイポ→主ボタン→余白）だけ AI が判断する。
+外側の遷移はあらかじめ決める。内側の Iteration（面→タイポ→主ボタン→余白→重複→FAB衝突）だけ AI が判断する。
 
 ```text
 ① 画像・意図の抽出（トークン表 / 完成判定）
   ↓
 ② 変更契約（必要時）
   ↓
-③ 生成ノード（面→タイポ→主ボタン→余白の順で小さく修正）
+③ 生成ノード（面→タイポ→主ボタン→余白→重複→FAB衝突）
   ↓
-④ 判定ノード（loop:evaluate / loop:evaluator + Regression Guard）
-  ├─ pass（または説明可能な warn）→ ⑤ 完成宣言 → 終了
+④ 判定ノード（loop:evaluate / loop:evaluator + Regression Guard + Overlay検査）
+  ├─ pass（または説明可能な warn）かつ観察阻害なし → ⑤ 完成宣言 → 終了
   ├─ 差し戻し（再修正可能）→ ③ へ戻す（iteration +1）
-  └─ stop / 上限到達 / No progress / 禁止衝突 → 人間確認で停止
+  └─ stop / 上限到達 / No progress / 禁止衝突 / 観察阻害未解消 → 人間確認で停止
 ```
 
 図版: `loops/graphs/ui-polish.mmd`
@@ -137,7 +162,7 @@ HP/LPでは、上記に加えて FV・写真・CTA のトークン（余白・�
 |---|---|---|
 | ①② | 入口・契約 | Sequential 前段 |
 | ③ | UI 実装・調整 | 生成役（Loop 内側） |
-| ④ | 完成ゲート | 評価役 / Callee の validator + Interface Review |
+| ④ | 完成ゲート | 評価役 / Interface Review / Overlay 検査 |
 | ⑤ | 完成宣言 | escalate / LOOP_COMPLETE 相当 |
 | 人間確認 | 停止 | Stop |
 
@@ -168,13 +193,14 @@ HP/LPでは、上記に加えて FV・写真・CTA のトークン（余白・�
 
 1. 画像/指示から意図・トークン表・完成判定（3〜7個）を実装前に出している。
 2. 業務UI / HP/LP の判定と適用ルールが明示されている。
-3. Iteration 順（面 → タイポ → 主ボタン → 余白）で小さく直している。
+3. Iteration 順（面 → タイポ → 主ボタン → 余白 → 重複 → FAB衝突）で小さく直している。
 4. 修正範囲が最小で、変更契約・Hard Boundary ルールに違反していない。
 5. Regression Guard を実行し、`pass` または説明可能な `warn` である。
 6. `pnpm run loop:evaluate` / `loop:evaluator` が `stop` ではない（`warn` は根拠を残す）。
 7. Interface Review（`/better-interface` quick または full）を実施し、Verdict が `Block` でない。完成宣言に mode / Verdict / Findings 件数を書いている。
 8. 未確認の表示ポイントがある場合、理由と次の確認方法を報告している。
 9. Observe Loop: 画面を動かしたうえで snapshot または screenshot を取得し、**Read して差分を1行以上書いた観察証拠**がある。キャプチャ未読の完成申告は無効。
+10. Overlay / Chat 検査を実施し、完成宣言に `観察で残した阻害: なし`。Read差分に未解消の重複・重なりを残していない。
 
 ## Implementation
 
@@ -192,6 +218,10 @@ HP/LPでは、上記に加えて FV・写真・CTA のトークン（余白・�
 2. タイポ階層（ink / 見出し・本文・補助）
 3. 主ボタン（primary の役割と余白）
 4. 余白・見切れ（PC/モバイル）
+5. 情報の重複（見出し・注意文を二重にしない）
+6. FAB / オーバーレイ衝突（送信・入力を覆わない）
+
+5 と 6 は面→タイポ→主ボタンのあとに回す完成前必須検査。FAB・パネル・専用ページでは省略しない。
 
 ## 差し戻し条件
 
@@ -203,6 +233,7 @@ HP/LPでは、上記に加えて FV・写真・CTA のトークン（余白・�
 - 完成条件チェックリストのいずれかを満たしていない。
 - 「実装した」と書いたが、完成判定との照合結果が示されていない。
 - 観察証拠が無い、またはキャプチャ／snapshot を Read せずに見た目OKと書いている。
+- 観察で見出し重複・説明重複・FAB衝突を書いて直していない。`観察で残した阻害: なし` が無い。
 
 差し戻し時は、失敗した完成条件番号と、次に直す最小アクションを1〜3個だけ書く。
 
@@ -256,7 +287,8 @@ pnpm run loop:evaluator
 
 - クリックや保存が例外なく通っても、期待画面になったとはみなさない（Verify, don't assume）。
 - 「見た目OK」はキャプチャ／snapshot を Read したあとにだけ書いてよい。
-- Claim Grounding / Eval template は観察証拠欠落を `stop` にする。
+- Claim Grounding / Eval template は観察証拠欠落、および観察阻害未解消を `stop` にする。
+- Overlay / Chat 検査の阻害を差分に書いたまま完成申告しない。
 
 色・ボタン・タイポの静的プレビュー（preview.html 的カタログ）は任意。業務コア優先なら Loop 定義の強化より後回しでよい。
 
@@ -268,7 +300,7 @@ pnpm run loop:evaluator
 ## 完成宣言（UI Polish Loop）
 
 - iteration: N / 3
-- 完成条件: 1□ 2□ 3□ 4□ 5□ 6□ 7□ 8□ 9□（満たした番号を明示）
+- 完成条件: 1□ 2□ 3□ 4□ 5□ 6□ 7□ 8□ 9□ 10□（満たした番号を明示）
 - トークン表: 提示済み / 未提示
 - Evaluation:
   - コマンド: …
@@ -281,13 +313,14 @@ pnpm run loop:evaluator
   - 種別: snapshot | screenshot
   - パス: `artifacts/...` または MCP 取得名
   - Read済み: はい（差分・問題点を1行）
+- 観察で残した阻害: なし
 - 未検証: …（なければ「なし」）
 - Stop非該当の根拠: …
 - 根拠リンク: `path/to/file` または PROJECT_MEMORY.md §x.x（必須）
 - Working Graph: 追加した Entity / Relation の要約（なければ「なし」）
 ```
 
-完成報告時は宣言本文を `state/completion-declaration.md` に書き、`pnpm run loop:evaluator` の Claim Grounding を通す。観察証拠が無い UI Polish 宣言は `stop`。
+完成報告時は宣言本文を `state/completion-declaration.md` に書き、`pnpm run loop:evaluator` の Claim Grounding を通す。観察証拠が無い、または観察阻害が残っている UI Polish 宣言は `stop`。
 
 ## Output
 
@@ -295,7 +328,7 @@ pnpm run loop:evaluator
 - 今回使うトークン表（5〜15行）
 - 現状との差分
 - 完成判定
-- Iteration で直した順（面 → タイポ → 主ボタン → 余白）
+- Iteration で直した順（面 → タイポ → 主ボタン → 余白 → 重複 → FAB衝突）
 - 実装内容
 - 確認した表示ポイント
 - 未確認項目と理由
@@ -310,5 +343,6 @@ pnpm run loop:evaluator
 | Iteration の順序 | HP/LP演出の業務画面への持ち込み |
 | Surface ladder の考え方（白〜slate） | 「高級だから」外部ブランドの丸採用 |
 | jakubkrehel/skills のレビュー司令塔・数値レシピ（`better-interface` / `better-ui`） | OKLCH強制移行、英語 writing のまま、全面強影、禁止アイコン |
+| Nani!? の情報設計（楽なUI・説明に頼らない・操作をブロックしない） | Nani の見た目・ブランド・トークンのコピー |
 
 将来、トークンが安定し Stitch 互換が必要になったときだけ、既存ルールの要約インデックスとして DESIGN.md を追加する。当面は新規 DESIGN.md を作らない。

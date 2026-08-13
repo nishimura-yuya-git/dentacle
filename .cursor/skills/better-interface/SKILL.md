@@ -23,6 +23,8 @@ description: >-
 
 既定は **read-only**。Findings の実装まで求められたときだけコードを触る。
 
+FAB・オーバーレイ・アプリ内チャットがある画面では、見出し重複・説明重複・主ボタン階層・モバイルでのFAB衝突を Layout の必須検査にする。観察で阻害を書いたまま Approve しない。
+
 ## Core Principles
 
 ### 1. スコープとモードを先に決める
@@ -47,7 +49,7 @@ description: >-
 | 順 | ドメイン | 正本 | 見るもの |
 | --- | --- | --- | --- |
 | 1 | Accessibility | `.cursor/rules/ui-design.mdc`（アクセシビリティ節） | focus、キーボード、aria-label、hit area、色だけに頼らない状態 |
-| 2 | Layout | `.cursor/rules/ui-design.mdc` / `ui-design-hp-lp.mdc` | 余白、階層、モバイル別設計、見切れ |
+| 2 | Layout | `.cursor/rules/ui-design.mdc` / `ui-design-hp-lp.mdc` | 余白、階層、モバイル別設計、見切れ、見出し重複、オーバーレイ衝突 |
 | 3 | Writing | `.cursor/rules/ui-language.mdc` | 日本語優先、装飾英語禁止、空状態・エラーの次行動 |
 | 4 | Typography | `.cursor/rules/ui-design.mdc`（タイポ節） | 見出し/本文/補助の階層。業務UIで装飾明朝の乱用なし |
 | 5 | Colors | `.cursor/rules/ui-design.mdc`（カラー節） | canvas/surface、主色 `#008C01` の役割、状態色の一貫性 |
@@ -115,6 +117,7 @@ pnpm run loop:evaluator
 | 外部ブランド色へ寄せる提案 | `ui-design.mdc` のトークンを正とする |
 | Lucide 等の禁止アイコン提案 | カスタムSVG / 既存画像のみ |
 | Approve なのに未対応 Finding | `Needs changes` か `Block` |
+| 観察で重複・衝突を書いて Approve | 直して再観察。完成宣言は阻害なし |
 
 ## Review Output Format
 

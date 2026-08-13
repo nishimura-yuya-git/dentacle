@@ -22,6 +22,7 @@ alwaysApply: true
 | 通常の実装・修正・差分確認 | Main Doctor Loop | `loops/goals/main-doctor.md` |
 | お客さんの問題文、表示不具合、動かない、壊れた、期待と違う | Bug Fix Loop + Regression Guard Loop | `loops/goals/bug-fix.md`, `loops/goals/regression-guard.md` |
 | UI改善、デザイン修正、見本画像、スクショ、余白、ボタン、見た目 | UI Polish Loop + Regression Guard Loop | `loops/goals/ui-polish.md` |
+| 新規 FAB / オーバーレイ / アプリ内チャットを含む実装 | Main Doctor + UI Polish + Regression Guard | `loops/goals/ui-polish.md`（Overlay / Chat 検査） |
 | `check:ssot` の警告、計算再実装、SSoT違反の解消 | SSoT Debt Hunter Loop + Regression Guard Loop | `loops/goals/ssot-debt-hunter.md` |
 | 修正完了後の安全確認、回帰確認、テスト確認 | Regression Guard Loop | `loops/goals/regression-guard.md` |
 
@@ -44,6 +45,7 @@ alwaysApply: true
 - ユーザーが画像、スクショ、見本デザイン、参考サイト、モックを添付している。
 - 「高級感」「余白」「押したくなるボタン」「一発出し」「見た目」「UI」「デザイン」などの意図がある。
 - 既存UIを理想画像に近づける依頼。
+- 新規 FAB、固定オーバーレイ、アプリ内チャット、専用フィードバック画面など、入口と本文が重なりうるUIを含む機能実装（見た目依頼がなくても Overlay 検査は必須）。
 
 この場合、コードを書く前に必ず以下を出す。
 
@@ -52,9 +54,11 @@ alwaysApply: true
 - ユーザーが何を「良い」と感じているか。
 - 業務UIかHP/LPかの判定。
 - 完成判定 3〜7個。
-- Evaluation前のIteration順: 面の階層 → タイポ → 主ボタン → 余白・見切れ。
+- Evaluation前のIteration順: 面の階層 → タイポ → 主ボタン → 余白・見切れ → 情報の重複 → FAB衝突。
 
-外部ブランドの DESIGN.md は構造・書き方の参考のみ。rootへのコピーや既存トークンの上書きはしない。
+外部ブランドの DESIGN.md は構造・書き方の参考のみ。rootへのコピーや既存トークンの上書きはしない。[Nani翻訳](https://nani.now/ja/blog/developing-nani-ai-translator) も思想だけ（楽なUI・説明に頼らない・操作をブロックしない）。見た目はコピーしない。
+
+観察で見出し重複・説明重複・FAB衝突を書いたまま完成申告しない。完成宣言に `観察で残した阻害: なし`。
 
 ## 完成の扱い
 
@@ -85,6 +89,8 @@ pnpm run test:changed
 
 - ユーザーがLoop名を言わなかったことを理由に、Loop判定を省略すること。
 - 画像やスクショがあるのに、画像からの抽出をせず実装へ進むこと。
+- FAB・オーバーレイ・アプリ内チャットを Main Doctor だけで完成扱いし、Overlay 検査を省略すること。
+- 観察で重複・重なりを書いたまま「見た目OK」と完成申告すること。
 - 期待値の根拠がないままテストやUIをAI都合で合わせること。
 - Warningを見ずに「通りました」と報告すること。
 - Stop条件を作業都合で無視すること。

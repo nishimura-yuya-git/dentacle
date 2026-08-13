@@ -142,14 +142,15 @@
 - Prompt → Context → Harness → Loop → Graph の層モデルをハーネス運用に明示する（unit of work を層ごとに固定する）。
 - No progress: `loop:evaluator` が評価シグネチャを `state/loop-progress.json` に記録する。同じ stop が 2 回連続したら自動続行禁止。同じ warn が 2 回連続したら方針変更を要求する。`loop:context` 経由は `--no-record`（二重記録防止）。無効化は `LOOP_PROGRESS_DISABLE=1`。
 - Context Budget: `loop:context` は must / compress / drop で「窓に残す文書」を選ぶ。`--goal=` または `LOOP_GOAL` で切り替える。
+- UI Polish の完成禁止条件は長い `loops/goals/ui-polish.md` の後半にだけ置かない。Context Budget で落ちる。短い `loops/goals/ui-polish-gate.md` を must として残す（§2.15）。
 - Graph 完成ゲートの横展開: UI Polish（`maxIterations: 3`）と Regression Guard（`maxIterations: 2`）にも適用する。「実装した」「直ったはず」の自己申告だけでは完成にしない。完成/通過宣言フォーマット必須。
 - §2.7 の横展開方針に対し、本決定で UI Polish / Regression Guard への適用を承認した扱いとする。
-- 関連: `scripts/lib/loop-progress.mjs`, `scripts/lib/context-budget.mjs`, `loops/graphs/ui-polish.mmd`, `loops/graphs/regression-guard.mmd`, `loops/goals/ui-polish.md`, `loops/goals/regression-guard.md`, `docs/agent-loop-harness.md` §6.1 / §6.2 / §12.2.1 / §13.1
+- 関連: `scripts/lib/loop-progress.mjs`, `scripts/lib/context-budget.mjs`, `loops/graphs/ui-polish.mmd`, `loops/graphs/regression-guard.mmd`, `loops/goals/ui-polish-gate.md`, `loops/goals/ui-polish.md`, `loops/goals/regression-guard.md`, `docs/agent-loop-harness.md` §6.1 / §6.2 / §12.2.1 / §13.1
 
 ### 2.10 薄い知識Graph層: Claim Grounding / Working Graph（2026-07-28 決定）
 
 - 制御 Graph（`loops/graphs/*.mmd`）とは別に、知識Graphの薄い層をハーネスに入れる。本格 NER・グラフDB・Claude 自動抽出パイプラインは入れない。
-- Claim Grounding: 完成宣言（`state/completion-declaration.md`）の主張を Evaluation 結果・根拠リンクと照合する。宣言ファイルが無いときは `skip`（通常の `loop:run` を止めない）。Evaluation 欠落は `stop`、根拠不足は `warn`。
+- Claim Grounding: 完成宣言（`state/completion-declaration.md`）の主張を Evaluation 結果・根拠リンクと照合する。宣言ファイルが無いときは `skip`（通常の `loop:run` を止めない）。Evaluation 欠落は `stop`、根拠不足は `warn`。UI Polish は観察証拠に加えページ枠照合が必須（§2.14 / §2.15）。欠落は `stop`。
 - Working Graph: エージェントが整理した Entity / Relation だけを `state/working-graph.json` に残す。型は `SCREEN | API | TABLE | SSOT | SYMPTOM | DOC`、関係は `touches | depends_on | reported_in`。
 - 完成報告時は宣言を `state/completion-declaration.md` に書き、`pnpm run loop:evaluator` で Claim Grounding を通す。
 - 将来の本格KG（抽出→解決→組立→クエリ）へ型だけ互換にしておく。全面導入は要件が揃うまで行わない。
@@ -197,10 +198,20 @@
 - UI Polish の完成申告は、画面を動かしたうえで snapshot または screenshot を取得し、**Read して差分を1行以上書いた観察証拠**が必須。キャプチャ未読の完成申告は無効。
 - 完成宣言の `観察証拠` に含める項目: 種別（`snapshot` | `screenshot`）・パス（または取得名）・`Read済み: はい（差分1行）`。
 - Claim Grounding（§2.10）と Eval template `ui-polish.completion` の `observe-evidence` が欠落すると `stop`。敵対シナリオ `ui-complete-without-observe` で回帰監視する。
-- 知覚の優先順位: 構造 `browser_snapshot` → 見た目 screenshot → vision による推測は最終手段。
+- 内側パネルだけのスクショは観察として数えない。見本キャプチャと実装キャプチャ（ページ全体）のペアと `ページ枠照合` が必須。欠落は `observe-chrome` で `stop`（§2.15）。
+- 知覚の優先順位: 構造 `browser_snapshot` → 見た目 screenshot（ページ全体） → vision による推測は最終手段。
 - 出典の原則名: Verify, don't assume / Observe loop（[desktop-harness](https://github.com/xfreeze2/desktop-harness) から借りるのは思想だけ。Mac CLI は入れない）。
-- Interface Review（§2.11）と併用する。観察証拠があっても Verdict が `Block` なら完成報告禁止。
-- 関連: `scripts/lib/claim-grounding.mjs`, `loops/goals/ui-polish.md`, `loops/evals/ui-polish.completion.json`, `loops/simulations/adversarial-scenarios.json`, `.cursor/skills/playwright-mcp-testing/SKILL.md`, `docs/agent-loop-harness.md` §12.2.2
+- Interface Review（§2.11）と併用する。観察証拠があっても Verdict が `Block` なら完成報告禁止。見本に無い業務枠が残っている Layout Finding は HIGH。
+- 関連: `scripts/lib/claim-grounding.mjs`, `loops/goals/ui-polish-gate.md`, `loops/goals/ui-polish.md`, `loops/evals/ui-polish.completion.json`, `loops/simulations/adversarial-scenarios.json`, `.cursor/skills/playwright-mcp-testing/SKILL.md`, `docs/agent-loop-harness.md` §12.2.2, §2.15
+
+### 2.15 UI Polish ページ枠照合ゲート（2026-08-13 決定）
+
+- 完成・「寄せた」申告は、見本キャプチャ（または「なし（指示のみ）」）と実装キャプチャ（ページ全体）を Read し、完成宣言に `ページ枠照合`（見本 / 実装 / 差分 / Read済み）を書く。内側パネルだけのスクショは完成根拠にしない。
+- Claim Grounding の欠落コードは `observe-chrome`。Eval template `ui-polish.completion` の `chrome-compare` も必須。敵対シナリオ `ui-complete-inner-panel-only`。
+- 画面種別は業務UI / HP-LP / **文書シェル（専用ページ枠）** の三択。見本が専用シェルなら、対象画面を `DashboardLayout`（業務サイドバー・クリニック名ピル・ご意見 FAB 等）で包んだまま完成にしない。原子（`Button` / `Modal` / `Toast`）の再利用とページ枠は別。
+- Stop の分割: 他画面の導線・グローバルナビ変更は確認停止。対象画面のラッピング差は差し戻し（完成禁止）。「既存UI導線を大きく変える」を対象画面の枠修正まで Stop にしない。
+- Context Budget: 完成禁止条件は短い `loops/goals/ui-polish-gate.md` を must として残す。長い `ui-polish.md` の後半は窓から落ちる前提（§2.9）。
+- 関連: `loops/goals/ui-polish-gate.md`, `loops/goals/ui-polish.md`, `scripts/lib/claim-grounding.mjs`, `scripts/lib/context-budget.mjs`, `loops/evals/ui-polish.completion.json`, `.cursor/rules/ui-design.mdc`, `.cursor/rules/agent-loops.mdc`, §2.9, §2.14, §10.29
 
 ---
 
@@ -1072,6 +1083,7 @@ AIが自分の実装に合わせて期待値を作ることは禁止。
 | 2026-08-11 | カレンダーアイコンのツールチップが下に隠れる | 見出し帯 overflow-x-auto が absolute をクリップ | portal + fixed + z-[100]（§10.25） |
 | 2026-08-12 | ログイン監査で地図の下に表が潰れる | fillViewport で地図＋表を同時表示 | 地図/一覧は Select 切替。同時に縦積みしない（§6.15 / §10.27） |
 | 2026-08-12 | 九州・沖縄選択で地図が全国並みにズームアウト | 沖縄・鹿児島離島インセットを外接に含めた | 本土のみ zoomSelector＋南余白（§6.15 / §10.28） |
+| 2026-08-13 | 内側パネルだけで UI Polish 完成にした | 観察がページ枠を要求せず、DashboardLayout 優先を誤読し、完成禁止条件が Context Budget で落ちた | ページ枠照合必須。内側だけは stop。Hard Gate を must に置く（§2.15 / §10.29） |
 
 ### 記録ルール
 
@@ -1280,6 +1292,13 @@ AIが自分の実装に合わせて期待値を作ることは禁止。
 - 再発防止: 九州のズームは `zoomSelector` で本土県のみ（沖縄・鹿児島除外）。南方向に余白を足して鹿児島本土が切れにくくする。塗り分け用 selector とズーム用を分ける（§6.15）。
 - 関連: `japanMapZoom.ts`, `AuthAuditJapanMap.tsx`
 
+### 10.29 内側パネルだけで UI Polish 完成にした（2026-08-13）
+
+- 事象: 見本寄せで白パネルの角丸・本文だけ合わせ、業務ダッシュボード枠のまま完成申告した。
+- 原因: 観察証拠が内側スクショで足りた。`DashboardLayout` 優先をページ枠まで適用した。完成禁止条件が長い goal 文書の後半にあり Context Budget で落ちた。
+- 再発防止: ページ枠照合必須（§2.15）。内側パネルだけの完成は `observe-chrome` で stop。短い Hard Gate を must に置く。対象画面のラッピング差は Stop ではなく差し戻し。
+- 関連: `loops/goals/ui-polish-gate.md`, `scripts/lib/claim-grounding.mjs`, §2.9, §2.14, §2.15
+
 ---
 
 ## 11. 🔗 重要ドキュメント・参照先
@@ -1292,14 +1311,14 @@ AIが自分の実装に合わせて期待値を作ることは禁止。
 - `docs/agent-loop-harness.md` — Agent Loop / Hard Boundary ハーネス設計
 - `loops/goals/bug-fix.md` — Bug Fix 完成ゲート（差し戻し / maxIterations / 完成宣言）
 - `loops/graphs/bug-fix.mmd` — Bug Fix 外側 Graph
-- `loops/goals/ui-polish.md` / `loops/graphs/ui-polish.mmd` — UI Polish 完成ゲート（Interface Review・§2.11 / 観察証拠・§2.14）
+- `loops/goals/ui-polish-gate.md` / `loops/goals/ui-polish.md` / `loops/graphs/ui-polish.mmd` — UI Polish 完成ゲート（Interface Review・§2.11 / 観察証拠・§2.14 / ページ枠照合・§2.15）
 - `.cursor/skills/better-interface/SKILL.md` / `.cursor/commands/better-interface.md` — 横断 Interface Review 司令塔
 - `.cursor/skills/better-ui/SKILL.md` — UI polish 細部レシピ（既存トークン準拠）
 - `.cursor/skills/playwright-mcp-testing/SKILL.md` — ブラウザ確認と Observe Loop（§2.14）
 - `loops/goals/regression-guard.md` / `loops/graphs/regression-guard.mmd` — Regression Guard 完成ゲート
 - `scripts/lib/loop-progress.mjs` — No progress ブレーキ
 - `scripts/lib/context-budget.mjs` — Context Budget（must / compress / drop）
-- `scripts/lib/claim-grounding.mjs` — Claim Grounding（主張↔根拠。UI Polish は観察証拠必須・§2.14）
+- `scripts/lib/claim-grounding.mjs` — Claim Grounding（主張↔根拠。UI Polish は観察証拠・ページ枠照合必須・§2.14 / §2.15）
 - `scripts/lib/working-graph.mjs` / `scripts/working-graph.mjs` — Working Graph（薄い共有メモリ）
 - `scripts/cursor-safety-guard.mjs` — PreToolUse ガード（変更契約 + Hard Boundary）
 - `scripts/change-contract-gate.mjs` — 変更契約ゲート CLI
@@ -1347,8 +1366,8 @@ AIは作業開始時に以下を確認する。
 □ pnpm run memory:audit で要詰めを確認し、理解レポート §6 に件数を書いた（§2.8）
 □ 不具合対応なら Bug Fix 完成ゲート（§2.7）と完成宣言を守った
 □ UI / 回帰確認なら §2.9（UI Polish / Regression Guard Graph・No progress・Context Budget）を守った
-□ UI Polish なら §2.11（Interface Review `/better-interface`。Verdict が Block なら完成報告禁止）と §2.14（観察証拠: snapshot|screenshot を Read して差分1行）を守った
-□ 完成報告なら §2.10（Claim Grounding / Working Graph。宣言は state/completion-declaration.md）を守った。UI Polish なら観察証拠欠落で stop（§2.14）
+□ UI Polish なら §2.11（Interface Review `/better-interface`。Verdict が Block なら完成報告禁止）と §2.14（観察証拠: snapshot|screenshot を Read して差分1行）と §2.15（ページ枠照合。内側パネルだけでは完成無効）を守った
+□ 完成報告なら §2.10（Claim Grounding / Working Graph。宣言は state/completion-declaration.md）を守った。UI Polish なら観察証拠欠落またはページ枠照合欠落で stop（§2.14 / §2.15）
 □ セキュリティ境界は §2.12（GPT非依存の `security:scan`。hook 自動実行はしない。必要なときだけ手動）を守った
 □ プラットフォーム保安なら §6.52（シード一時表DROP・漏洩PW保護ON・DB SSL Enforcement ON。PITRは課金承認後）を守った
 □ 雛形コピー直後なら Git 未初期化で scan skip になることを理解した。本開発開始前に `git init` した（§2.12）
@@ -1470,4 +1489,5 @@ AIは作業開始時に以下を確認する。
 - `2026-08-13`: 運営モデル切替に grok-4.6 を追加（既定は grok-4.5、カスケード未変更）を §6.14 / §6.36 / §6.38 / §6.53 / §12 に追記（`/project-memory-learn`）
 - `2026-08-13`: ご意見チャット→GitHub Issue を §6.54 / §5 / §6.33 / §7 / §12 に追記（`/project-memory-learn`）。入口は FAB・アカウントメニュー・`/feedback`。正の記録は Issue。トークンはサーバ専用。患者PIIは載せない（§6.20）
 - `2026-08-13`: お知らせ（提案→入れる／入れない・ログイン非掲載）を §6.55 / §6.21 / §6.24 / §6.33 / §6.51 / §3 / §7 / §12 に追記（`/project-memory-learn`）。main 上のご意見チャットが先に §6.54 を使っていたため、お知らせは §6.55
+- `2026-08-13`: UI Polish ページ枠照合ゲートを §2.15 / §2.9 / §2.10 / §2.14 / §10.29 / §11 / §12 に追記（`/project-memory-learn`）。内側パネルだけの完成は無効。Hard Gate を Context Budget の must に置く
 

@@ -55,3 +55,32 @@ export function normalizePlatformCursorModelId(
     ? value
     : DEFAULT_PLATFORM_CURSOR_MODEL_ID
 }
+
+const GROK_PLATFORM_CURSOR_MODEL_ID_SET = new Set<string>([
+  'grok-4.5',
+  'grok-4.6',
+])
+
+export function isGrokPlatformCursorModelId(
+  value: unknown,
+): value is Extract<PlatformCursorModelId, 'grok-4.5' | 'grok-4.6'> {
+  return typeof value === 'string' && GROK_PLATFORM_CURSOR_MODEL_ID_SET.has(value)
+}
+
+export const COMPOSER_PLATFORM_CURSOR_MODEL_ID = 'composer-2.5' as const
+
+/** Grok 行の版セレクト。ラベルは「Grok」見出しと重複させない */
+export const GROK_VERSION_SELECT_OPTIONS = PLATFORM_CURSOR_MODEL_OPTIONS.filter(
+  (option) => isGrokPlatformCursorModelId(option.id),
+).map((option) => ({
+  value: option.id,
+  label: option.recommended
+    ? `${option.label.replace(/^Grok\s+/, '')}（おすすめ）`
+    : option.label.replace(/^Grok\s+/, ''),
+}))
+
+export function grokVersionValue(
+  modelId: PlatformCursorModelId,
+): Extract<PlatformCursorModelId, 'grok-4.5' | 'grok-4.6'> {
+  return isGrokPlatformCursorModelId(modelId) ? modelId : 'grok-4.5'
+}

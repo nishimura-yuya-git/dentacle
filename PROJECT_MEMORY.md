@@ -200,7 +200,22 @@
 - 知覚の優先順位: 構造 `browser_snapshot` → 見た目 screenshot → vision による推測は最終手段。
 - 出典の原則名: Verify, don't assume / Observe loop（[desktop-harness](https://github.com/xfreeze2/desktop-harness) から借りるのは思想だけ。Mac CLI は入れない）。
 - Interface Review（§2.11）と併用する。観察証拠があっても Verdict が `Block` なら完成報告禁止。
+- **観察阻害クリア（2026-08-13 追記）**: 観察証拠があっても、Read差分に未解消の重複・重なり・隠蔽・見切れ・二重・衝突が残っている完成申告は無効。完成宣言に `観察で残した阻害: なし` が必須。Eval template `observe-blockers-cleared` 欠落は `stop`。敵対シナリオ `ui-complete-with-unresolved-observe`。「重複は解消」「FAB衝突なし」は未解消ではない（§10.29）。
 - 関連: `scripts/lib/claim-grounding.mjs`, `loops/goals/ui-polish.md`, `loops/evals/ui-polish.completion.json`, `loops/simulations/adversarial-scenarios.json`, `.cursor/skills/playwright-mcp-testing/SKILL.md`, `docs/agent-loop-harness.md` §12.2.2
+
+### 2.15 Overlay / Chat 検査と Nani!? 思想（2026-08-13 決定）
+
+- [Nani翻訳](https://nani.now/ja/blog/developing-nani-ai-translator) から借りるのは **思想だけ**。見た目・トークン・ブランドはコピーしない。正本は `ui-design.mdc` / `ui-language.mdc`。
+- 思想: すごそうなUIより楽なUI。説明文に頼らない（同じ注意を二重にしない）。操作をブロックしない。脇役は主役を奪わない。デフォルトがベスト。スクロールは安全寄り。
+- 混同しない: jakubkrehel/skills は Review（§2.11）。desktop-harness は Observe（§2.14）。Nani は情報設計の楽さ。
+- Overlay / Chat 検査（FAB・パネル・専用ページ時は必須）:
+  1. 見出しは1箇所（レイアウト h1 とパネル h2 を同じ文言で重ねない）
+  2. 同じ注意をヘッダーと案内バブルで重複させない
+  3. 主操作は Primary。ゴーストだけで主導線にしない
+  4. モバイルで FAB / 閉じる丸が送信・入力を覆わない
+  5. 専用ページでは入口FABを出さない
+- 新規 FAB / オーバーレイ / アプリ内チャットを含む機能実装は、見た目依頼がなくても Main Doctor + UI Polish + Regression Guard（`.cursor/rules/agent-loops.mdc`）。
+- 関連: `loops/goals/ui-polish.md`, `docs/agent-loop-harness.md` §7 / §7.2, `.cursor/rules/ui-design.mdc`, `.cursor/skills/better-interface/SKILL.md`
 
 ---
 
@@ -1055,6 +1070,7 @@ AIが自分の実装に合わせて期待値を作ることは禁止。
 | 2026-08-11 | カレンダーアイコンのツールチップが下に隠れる | 見出し帯 overflow-x-auto が absolute をクリップ | portal + fixed + z-[100]（§10.25） |
 | 2026-08-12 | ログイン監査で地図の下に表が潰れる | fillViewport で地図＋表を同時表示 | 地図/一覧は Select 切替。同時に縦積みしない（§6.15 / §10.27） |
 | 2026-08-12 | 九州・沖縄選択で地図が全国並みにズームアウト | 沖縄・鹿児島離島インセットを外接に含めた | 本土のみ zoomSelector＋南余白（§6.15 / §10.28） |
+| 2026-08-13 | 観察で見出し二重・FAB衝突を書いて完成できた | Observe はキャプチャ未読だけ止め、書いた阻害の解消を見ていなかった | 完成宣言に `観察で残した阻害: なし`。未解消の重複・重なりは stop（§2.14 / §2.15 / §10.29） |
 
 ### 記録ルール
 
@@ -1263,6 +1279,13 @@ AIが自分の実装に合わせて期待値を作ることは禁止。
 - 再発防止: 九州のズームは `zoomSelector` で本土県のみ（沖縄・鹿児島除外）。南方向に余白を足して鹿児島本土が切れにくくする。塗り分け用 selector とズーム用を分ける（§6.15）。
 - 関連: `japanMapZoom.ts`, `AuthAuditJapanMap.tsx`
 
+### 10.29 観察で重複・FAB衝突を書いて完成にした（2026-08-13）
+
+- 事象: ご意見チャットの観察で、見出し二重・注意重複・ゴースト主ボタン・モバイルで FAB が送信に重なる、と書いたまま UI 完成扱いできた。
+- 原因: Observe Loop（§2.14）はキャプチャ未読だけを `stop` にしていた。Read差分に書いた阻害の解消と、FAB 実装時の UI Polish 併用が無かった。
+- 再発防止: 完成宣言に `観察で残した阻害: なし`。未解消の重複・重なりは Claim Grounding / Eval template で `stop`。新規 FAB / オーバーレイ / アプリ内チャットは Overlay / Chat 検査必須（§2.15）。
+- 関連: `scripts/lib/claim-grounding.mjs`, `loops/goals/ui-polish.md`, `loops/evals/ui-polish.completion.json`, ご意見チャット
+
 ---
 
 ## 11. 🔗 重要ドキュメント・参照先
@@ -1275,14 +1298,14 @@ AIが自分の実装に合わせて期待値を作ることは禁止。
 - `docs/agent-loop-harness.md` — Agent Loop / Hard Boundary ハーネス設計
 - `loops/goals/bug-fix.md` — Bug Fix 完成ゲート（差し戻し / maxIterations / 完成宣言）
 - `loops/graphs/bug-fix.mmd` — Bug Fix 外側 Graph
-- `loops/goals/ui-polish.md` / `loops/graphs/ui-polish.mmd` — UI Polish 完成ゲート（Interface Review・§2.11 / 観察証拠・§2.14）
+- `loops/goals/ui-polish.md` / `loops/graphs/ui-polish.mmd` — UI Polish 完成ゲート（Interface Review・§2.11 / 観察証拠・§2.14 / Overlay・Nani 思想・§2.15）
 - `.cursor/skills/better-interface/SKILL.md` / `.cursor/commands/better-interface.md` — 横断 Interface Review 司令塔
 - `.cursor/skills/better-ui/SKILL.md` — UI polish 細部レシピ（既存トークン準拠）
 - `.cursor/skills/playwright-mcp-testing/SKILL.md` — ブラウザ確認と Observe Loop（§2.14）
 - `loops/goals/regression-guard.md` / `loops/graphs/regression-guard.mmd` — Regression Guard 完成ゲート
 - `scripts/lib/loop-progress.mjs` — No progress ブレーキ
 - `scripts/lib/context-budget.mjs` — Context Budget（must / compress / drop）
-- `scripts/lib/claim-grounding.mjs` — Claim Grounding（主張↔根拠。UI Polish は観察証拠必須・§2.14）
+- `scripts/lib/claim-grounding.mjs` — Claim Grounding（主張↔根拠。UI Polish は観察証拠＋観察阻害クリア必須・§2.14）
 - `scripts/lib/working-graph.mjs` / `scripts/working-graph.mjs` — Working Graph（薄い共有メモリ）
 - `scripts/cursor-safety-guard.mjs` — PreToolUse ガード（変更契約 + Hard Boundary）
 - `scripts/change-contract-gate.mjs` — 変更契約ゲート CLI
@@ -1330,8 +1353,9 @@ AIは作業開始時に以下を確認する。
 □ pnpm run memory:audit で要詰めを確認し、理解レポート §6 に件数を書いた（§2.8）
 □ 不具合対応なら Bug Fix 完成ゲート（§2.7）と完成宣言を守った
 □ UI / 回帰確認なら §2.9（UI Polish / Regression Guard Graph・No progress・Context Budget）を守った
-□ UI Polish なら §2.11（Interface Review `/better-interface`。Verdict が Block なら完成報告禁止）と §2.14（観察証拠: snapshot|screenshot を Read して差分1行）を守った
-□ 完成報告なら §2.10（Claim Grounding / Working Graph。宣言は state/completion-declaration.md）を守った。UI Polish なら観察証拠欠落で stop（§2.14）
+□ UI Polish なら §2.11（Interface Review `/better-interface`。Verdict が Block なら完成報告禁止）と §2.14（観察証拠: snapshot|screenshot を Read して差分1行。`観察で残した阻害: なし`）と §2.15（Overlay / Chat 検査・Nani は思想だけ）を守った
+□ 新規 FAB / オーバーレイ / アプリ内チャットなら §2.15（見た目依頼がなくても UI Polish 併用。見出し1箇所・注意非重複・主ボタン・FAB非衝突・専用ページで入口FABなし）を守った
+□ 完成報告なら §2.10（Claim Grounding / Working Graph。宣言は state/completion-declaration.md）を守った。UI Polish なら観察証拠欠落または観察阻害未解消で stop（§2.14）
 □ セキュリティ境界は §2.12（GPT非依存の `security:scan`。hook 自動実行はしない。必要なときだけ手動）を守った
 □ プラットフォーム保安なら §6.52（シード一時表DROP・漏洩PW保護ON・DB SSL Enforcement ON。PITRは課金承認後）を守った
 □ 雛形コピー直後なら Git 未初期化で scan skip になることを理解した。本開発開始前に `git init` した（§2.12）
@@ -1372,7 +1396,7 @@ AIは作業開始時に以下を確認する。
 □ 運営AIハブなら §6.45 / §6.46（見出しSelectで画面切替・提案内もセクションSelect・fillViewport+sticky表・最近のジョブはクリニック絞り込み・再利用はジョブの clinic_id・サイドバーは自動提案1項目・旧 `/admin/ai-usage` はリダイレクト）を守った
 □ 自動提案スナップショットなら §6.39（住所必須・距離行列・頻度/期限緊急度・schema v2・生住所非渡与）を守った
 □ セキュリティ是正なら §6.40 / §10.11（clinic_members RLS 分割・運営除外・propose 60秒クールダウン・待機時間明示のレート制限文言・公開エラーは固定文言）を守った
-□ ご意見チャットなら §6.54 / §6.20 / §6.33（入口は FAB・アカウントメニュー・`/feedback`。業務ナビ禁止。正は GitHub Issue。トークンはサーバ専用。`VITE_` 禁止。患者PIIは載せない。公開エラーは固定文言）を守った
+□ ご意見チャットなら §6.54 / §6.20 / §6.33 / §2.15（入口は FAB・アカウントメニュー・`/feedback`。業務ナビ禁止。正は GitHub Issue。トークンはサーバ専用。`VITE_` 禁止。患者PIIは載せない。公開エラーは固定文言。専用ページでは入口FABを出さない）を守った
 □ Cloud 送信のコンプライアンスなら §6.12（UUID・制約中心。氏名・電話・生住所非渡与。DPA/同意を文書化）を守った
 □ ナビ▼メニューなら §10.8（overflow で消さない。portal＋fixed。主導線はサイドバーアコーディオン）を守った
 □ Cloud 起動時は `cloud` を明示したか（未指定で local に黙って落ちない）を確認した
@@ -1451,4 +1475,5 @@ AIは作業開始時に以下を確認する。
 - `2026-08-12`: 在席ハートビート・件数テキスト配置・九州ズーム再発防止・IP回線共有文言を §6.15 / §7 / §10.28 / §12 に追記（`/project-memory-learn`）
 - `2026-08-13`: 運営モデル切替に grok-4.6 を追加（既定は grok-4.5、カスケード未変更）を §6.14 / §6.36 / §6.38 / §6.53 / §12 に追記（`/project-memory-learn`）
 - `2026-08-13`: ご意見チャット→GitHub Issue を §6.54 / §5 / §6.33 / §7 / §12 に追記（`/project-memory-learn`）。入口は FAB・アカウントメニュー・`/feedback`。正の記録は Issue。トークンはサーバ専用。患者PIIは載せない（§6.20）
+- `2026-08-13`: Overlay / Chat 検査と Nani!? 思想を §2.15 / §2.14追記 / §10.29 / §11 / §12 に追記（`/project-memory-learn`）。観察阻害未解消は完成禁止。FAB実装は UI Polish 併用。Nani は思想だけ
 

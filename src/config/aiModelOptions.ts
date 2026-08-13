@@ -1,6 +1,10 @@
 /** 全院共通で切替可能な Cursor SDK モデル（§6.14 手動切替） */
 
-export const PLATFORM_CURSOR_MODEL_IDS = ['grok-4.5', 'composer-2.5'] as const
+export const PLATFORM_CURSOR_MODEL_IDS = [
+  'grok-4.5',
+  'grok-4.6',
+  'composer-2.5',
+] as const
 
 export type PlatformCursorModelId = (typeof PLATFORM_CURSOR_MODEL_IDS)[number]
 
@@ -20,6 +24,12 @@ export const PLATFORM_CURSOR_MODEL_OPTIONS: Array<{
     description:
       '通常の自動提案向けベースモデル ・負荷と品質のバランスが取りやすい',
     recommended: true,
+  },
+  {
+    id: 'grok-4.6',
+    label: 'Grok 4.6',
+    description:
+      '4.5の後継。長い割付判断に向く ・参照単価は4.5より上がりやすい',
   },
   {
     id: 'composer-2.5',

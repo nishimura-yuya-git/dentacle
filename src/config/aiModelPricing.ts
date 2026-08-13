@@ -28,6 +28,14 @@ export const AI_MODEL_PRICING_TABLE: AiModelPricingRow[] = [
     note: 'ベースモデル（§6.14）。単価は参照仮値',
   },
   {
+    modelId: 'grok-4.6',
+    label: 'Grok 4.6',
+    cascadeBand: '手動切替',
+    inputUsdPer1M: 2.0,
+    outputUsdPer1M: 6.0,
+    note: '運営切替用。カスケード未定義。単価は Cursor 公開の標準参照',
+  },
+  {
     modelId: 'composer-2.5',
     label: 'Composer 2.5',
     cascadeBand: '50%超〜99%',

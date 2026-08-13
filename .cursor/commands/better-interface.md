@@ -38,4 +38,4 @@ UIを領域横断でレビューする。実装は、ユーザーが明示した
 
 `Block` のときは完成報告禁止で生成ノードへ差し戻す。
 
-見本がある改修では、Layout でページ枠（chrome）と negative inventory を先に見る。内側パネルだけの一致では Approve しない。
+見本がある改修では、Layout でページ枠（chrome）と negative inventory を先に見る。内側パネルだけの一致では Approve しない。見本サイトの色・フォント・製品事実はコピーしない。

@@ -128,6 +128,11 @@ function assertTrue(value, message) {
   - 実装: \`/opt/cursor/artifacts/screenshots/home-full.png\`
   - 差分: 業務サイドバーとご意見FABは見本に無く、実装のページ全体からも外れている
   - Read済み: はい
+- 骨格照合:
+  - 見本URL: なし（指示のみ）
+  - 借りる: 余白と見出し階層
+  - 借りない: 外部ブランドの色とフォント
+  - Read済み: はい
 - Stop非該当の根拠: PROJECT_MEMORY.md §2.9 と差分 \`src/pages/Home.tsx\`
 `,
     goal: 'ui-polish',
@@ -180,6 +185,34 @@ function assertTrue(value, message) {
 }
 
 {
+  const parsed = parseCompletionDeclaration(`
+## 完成宣言（UI Polish Loop）
+- Evaluation:
+  - コマンド: pnpm run loop:ui
+  - 結果: pass
+- 観察証拠:
+  - 種別: screenshot
+  - パス: \`/tmp/inner-panel.png\`
+  - Read済み: はい（白パネルは一致）
+- ページ枠照合:
+  - 見本: \`/tmp/reference-full.png\`
+  - 実装: \`/tmp/impl-full.png\`
+  - 差分: 左レールあり。業務サイドバー・FABは見本に無く実装から除外
+  - Read済み: はい
+- 骨格照合:
+  - 見本URL: https://nani.now/ja/security
+  - 借りる: 左レール幅、白パネル、h2下線、囲み、点線リンク、カード外フッター
+  - 借りない: 氷青背景、Inter、3D PNG、OAuth、Stripe
+  - Read済み: はい
+- Stop非該当の根拠: \`src/pages/X.tsx\`
+`);
+  assertEqual(parsed.hasBorrowCopy, true, '骨格照合を検出');
+  assertEqual(parsed.hasLiveReferenceUrl, true, 'ライブ見本URLを検出');
+  assertEqual(parsed.hasReferenceCapture, true, '見本キャプチャパスがある');
+  assertEqual(parsed.hasValidReferenceShot, true, 'ライブURLでもスクショがあれば充足');
+}
+
+{
   const result = evaluateClaimGrounding({
     declarationText: `
 ## 完成宣言（UI Polish Loop）
@@ -201,6 +234,114 @@ function assertTrue(value, message) {
   });
   assertEqual(result.status, 'stop', 'ページ枠の差分が未確認なら stop');
   assertTrue(result.missing.includes('observe-chrome'), '未確認差分は chrome 未充足');
+}
+
+{
+  // 期待値根拠: ユーザー報告 — 骨格（枠）と事実（OAuth/Stripe）を分けずに寄せ得た。骨格照合が無い完成は stop。
+  const result = evaluateClaimGrounding({
+    declarationText: `
+## 完成宣言（UI Polish Loop）
+- Evaluation:
+  - コマンド: pnpm run loop:ui
+  - 結果: pass
+- Regression Guard: pass
+- 観察証拠:
+  - 種別: screenshot
+  - パス: \`/tmp/full.png\`
+  - Read済み: はい（ページ全体を確認）
+- ページ枠照合:
+  - 見本: \`/tmp/reference-full.png\`
+  - 実装: \`/tmp/impl-full.png\`
+  - 差分: 左レールあり。業務サイドバーは見本に無く実装から除外
+  - Read済み: はい
+- Stop非該当の根拠: \`src/pages/Home.tsx\`
+`,
+    goal: 'ui-polish',
+  });
+  assertEqual(result.status, 'stop', '骨格照合が無い UI Polish は stop');
+  assertTrue(result.missing.includes('observe-borrow'), 'observe-borrow 欠落');
+}
+
+{
+  // 期待値根拠: ユーザー報告 — ライブURLを記憶だけで寄せて完成し得た。見本スクショ必須。
+  const result = evaluateClaimGrounding({
+    declarationText: `
+## 完成宣言（UI Polish Loop）
+- Evaluation:
+  - コマンド: pnpm run loop:ui
+  - 結果: pass
+- Regression Guard: pass
+- 観察証拠:
+  - 種別: screenshot
+  - パス: \`/tmp/impl-full.png\`
+  - Read済み: はい（ページ全体を確認）
+- ページ枠照合:
+  - 見本: なし（指示のみ）
+  - 実装: \`/tmp/impl-full.png\`
+  - 差分: 左レールあり。業務サイドバーは無い
+  - Read済み: はい
+- 骨格照合:
+  - 見本URL: https://nani.now/ja/security
+  - 借りる: 左レール幅、白パネル、h2下線
+  - 借りない: 氷青、Inter、OAuth、Stripe
+  - Read済み: はい
+- Stop非該当の根拠: \`src/pages/Home.tsx\`
+`,
+    goal: 'ui-polish',
+  });
+  assertEqual(result.status, 'stop', 'ライブURLなのに見本スクショなしは stop');
+  assertTrue(result.missing.includes('observe-reference-shot'), 'observe-reference-shot 欠落');
+}
+
+{
+  const parsed = parseCompletionDeclaration(`
+## 完成宣言（UI Polish Loop）
+- Evaluation:
+  - コマンド: pnpm run loop:ui
+  - 結果: pass
+- 観察証拠:
+  - 種別: screenshot
+  - パス: \`/tmp/full.png\`
+  - Read済み: はい（ページ全体）
+- ページ枠照合:
+  - 見本: https://nani.now/ja/security
+  - 実装: \`/tmp/impl-full.png\`
+  - 差分: 左レールあり
+  - Read済み: はい
+`);
+  assertEqual(parsed.hasChromeCompare, false, '見本がURL文字列なら chrome 未充足');
+  assertEqual(parsed.hasValidReferenceShot, false, 'URL文字列は見本スクショに数えない');
+}
+
+{
+  // 期待値根拠: ライブURLはページ全体スクショを見本にすれば完成してよい
+  const result = evaluateClaimGrounding({
+    declarationText: `
+## 完成宣言（UI Polish Loop）
+- Evaluation:
+  - コマンド: pnpm run loop:ui
+  - 結果: pass
+- Regression Guard: pass
+- 観察証拠:
+  - 種別: screenshot
+  - パス: \`/tmp/impl-full.png\`
+  - Read済み: はい（左レールと白パネルのページ枠が一致）
+- ページ枠照合:
+  - 見本: \`/tmp/nani-security-live-full.png\`
+  - 実装: \`/tmp/impl-full.png\`
+  - 差分: 左レールあり。業務サイドバー・FABは見本に無く実装から除外
+  - Read済み: はい
+- 骨格照合:
+  - 見本URL: https://nani.now/ja/security
+  - 借りる: 左レール幅、白パネル、h2下線、囲み、点線リンク、カード外フッター
+  - 借りない: 氷青、Inter、3D PNG、OAuth、Stripe
+  - Read済み: はい
+- Stop非該当の根拠: PROJECT_MEMORY.md §2.15 と差分 \`src/pages/Security/SecurityPage.tsx\`
+`,
+    goal: 'ui-polish',
+    changedFiles: ['src/pages/Security/SecurityPage.tsx'],
+  });
+  assertEqual(result.status, 'pass', 'ライブURLでも見本スクショと骨格照合があれば pass');
 }
 
 {

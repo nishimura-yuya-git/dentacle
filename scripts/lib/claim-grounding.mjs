@@ -9,6 +9,8 @@
  * UI Polish では Observe Loop 原則を適用する:
  * 見た目・画面変化の完成主張は、キャプチャ／snapshot を Read した証拠が無いと stop。
  * 加えてページ枠照合（見本キャプチャと実装キャプチャのペア）が無いと stop。
+ * 加えて骨格照合（借りる / 借りない）が無いと stop。
+ * 見本が http(s) URL なのに見本が「なし」または URL 文字列のままだと stop。
  */
 
 import { existsSync, readFileSync } from 'node:fs';
@@ -28,6 +30,7 @@ const OBSERVE_READ_RE = /(?:Read済み|read(?:\s*済み)?|read)\s*[:：]\s*(は�
 const PLACEHOLDER_RE = /^(…|\.\.\.|なし|n\/a|-)?$/i;
 const UNCONFIRMED_NOTE_RE = /^(未確認|未観察|空欄)$/i;
 const NONE_LIKE_RE = /^(なし|n\/a|指示のみ)(（指示のみ）)?$/i;
+const HTTP_URL_RE = /^https?:\/\//i;
 
 /**
  * @param {string} value
@@ -67,6 +70,25 @@ function stripPathTicks(raw) {
 }
 
 /**
+ * ライブページの URL か。キャプチャパスとしては使えない。
+ * @param {string} value
+ */
+export function isHttpUrl(value) {
+  return HTTP_URL_RE.test(stripPathTicks(value));
+}
+
+/**
+ * ページ全体スクショ等のキャプチャパスか。URL や「なし」は不可。
+ * @param {string} value
+ */
+export function isCapturePath(value) {
+  if (value == null) return false;
+  const text = stripPathTicks(value);
+  if (!isMeaningful(text) || isNoneLike(text) || isHttpUrl(text)) return false;
+  return true;
+}
+
+/**
  * 完成宣言テキストをパースする。
  * @param {string} text
  */
@@ -84,21 +106,33 @@ export function parseCompletionDeclaration(text) {
   let observeReadNote = '';
   let inObserveSection = false;
   let inChromeSection = false;
+  let inBorrowSection = false;
   let chromeReference = null;
   const chromeImplementationPaths = [];
   let chromeDiff = '';
   let chromeReadConfirmed = false;
+  let borrowUrl = null;
+  let borrowKeep = '';
+  let borrowSkip = '';
+  let borrowReadConfirmed = false;
 
   for (const line of lines) {
-    if (/ページ枠照合|chrome\s*compare/i.test(line)) {
+    if (/骨格照合|borrow[-_ ]?copy|borrow\s*copy/i.test(line)) {
+      inBorrowSection = true;
+      inChromeSection = false;
+      inObserveSection = false;
+    } else if (/ページ枠照合|chrome\s*compare/i.test(line)) {
       inChromeSection = true;
       inObserveSection = false;
+      inBorrowSection = false;
     } else if (/観察証拠|Observe\s*evidence/i.test(line)) {
       inObserveSection = true;
       inChromeSection = false;
+      inBorrowSection = false;
     } else if (/^\s*#{1,6}\s+/.test(line)) {
       inObserveSection = false;
       inChromeSection = false;
+      inBorrowSection = false;
     }
 
     const commandMatch = line.match(COMMAND_RE);
@@ -154,7 +188,7 @@ export function parseCompletionDeclaration(text) {
     }
 
     if (inChromeSection) {
-      const refMatch = line.match(/(?:見本|reference)\s*[:：]\s*(.+)/i);
+      const refMatch = line.match(/(?:見本(?!URL)|reference)\s*[:：]\s*(.+)/i);
       if (refMatch) {
         chromeReference = stripPathTicks(refMatch[1]);
       }
@@ -187,6 +221,28 @@ export function parseCompletionDeclaration(text) {
         }
       }
     }
+
+    if (inBorrowSection) {
+      const urlMatch = line.match(/(?:見本URL|reference\s*URL|source\s*URL)\s*[:：]\s*(.+)/i);
+      if (urlMatch) {
+        borrowUrl = stripPathTicks(urlMatch[1]);
+      }
+
+      const skipMatch = line.match(/(?:借りない|do not borrow|skip)\s*[:：]\s*(.+)/i);
+      if (skipMatch && isMeaningful(skipMatch[1])) {
+        borrowSkip = skipMatch[1].trim();
+      }
+
+      const keepMatch = line.match(/(?:借りる|borrow|keep)\s*[:：]\s*(.+)/i);
+      if (keepMatch && isMeaningful(keepMatch[1]) && !/借りない/.test(line)) {
+        borrowKeep = keepMatch[1].trim();
+      }
+
+      const borrowReadMatch = line.match(OBSERVE_READ_RE);
+      if (borrowReadMatch) {
+        borrowReadConfirmed = true;
+      }
+    }
   }
 
   // Evaluation コマンド行の pnpm は「実行した」記録にはなるが、根拠リンク充足には使わない
@@ -203,13 +259,21 @@ export function parseCompletionDeclaration(text) {
   const uniqueChromeImplPaths = [
     ...new Set(chromeImplementationPaths.filter((path) => isMeaningful(path))),
   ];
-  const hasChromeReference = chromeReference != null && (isMeaningful(chromeReference) || isNoneLike(chromeReference));
+  const hasChromeReference =
+    chromeReference != null && (isCapturePath(chromeReference) || isNoneLike(chromeReference));
   const hasChromeCompare = Boolean(
     hasChromeReference &&
       uniqueChromeImplPaths.length > 0 &&
       isConfirmedNote(chromeDiff) &&
       chromeReadConfirmed,
   );
+  const hasBorrowUrl = borrowUrl != null && (isMeaningful(borrowUrl) || isNoneLike(borrowUrl));
+  const hasBorrowCopy = Boolean(
+    hasBorrowUrl && isMeaningful(borrowKeep) && isMeaningful(borrowSkip) && borrowReadConfirmed,
+  );
+  const hasLiveReferenceUrl = isHttpUrl(borrowUrl) || isHttpUrl(chromeReference);
+  const hasReferenceCapture = isCapturePath(chromeReference);
+  const hasValidReferenceShot = !hasLiveReferenceUrl || hasReferenceCapture;
 
   return {
     evaluationCommand,
@@ -226,6 +290,14 @@ export function parseCompletionDeclaration(text) {
     chromeDiff,
     chromeReadConfirmed,
     hasChromeCompare,
+    borrowUrl,
+    borrowKeep,
+    borrowSkip,
+    borrowReadConfirmed,
+    hasBorrowCopy,
+    hasLiveReferenceUrl,
+    hasReferenceCapture,
+    hasValidReferenceShot,
     hasEvaluationCommand: Boolean(
       (evaluationCommand && evaluationCommand.length > 1 && evaluationCommand !== '…') || hasPnpmCommand,
     ),
@@ -271,6 +343,14 @@ export function requiresObserveEvidence({ goal = null, declarationText = '' } = 
  * @param {{ goal?: string | null, declarationText?: string }} input
  */
 export function requiresChromeCompare(input = {}) {
+  return requiresObserveEvidence(input);
+}
+
+/**
+ * UI Polish 完成ゲートが骨格照合（借りる / 借りない）を要求するか。
+ * @param {{ goal?: string | null, declarationText?: string }} input
+ */
+export function requiresBorrowCopy(input = {}) {
   return requiresObserveEvidence(input);
 }
 
@@ -345,11 +425,18 @@ export function evaluateClaimGrounding({
 
   const needsObserve = requiresObserveEvidence({ goal, declarationText: text });
   const needsChrome = requiresChromeCompare({ goal, declarationText: text });
+  const needsBorrow = requiresBorrowCopy({ goal, declarationText: text });
   if (needsObserve && !parsed.hasObserveEvidence) {
     missing.push('observe-evidence');
   }
   if (needsChrome && !parsed.hasChromeCompare) {
     missing.push('observe-chrome');
+  }
+  if (needsBorrow && !parsed.hasBorrowCopy) {
+    missing.push('observe-borrow');
+  }
+  if (needsBorrow && parsed.hasLiveReferenceUrl && !parsed.hasReferenceCapture) {
+    missing.push('observe-reference-shot');
   }
 
   const evidenceResolution = resolveEvidencePaths(parsed.evidencePaths, { changedFiles });
@@ -398,6 +485,32 @@ export function evaluateClaimGrounding({
     };
   }
 
+  if (missing.includes('observe-borrow')) {
+    return {
+      status: 'stop',
+      reason:
+        'UI Polish 完成宣言に骨格照合がありません（借りる / 借りない を Read するまで完成にしない）。',
+      nextAction:
+        '骨格照合に 見本URL・借りる（枠・並び・余白）・借りない（色・フォント・事実）・Read済み: はい を記入してください。',
+      parsed,
+      missing,
+      evidenceResolution,
+    };
+  }
+
+  if (missing.includes('observe-reference-shot')) {
+    return {
+      status: 'stop',
+      reason:
+        '見本がライブ URL なのに、見本キャプチャがありません（URL 文字列や「なし（指示のみ）」では寄せない）。',
+      nextAction:
+        '見本ページを開き、ページ全体スクショを撮って ページ枠照合の見本 に path を書いてください。',
+      parsed,
+      missing,
+      evidenceResolution,
+    };
+  }
+
   if (missing.includes('evidence-link') || missing.includes('evidence-path-unresolved')) {
     return {
       status: 'warn',
@@ -413,7 +526,7 @@ export function evaluateClaimGrounding({
   return {
     status: 'pass',
     reason: needsObserve
-      ? '完成宣言の主張は観察証拠・ページ枠照合・根拠リンク・Evaluation 結果にグラウンディングされています。'
+      ? '完成宣言の主張は観察証拠・ページ枠照合・骨格照合・根拠リンク・Evaluation 結果にグラウンディングされています。'
       : '完成宣言の主張は根拠リンクと Evaluation 結果にグラウンディングされています。',
     nextAction: null,
     parsed,

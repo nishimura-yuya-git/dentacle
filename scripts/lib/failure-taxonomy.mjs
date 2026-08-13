@@ -29,8 +29,8 @@ export const FAILURE_CLASSES = [
   {
     id: 'claim-grounding',
     label: '完成宣言の根拠不足',
-    matchText: /claim[-_ ]?grounding|完成宣言|根拠リンク|Evaluation 欠落|観察証拠|Observe Loop|ページ枠照合|observe-chrome/i,
-    matchType: /claim[-_]?grounding|observe[-_]?evidence|observe[-_]?chrome/i,
+    matchText: /claim[-_ ]?grounding|完成宣言|根拠リンク|Evaluation 欠落|観察証拠|Observe Loop|ページ枠照合|observe-chrome|骨格照合|observe-borrow|observe-reference-shot/i,
+    matchType: /claim[-_]?grounding|observe[-_]?evidence|observe[-_]?chrome|observe[-_]?borrow|observe[-_]?reference/i,
   },
   {
     id: 'no-progress',

@@ -426,7 +426,7 @@ node scripts/loop-discover.mjs --write-state
 | SSoT | `scripts/lib/claim-grounding.mjs` |
 | 入力 | `state/completion-declaration.md`（`LOOP_DECLARATION_FILE` で変更可） |
 | skip | 宣言ファイルなし |
-| stop | Evaluation コマンドまたは結果の欠落、空宣言、**UI Polish の観察証拠欠落**、**ページ枠照合欠落（observe-chrome）** |
+| stop | Evaluation コマンドまたは結果の欠落、空宣言、**UI Polish の観察証拠欠落**、**ページ枠照合欠落（observe-chrome）**、**骨格照合欠落（observe-borrow）**、**ライブ見本スクショ欠落（observe-reference-shot）** |
 | warn | 根拠リンク不足（パス / MEMORY 節 / 根拠ノート） |
 | 検証 | `pnpm run test:claim-grounding` |
 
@@ -440,9 +440,11 @@ node scripts/loop-discover.mjs --write-state
 
 - 完成宣言の `観察証拠`（種別・パス・Read済み差分）が無い UI Polish は `stop`
 - 完成宣言の `ページ枠照合`（見本 / 実装ページ全体 / 差分 / Read済み）が無い UI Polish は `stop`（欠落コード `observe-chrome`）
+- 完成宣言の `骨格照合`（見本URL / 借りる / 借りない / Read済み）が無い UI Polish は `stop`（欠落コード `observe-borrow`）
+- 見本が `http(s)` URL なのに見本が「なし」または URL 文字列のままなら `stop`（欠落コード `observe-reference-shot`）
 - 内側パネルだけのスクショは観察として数えない。見本キャプチャと実装キャプチャ（ページ全体）のペアが必要
-- Eval template `ui-polish.completion` の `observe-evidence` と `chrome-compare` も必須
-- 敵対シナリオ: `ui-complete-without-observe` / `ui-complete-inner-panel-only`
+- Eval template `ui-polish.completion` の `observe-evidence` と `chrome-compare` と `borrow-copy` と `reference-shot` も必須
+- 敵対シナリオ: `ui-complete-without-observe` / `ui-complete-inner-panel-only` / `ui-complete-without-borrow-copy` / `ui-complete-live-url-without-reference-shot`
 - 知覚優先: 構造 snapshot → 見た目 screenshot（ページ全体） → vision は最終手段
 - 出典の原則名: Verify, don't assume / Observe loop
 - Hard Gate 文書: `loops/goals/ui-polish-gate.md`（Context Budget で must。長い goal 文書の後半は窓から落ちる）

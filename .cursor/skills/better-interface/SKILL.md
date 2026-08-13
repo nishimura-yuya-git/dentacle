@@ -47,7 +47,7 @@ description: >-
 | 順 | ドメイン | 正本 | 見るもの |
 | --- | --- | --- | --- |
 | 1 | Accessibility | `.cursor/rules/ui-design.mdc`（アクセシビリティ節） | focus、キーボード、aria-label、hit area、色だけに頼らない状態 |
-| 2 | Layout | `.cursor/rules/ui-design.mdc` / `ui-design-hp-lp.mdc` | ページ枠（chrome）、negative inventory、余白、階層、モバイル別設計、見切れ |
+| 2 | Layout | `.cursor/rules/ui-design.mdc` / `ui-design-hp-lp.mdc` | ページ枠（chrome）、negative inventory、骨格照合（借りる/借りない）、余白、階層、モバイル別設計、見切れ |
 | 3 | Writing | `.cursor/rules/ui-language.mdc` | 日本語優先、装飾英語禁止、空状態・エラーの次行動 |
 | 4 | Typography | `.cursor/rules/ui-design.mdc`（タイポ節） | 見出し/本文/補助の階層。業務UIで装飾明朝の乱用なし |
 | 5 | Colors | `.cursor/rules/ui-design.mdc`（カラー節） | canvas/surface、主色 `#008C01` の役割、状態色の一貫性 |
@@ -65,7 +65,7 @@ description: >-
 
 共有 severity:
 
-- `HIGH`: タスク阻害、誤誘導、操作/内容の隠蔽、データ損失リスク、繰り返し起きる系統障害。見本があるとき、見本に無い業務枠（サイドバー、FAB、業務ヘッダー）が残っているのも HIGH
+- `HIGH`: タスク阻害、誤誘導、操作/内容の隠蔽、データ損失リスク、繰り返し起きる系統障害。見本があるとき、見本に無い業務枠（サイドバー、FAB、業務ヘッダー）が残っているのも HIGH。見本のブランド色・フォント・製品事実をコピーしているのも HIGH
 - `MEDIUM`: 理解・効率・適応・一貫性を実質的に損なう
 - `LOW`: 局所 polish。`quick` では出さない
 
@@ -98,7 +98,7 @@ pnpm run loop:evaluate
 pnpm run loop:evaluator
 ```
 
-見本がある改修では、判定の前にページ枠照合を書く。内側パネルだけのスクショでは Layout を Clear にしない。
+見本がある改修では、判定の前にページ枠照合と骨格照合を書く。内側パネルだけのスクショでは Layout を Clear にしない。見本がライブ URL なら、そのページのページ全体スクショが無い Layout も Clear にしない。
 
 ### 9. 既定は変更しない
 
@@ -118,6 +118,7 @@ pnpm run loop:evaluator
 | Lucide 等の禁止アイコン提案 | カスタムSVG / 既存画像のみ |
 | Approve なのに未対応 Finding | `Needs changes` か `Block` |
 | 見本と違うページ枠を Approve | 見本に無い sidebar / FAB / 業務ヘッダーは Layout HIGH。内側パネル一致だけでは Approve しない |
+| 見本の色・事実をコピーして Approve | 骨格照合の「借りない」側（色・フォント・OAuth/Stripe 等の事実）をコピーしたら Colors / Writing HIGH |
 
 ## Review Output Format
 
@@ -179,4 +180,4 @@ UI Polish の完成宣言に次を足す:
 
 `Block` または完成条件未達の `Needs changes` は、生成ノードへ差し戻す（iteration が残っている場合）。
 
-見本があるときは Layout を先に見る。ページ枠が違うのに面やタイポだけ Approve しない。
+見本があるときは Layout を先に見る。ページ枠が違うのに面やタイポだけ Approve しない。見本の骨格だけ借り、ブランドと事実は案件の正を使う。

@@ -37,6 +37,18 @@
       "signals": ["hasChromeCompare"]
     },
     {
+      "id": "borrow-copy",
+      "label": "骨格照合（借りる / 借りない）がある",
+      "required": true,
+      "signals": ["hasBorrowCopy"]
+    },
+    {
+      "id": "reference-shot",
+      "label": "ライブURLの見本はページ全体スクショがある",
+      "required": true,
+      "signals": ["hasValidReferenceShot"]
+    },
+    {
       "id": "interface-review",
       "label": "Interface Review（better-interface）に言及している",
       "required": false,

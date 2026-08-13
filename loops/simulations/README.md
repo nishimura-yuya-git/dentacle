@@ -11,7 +11,7 @@ Future AGI の Simulate（persona × scenario × 採点）思想だけを借り�
 | scenario | `adversarial-scenarios.json` の1件 |
 | score | PreToolUse ガード / Claim Grounding / failure taxonomy の期待値 |
 
-`action.type: "claim-grounding"` のシナリオは編集ガードではなく、完成宣言の観察証拠欠落・ページ枠照合欠落などを殴る。
+`action.type: "claim-grounding"` のシナリオは編集ガードではなく、完成宣言の観察証拠欠落・ページ枠照合欠落・骨格照合欠落・ライブ見本スクショ欠落などを殴る。
 
 ## 実行
 

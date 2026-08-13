@@ -108,6 +108,11 @@ function assertTrue(value, message) {
   - 実装: \`/tmp/ui-full.png\`
   - 差分: ページ全体に業務サイドバーは無く、見本指示の専用枠もない
   - Read済み: はい
+- 骨格照合:
+  - 見本URL: なし（指示のみ）
+  - 借りる: 余白と見出し階層
+  - 借りない: 外部ブランドの色とフォント
+  - Read済み: はい
 - 根拠: \`src/pages/X.tsx\`
 `;
   const withObserve = buildScoreContext({
@@ -142,6 +147,34 @@ function assertTrue(value, message) {
   );
   assertEqual(scoredInner.status, 'stop', '内側パネルだけの観察は chrome-compare で stop');
   assertTrue(scoredInner.missingRequired.includes('chrome-compare'), 'chrome-compare 必須欠落');
+
+  const chromeWithoutBorrow = `
+## 完成宣言（UI Polish Loop）
+- Evaluation:
+  - コマンド: pnpm run loop:ui
+  - 結果: pass
+- 観察証拠:
+  - 種別: screenshot
+  - パス: \`/tmp/full.png\`
+  - Read済み: はい（ページ全体の枠を確認）
+- ページ枠照合:
+  - 見本: \`/tmp/reference-full.png\`
+  - 実装: \`/tmp/impl-full.png\`
+  - 差分: 左レールあり。業務サイドバーは無い
+  - Read済み: はい
+- 根拠: \`src/pages/X.tsx\`
+`;
+  const scoredBorrow = scoreEvalTemplate(
+    template,
+    buildScoreContext({
+      declarationText: chromeWithoutBorrow,
+      parsed: parseCompletionDeclaration(chromeWithoutBorrow),
+      evaluationResult: 'pass',
+      verdictStatus: 'pass',
+    }),
+  );
+  assertEqual(scoredBorrow.status, 'stop', '骨格照合なしは borrow-copy で stop');
+  assertTrue(scoredBorrow.missingRequired.includes('borrow-copy'), 'borrow-copy 必須欠落');
 }
 
 {

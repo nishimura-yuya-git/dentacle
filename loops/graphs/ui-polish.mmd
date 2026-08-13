@@ -7,8 +7,8 @@
 %% maxIterations: ③→④ の往復は最大 3 回
 
 flowchart TD
-  IN["① 画像・意図の抽出<br/>ページ枠 / トークン表 / 完成判定"] --> CONTRACT["② 変更契約<br/>必要時"]
-  CONTRACT --> GEN["③ 生成ノード<br/>ページ枠→面→タイポ→主ボタン→余白"]
+  IN["① 画像・意図の抽出<br/>ページ枠 / 骨格照合 / トークン表 / 完成判定"] --> CONTRACT["② 変更契約<br/>必要時"]
+  CONTRACT --> GEN["③ 生成ノード<br/>ページ枠→骨格照合→面→タイポ→主ボタン→余白"]
   GEN --> JUDGE["④ 判定ノード<br/>loop:evaluate / evaluator<br/>+ Regression Guard<br/>+ Interface Review"]
 
   JUDGE -->|"pass / 説明可能な warn<br/>かつ Review が Block でない"| DONE["⑤ 完成宣言<br/>LOOP_COMPLETE 相当"]

@@ -752,8 +752,8 @@ DB上の確定・集計テーブル
 - **料金表示は円**: `USD_TO_JPY = 160`（`aiModelPricing.ts`）。確定課金と参照概算を円換算。実請求の正は Cursor 課金。
 - **絞り込み**: 「AI利用状況」見出し右端（`actions`）にクリニック・開始日・終了日を**横1行**で置く（`DatePicker inline`・`flex-nowrap`。§10.12）。既定は直近30日。
 - **合計**: 同行の `/icon/coin.png` アイコン → 連絡者リストと同型の近傍ポップオーバー（`useAnchoredPopover`）。中身は**料金合計のみ**（確定＋参照概算の合算円）。
-- **モデル切替（2026-08-13）**: 全院共通。許容・既定は §6.53。自動カスケードではない。
-- 関連: `ProposalsPage.tsx`, `useAiUsageDashboard.tsx`, `AiUsageFilters.tsx`, `AiUsageTotals.tsx`, `AiUsageModelSwitcher.tsx`, `public/icon/coin.png`, §6.14, §6.29, §6.36, §6.37, §6.46, §6.53, §10.12
+- **モデル切替（2026-08-13）**: 全院共通。許容・既定は §6.53。Grok は1行＋版セレクト。Composer は単独行。自動カスケードではない。
+- 関連: `ProposalsPage.tsx`, `useAiUsageDashboard.tsx`, `AiUsageFilters.tsx`, `AiUsageTotals.tsx`, `AiUsageModelSwitcher.tsx`, `AiUsageModelSwitcherMenu.tsx`, `public/icon/coin.png`, §6.14, §6.29, §6.36, §6.37, §6.46, §6.53, §10.12
 
 ### 6.39 自動提案スナップショット（住所必須・距離・頻度）（2026-08-11 決定）
 
@@ -934,9 +934,11 @@ DB上の確定・集計テーブル
 - **既定・おすすめ**: `grok-4.5`（未切替・行が読めない場合もこれ）
 - Composer 2.5 は残す。既定を 4.6 に上げない。4.5 を外さない。
 - `grok-4.6` は手動切替の選択肢。カスケード帯（0〜50% 等）にはまだ載せない。
+- **UI（2026-08-13）**: Grok 4.5 と 4.6 は別行に並べない。見出しは「Grok」1行、版は共通 `Select`（§6.26）。Composer 2.5 は単独行のまま。
+- **版セレクトのラベル**: `4.5（おすすめ）` / `4.6`。見出しと重複する「Grok」は選択肢に書かない。正: `GROK_VERSION_SELECT_OPTIONS`
 - 選択肢の正: `src/config/aiModelOptions.ts`。DB 制約: `platform_ai_settings.cursor_model_id`
 - 環境変数 `CURSOR_MODEL_ID` はフォールバック既定（`grok-4.5`）。runtime の正は運営切替。
-- 関連: `AiUsageModelSwitcher.tsx`, `loadPlatformCursorModel.ts`, `aiModelPricing.ts`, §6.14, §6.36, §6.38
+- 関連: `AiUsageModelSwitcher.tsx`, `AiUsageModelSwitcherMenu.tsx`, `loadPlatformCursorModel.ts`, `aiModelPricing.ts`, §6.14, §6.26, §6.36, §6.38
 
 ### 6.54 ご意見チャット → GitHub Issue（2026-08-13 決定）
 
@@ -1356,7 +1358,7 @@ AIは作業開始時に以下を確認する。
 □ 評価契約・失敗分類・敵対シナリオは §2.13（Future AGI 製品ではなく薄い型だけ。LLM-as-judge を司法の主にしない）を守った
 □ 自動提案・ルート最適化の裏処理なら §6.10 / §6.11 / §6.12（Cursor SDK・開発local/本番Cloud・DB直結禁止・Adapter・HTTP MCP・self-hosted当面不要）を守った
 □ 精度・導入ナレッジなら §6.13（構造化制約が正・電話確認から昇格・自然文の無確認ハード制約化禁止）を守った
-□ SDK モデル選択なら §6.14 / §6.53（カスケードは後続。手動切替は grok-4.5 / grok-4.6 / composer-2.5。既定は grok-4.5。IDは list 確認）を守った
+□ SDK モデル選択なら §6.14 / §6.53（カスケードは後続。手動切替は grok-4.5 / grok-4.6 / composer-2.5。既定は grok-4.5。Grok は1行＋版セレクト、ラベルは版番号のみ。IDは list 確認）を守った
 □ 認証・監査なら §6.15（サーバー側IP＝回線出口・clinic/memberships・端末UA要約・運営のみ `/auth-audit`・地図は件数をチップ行右端・九州は zoomSelector・在席はハートビート・IPブロックは回線共有前提文言・運営バイパス・§10.27/§10.28）を守った
 □ ルート距離なら §6.16 / §6.39（`travelDistance.ts` で行列、生住所非渡与、住所必須、地図鍵を渡さない）を守った
 □ サービス名・画面コピーなら §6.17（対外名はデンタクル。内部識別子は Detacle。装飾英語見出しを増やさない。SEOはサブタイトル側）を守った
@@ -1470,4 +1472,5 @@ AIは作業開始時に以下を確認する。
 - `2026-08-13`: 運営モデル切替に grok-4.6 を追加（既定は grok-4.5、カスケード未変更）を §6.14 / §6.36 / §6.38 / §6.53 / §12 に追記（`/project-memory-learn`）
 - `2026-08-13`: ご意見チャット→GitHub Issue を §6.54 / §5 / §6.33 / §7 / §12 に追記（`/project-memory-learn`）。入口は FAB・アカウントメニュー・`/feedback`。正の記録は Issue。トークンはサーバ専用。患者PIIは載せない（§6.20）
 - `2026-08-13`: お知らせ（提案→入れる／入れない・ログイン非掲載）を §6.55 / §6.21 / §6.24 / §6.33 / §6.51 / §3 / §7 / §12 に追記（`/project-memory-learn`）。main 上のご意見チャットが先に §6.54 を使っていたため、お知らせは §6.55
+- `2026-08-13`: 運営モデル切替の Grok を1行＋版セレクトにまとめる UI を §6.38 / §6.53 / §12 に追記（`/project-memory-learn`）。ラベルは `4.5（おすすめ）` / `4.6`
 

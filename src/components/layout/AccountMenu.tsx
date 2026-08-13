@@ -9,6 +9,7 @@ type Props = {
 
 const MENU_LINKS = [
   { to: '/mypage', label: 'マイページ' },
+  { to: '/announcements', label: 'お知らせ' },
   { to: '/users', label: 'ユーザー管理（追加・編集・削除）' },
   { to: '/import', label: 'CSV取込' },
   { to: '/account/contractor', label: '契約者情報' },

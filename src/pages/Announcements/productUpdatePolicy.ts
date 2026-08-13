@@ -1,0 +1,42 @@
+/** お知らせの公開ゲート（画面・テストの正）。DB の status と一致させる。 */
+
+export const PRODUCT_UPDATE_STATUSES = ['proposed', 'published', 'rejected'] as const
+export type ProductUpdateStatus = (typeof PRODUCT_UPDATE_STATUSES)[number]
+
+export const PRODUCT_UPDATE_KINDS = ['feature', 'improve', 'fix'] as const
+export type ProductUpdateKind = (typeof PRODUCT_UPDATE_KINDS)[number]
+
+export const PRODUCT_UPDATE_SURFACES = [
+  'all',
+  'calendar',
+  'patients',
+  'contacts',
+  'users',
+  'settings',
+  'import',
+] as const
+export type ProductUpdateSurface = (typeof PRODUCT_UPDATE_SURFACES)[number]
+
+/** 院ユーザーのお知らせ一覧に出してよいか。デプロイや提案だけでは true にしない。 */
+export function isProductUpdateVisibleToClinic(status: ProductUpdateStatus): boolean {
+  return status === 'published'
+}
+
+/** 入れる／入れないの判定対象か。公開済み・非採用は再判定しない。 */
+export function canReviewProductUpdate(status: ProductUpdateStatus): boolean {
+  return status === 'proposed'
+}
+
+export type ProductUpdateInsertIntent = {
+  status: ProductUpdateStatus
+}
+
+/**
+ * 新規作成は必ず提案。公開ステータスでの作成は禁止（入れる操作は別）。
+ * DB の propose_product_update と同じ契約。
+ */
+export function assertProductUpdateCreatedAsProposal(intent: ProductUpdateInsertIntent): void {
+  if (intent.status !== 'proposed') {
+    throw new Error('お知らせは提案として作成してください。入れる操作は別に行います。')
+  }
+}

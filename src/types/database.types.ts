@@ -969,6 +969,60 @@ export type Database = {
         }
         Relationships: []
       }
+      product_updates: {
+        Row: {
+          body: string | null
+          created_at: string
+          detail_url: string | null
+          id: string
+          kind: string
+          proposed_at: string
+          proposed_by: string | null
+          published_at: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          surfaces: string[]
+          title: string
+          update_number: number | null
+          updated_at: string
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          detail_url?: string | null
+          id?: string
+          kind: string
+          proposed_at?: string
+          proposed_by?: string | null
+          published_at?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          surfaces?: string[]
+          title: string
+          update_number?: number | null
+          updated_at?: string
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          detail_url?: string | null
+          id?: string
+          kind?: string
+          proposed_at?: string
+          proposed_by?: string | null
+          published_at?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          surfaces?: string[]
+          title?: string
+          update_number?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       schedule_job_items: {
         Row: {
           adopted_visit_id: string | null
@@ -1708,6 +1762,18 @@ export type Database = {
         Args: { p_clinic_id?: string; p_event: string }
         Returns: string
       }
+      propose_product_update: {
+        Args: {
+          p_body?: string
+          p_detail_url?: string
+          p_kind: string
+          p_surfaces?: string[]
+          p_title: string
+        }
+        Returns: string
+      }
+      publish_product_update: { Args: { p_id: string }; Returns: number }
+      reject_product_update: { Args: { p_id: string }; Returns: boolean }
       request_client_ip: { Args: never; Returns: string }
       touch_auth_presence: {
         Args: { p_clinic_id?: string }

@@ -24,6 +24,7 @@ import {
   MyPage,
   PaymentHistoryPage,
 } from '@/pages/Account'
+import { AnnouncementsPage } from '@/pages/Announcements/AnnouncementsPage'
 
 function ClinicShell() {
   return (
@@ -47,6 +48,7 @@ function App() {
                   <Route path="/members" element={<Navigate to="/users" replace />} />
                   <Route path="/users" element={<MembersPage />} />
                   <Route path="/mypage" element={<MyPage />} />
+                  <Route path="/announcements" element={<AnnouncementsPage />} />
                   <Route path="/account/contractor" element={<ContractorInfoPage />} />
                   <Route path="/account/payments" element={<PaymentHistoryPage />} />
                   <Route path="/account/contract" element={<ContractInfoPage />} />

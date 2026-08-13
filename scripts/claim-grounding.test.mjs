@@ -5,6 +5,8 @@
  */
 import {
   evaluateClaimGrounding,
+  hasUnresolvedObserveProblems,
+  isObserveBlockersCleared,
   parseCompletionDeclaration,
   resolveEvidencePaths,
 } from './lib/claim-grounding.mjs';
@@ -134,6 +136,7 @@ function assertTrue(value, message) {
   - Read済み: はい
 - 操作観察:
   - 対象: なし（端の開閉なし）
+- 観察で残した阻害: なし
 - Stop非該当の根拠: PROJECT_MEMORY.md §2.9 と差分 \`src/pages/Home.tsx\`
 `,
     goal: 'ui-polish',
@@ -328,6 +331,7 @@ function assertTrue(value, message) {
   - 種別: screenshot
   - パス: \`/tmp/account-menu-open.png\`
   - Read済み: はい（上開き、ログアウト可視、レールは動かない）
+- 観察で残した阻害: なし
 - Stop非該当の根拠: PROJECT_MEMORY.md §6.56 と差分 \`src/components/layout/AccountMenu.tsx\`
 `,
     goal: 'ui-polish',
@@ -358,6 +362,118 @@ function assertTrue(value, message) {
   });
   assertEqual(resolved[0].ok, true, '変更面のパスは ok');
   assertEqual(resolved[1].ok, false, '存在しないパスは ng');
+}
+
+{
+  // 期待値根拠: ご意見チャット観察 — 見出し二重・FAB衝突を書いて完成できた
+  assertEqual(
+    hasUnresolvedObserveProblems('見出しが二重で、FABが送信に重なる'),
+    true,
+    '未解消の二重・重なりを検出',
+  );
+  assertEqual(
+    hasUnresolvedObserveProblems('見出し重複は解消。FAB衝突なし'),
+    false,
+    '解消済みは未解消ではない',
+  );
+  assertEqual(hasUnresolvedObserveProblems('余白は一致'), false, '阻害語が無い観察は未解消ではない');
+  assertEqual(isObserveBlockersCleared('なし'), true, '阻害欄なしはクリア');
+  assertEqual(isObserveBlockersCleared(''), false, '空欄はクリアではない');
+  assertEqual(isObserveBlockersCleared('見出し重複が残る'), false, '残件ありはクリアではない');
+}
+
+{
+  const result = evaluateClaimGrounding({
+    declarationText: `
+## 完成宣言（UI Polish Loop）
+- Evaluation:
+  - コマンド: pnpm run loop:ui
+  - 結果: pass
+- Regression Guard: pass
+- 観察証拠:
+  - 種別: screenshot
+  - パス: \`/tmp/feedback.png\`
+  - Read済み: はい（見出しが二重で、FABが送信に重なる）
+- 参照の正体: なし（指示のみ）
+- 対象枠: ロック（DashboardLayout）
+- 借りてよい: なし（指示のみ）
+- 借りない: 見本のページ枠、暗い面
+- ページ枠照合:
+  - 見本: なし（指示のみ）
+  - 実装: \`/tmp/feedback-full.png\`
+  - 差分: 対象は業務ハブのためサイドバー・FABを残した
+  - Read済み: はい
+- 操作観察:
+  - 対象: なし（端の開閉なし）
+- 観察で残した阻害: なし
+- Stop非該当の根拠: \`src/pages/Feedback.tsx\`
+`,
+    goal: 'ui-polish',
+  });
+  assertEqual(result.status, 'stop', '未解消の観察阻害を残した完成は stop');
+  assertTrue(result.missing.includes('observe-blockers-cleared'), 'observe-blockers-cleared 欠落');
+}
+
+{
+  const result = evaluateClaimGrounding({
+    declarationText: `
+## 完成宣言（UI Polish Loop）
+- Evaluation:
+  - コマンド: pnpm run loop:ui
+  - 結果: pass
+- Regression Guard: pass
+- 観察証拠:
+  - 種別: screenshot
+  - パス: \`/tmp/feedback.png\`
+  - Read済み: はい（余白は一致）
+- 参照の正体: なし（指示のみ）
+- 対象枠: ロック（DashboardLayout）
+- 借りてよい: なし（指示のみ）
+- 借りない: 見本のページ枠、暗い面
+- ページ枠照合:
+  - 見本: なし（指示のみ）
+  - 実装: \`/tmp/feedback-full.png\`
+  - 差分: 対象は業務ハブのためサイドバーを残した
+  - Read済み: はい
+- 操作観察:
+  - 対象: なし（端の開閉なし）
+- Stop非該当の根拠: \`src/pages/Feedback.tsx\`
+`,
+    goal: 'ui-polish',
+  });
+  assertEqual(result.status, 'stop', '観察阻害欄なしの UI Polish は stop');
+  assertTrue(result.missing.includes('observe-blockers-cleared'), '阻害欄欠落');
+}
+
+{
+  const result = evaluateClaimGrounding({
+    declarationText: `
+## 完成宣言（UI Polish Loop）
+- Evaluation:
+  - コマンド: pnpm run loop:ui
+  - 結果: pass
+- Regression Guard: pass
+- 観察証拠:
+  - 種別: screenshot
+  - パス: \`/tmp/feedback.png\`
+  - Read済み: はい（見出し重複は解消。FAB衝突なし）
+- 参照の正体: なし（指示のみ）
+- 対象枠: ロック（DashboardLayout）
+- 借りてよい: なし（指示のみ）
+- 借りない: 見本のページ枠、暗い面
+- ページ枠照合:
+  - 見本: なし（指示のみ）
+  - 実装: \`/tmp/feedback-full.png\`
+  - 差分: 対象は業務ハブのためサイドバーを残した
+  - Read済み: はい
+- 操作観察:
+  - 対象: なし（端の開閉なし）
+- 観察で残した阻害: なし
+- Stop非該当の根拠: \`src/pages/Feedback.tsx\`
+`,
+    goal: 'ui-polish',
+  });
+  assertEqual(result.status, 'pass', '解消済みの観察阻害は pass');
 }
 
 if (failed > 0) {

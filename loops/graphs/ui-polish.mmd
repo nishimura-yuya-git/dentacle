@@ -9,7 +9,7 @@
 flowchart TD
   IN["① 画像・意図の抽出<br/>参照の正体 / 対象枠ロック / 借り一覧 / 端の開閉"] --> CONTRACT["② 変更契約<br/>必要時"]
   CONTRACT --> GEN["③ 生成ノード<br/>対象枠ロック→借り一覧→面→タイポ→余白→端の開閉"]
-  GEN --> JUDGE["④ 判定ノード<br/>loop:evaluate / evaluator<br/>+ Regression Guard<br/>+ Interface Review"]
+  GEN --> JUDGE["④ 判定ノード<br/>loop:evaluate / evaluator<br/>+ Regression Guard<br/>+ Interface Review<br/>+ Overlay検査"]
 
   JUDGE -->|"pass / 説明可能な warn<br/>かつ Review が Block でない"| DONE["⑤ 完成宣言<br/>LOOP_COMPLETE 相当"]
   JUDGE -->|"差し戻し<br/>完成条件未達・必須失敗<br/>または Review Block"| GEN

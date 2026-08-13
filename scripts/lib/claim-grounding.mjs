@@ -11,6 +11,7 @@
  * 加えてページ枠照合（見本キャプチャと実装キャプチャのペア）が無いと stop。
  * 借り契約（参照の正体 / 対象枠 / 借りてよい / 借りない）が無いと stop。
  * 操作観察（端の開閉。無しなら「なし（端の開閉なし）」）が無いと stop。
+ * 観察で残した阻害が未解消、または「観察で残した阻害: なし」が無いと stop。
  */
 
 import { existsSync, readFileSync } from 'node:fs';
@@ -31,6 +32,32 @@ const PLACEHOLDER_RE = /^(…|\.\.\.|なし|n\/a|-)?$/i;
 const UNCONFIRMED_NOTE_RE = /^(未確認|未観察|空欄)$/i;
 const NONE_LIKE_RE = /^(なし|n\/a|指示のみ)(（指示のみ）)?$/i;
 const EDGE_SKIP_RE = /端の開閉なし/;
+const OBSERVE_BLOCKER_LINE_RE = /観察で残した阻害\s*[:：]\s*(.+)/i;
+const CLEAR_BLOCKER_RE = /^(なし|none|n\/a|-|無し)([。．.]*)?$/i;
+const UNRESOLVED_PROBLEM_RE = /重複|重なり|重なる|隠蔽|見切れ|二重|衝突/;
+const PROBLEM_RESOLVED_RE =
+  /解消|修正済|直した|なくなった|残っていない|阻害なし|衝突なし|重なりなし|重複なし|見切れなし|隠蔽なし/;
+
+/**
+ * 観察差分に未解消の阻害が残っているか。
+ * 「重複は解消した」は未解消ではない。
+ * @param {string} note
+ */
+export function hasUnresolvedObserveProblems(note) {
+  const text = String(note ?? '').trim();
+  if (!text) return false;
+  if (!UNRESOLVED_PROBLEM_RE.test(text)) return false;
+  return !PROBLEM_RESOLVED_RE.test(text);
+}
+
+/**
+ * 「観察で残した阻害」欄が完成してよいか。
+ * @param {string | null} raw
+ */
+export function isObserveBlockersCleared(raw) {
+  const text = String(raw ?? '').trim();
+  return Boolean(text) && CLEAR_BLOCKER_RE.test(text);
+}
 
 /**
  * @param {string} value
@@ -112,6 +139,7 @@ export function parseCompletionDeclaration(text) {
   let targetChrome = null;
   let borrowAllow = null;
   let borrowDeny = null;
+  let observeBlockersRaw = null;
 
   for (const line of lines) {
     if (/操作観察|edge\s*overlay|edge\s*observe/i.test(line)) {
@@ -148,6 +176,11 @@ export function parseCompletionDeclaration(text) {
     const evidenceMatch = line.match(EVIDENCE_LINE_RE);
     if (evidenceMatch) {
       evidenceNotes.push(evidenceMatch[1].trim());
+    }
+
+    const blockerMatch = line.match(OBSERVE_BLOCKER_LINE_RE);
+    if (blockerMatch) {
+      observeBlockersRaw = blockerMatch[1].trim();
     }
 
     for (const pathMatch of line.matchAll(PATH_RE)) {
@@ -309,6 +342,18 @@ export function parseCompletionDeclaration(text) {
         edgeReadConfirmed &&
         isMeaningful(edgeReadNote)),
   );
+  const blockersText = String(observeBlockersRaw ?? '').trim();
+  const hasObserveBlockersField = Boolean(
+    observeBlockersRaw != null && blockersText && blockersText !== '…' && blockersText !== '...',
+  );
+  const observeHasUnresolvedProblems = hasUnresolvedObserveProblems(
+    [observeReadNote, chromeDiff, edgeReadNote].filter(Boolean).join(' '),
+  );
+  const hasObserveBlockersCleared = Boolean(
+    hasObserveBlockersField &&
+      isObserveBlockersCleared(observeBlockersRaw) &&
+      !observeHasUnresolvedProblems,
+  );
 
   return {
     evaluationCommand,
@@ -336,6 +381,10 @@ export function parseCompletionDeclaration(text) {
     edgeReadConfirmed,
     edgeReadNote,
     hasEdgeOverlayObserve,
+    observeBlockersRaw,
+    hasObserveBlockersField,
+    observeHasUnresolvedProblems,
+    hasObserveBlockersCleared,
     hasEvaluationCommand: Boolean(
       (evaluationCommand && evaluationCommand.length > 1 && evaluationCommand !== '…') || hasPnpmCommand,
     ),
@@ -487,6 +536,9 @@ export function evaluateClaimGrounding({
   if (needsEdge && !parsed.hasEdgeOverlayObserve) {
     missing.push('observe-edge');
   }
+  if (needsObserve && parsed.hasObserveEvidence && !parsed.hasObserveBlockersCleared) {
+    missing.push('observe-blockers-cleared');
+  }
 
   const evidenceResolution = resolveEvidencePaths(parsed.evidencePaths, { changedFiles });
   const badPaths = evidenceResolution.filter((item) => !item.ok);
@@ -554,6 +606,19 @@ export function evaluateClaimGrounding({
         'UI Polish 完成宣言に操作観察がありません（端の開閉を動かして見切れ・固定枠のガクつきを確認するまで完成にしない）。',
       nextAction:
         '操作観察に 対象（下端▼等、または なし（端の開閉なし））・種別・パス・Read済み: はい（見切れなし／固定枠は動かない） を記入してください。',
+      parsed,
+      missing,
+      evidenceResolution,
+    };
+  }
+
+  if (missing.includes('observe-blockers-cleared')) {
+    return {
+      status: 'stop',
+      reason:
+        '観察で見出し重複・説明重複・FAB衝突などの阻害が残っている、または「観察で残した阻害: なし」が無い。',
+      nextAction:
+        '阻害を直してから再観察する。完成時は「観察で残した阻害: なし」。Read差分に未解消の重複・重なりを残したまま なし と書かない。',
       parsed,
       missing,
       evidenceResolution,

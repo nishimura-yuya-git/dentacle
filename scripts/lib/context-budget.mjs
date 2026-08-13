@@ -24,7 +24,7 @@
 export const SOURCE_CATALOG = [
   { path: 'PROJECT_MEMORY.md', tier: 'must', maxLines: 60, always: true },
   { path: '.cursor/rules/safety.mdc', tier: 'must', maxLines: 40, always: true },
-  { path: '.cursor/rules/agent-loops.mdc', tier: 'must', maxLines: 40, always: true },
+  { path: '.cursor/rules/agent-loops.mdc', tier: 'must', maxLines: 55, always: true },
   { path: '.cursor/rules/change-contract.mdc', tier: 'must', maxLines: 40, always: true },
   { path: '.cursor/rules/invariants.mdc', tier: 'compress', maxLines: 25, always: true },
   { path: '.cursor/rules/architecture-extension.mdc', tier: 'compress', maxLines: 25, always: true },

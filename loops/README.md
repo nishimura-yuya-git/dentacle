@@ -68,7 +68,7 @@
 
 制御 Graph（`loops/graphs/*.mmd`）とは別に、共有メモリとグラウンディングを薄く持つ。
 
-- Claim Grounding: 完成宣言（`state/completion-declaration.md`）の主張を根拠と照合。無ければ skip。UI Polish は観察証拠（snapshot|screenshot を Read した記録）とページ枠照合が必須。
+- Claim Grounding: 完成宣言（`state/completion-declaration.md`）の主張を根拠と照合。無ければ skip。UI Polish は観察証拠（snapshot|screenshot を Read した記録）とページ枠照合と観察阻害クリアが必須。
 - Working Graph: `SCREEN/API/TABLE/SSOT/SYMPTOM/DOC` と `touches/depends_on/reported_in` を `state/working-graph.json` に残す。
 - 全文書 NER・グラフDB・Claude 自動抽出は行わない。
 - コマンド: `pnpm run working-graph` / `pnpm run test:claim-grounding` / `pnpm run test:working-graph`

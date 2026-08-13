@@ -64,6 +64,10 @@ function assertTrue(value, message) {
     result.selected.some((s) => s.path === 'loops/graphs/regression-guard.mmd'),
     'ui-polish では Regression Guard graph も残す',
   );
+  const uiGoal = result.selected.find((s) => s.path === 'loops/goals/ui-polish.md');
+  assertTrue(uiGoal && uiGoal.maxLines >= 34, 'ui-polish 先頭に Overlay 検査が入る行数');
+  const agentLoops = result.selected.find((s) => s.path === '.cursor/rules/agent-loops.mdc');
+  assertTrue(agentLoops && agentLoops.maxLines >= 48, 'agent-loops の FAB 併用行が入る行数');
 }
 
 {

@@ -114,6 +114,7 @@ function assertTrue(value, message) {
   - Read済み: はい
 - 操作観察:
   - 対象: なし（端の開閉なし）
+- 観察で残した阻害: なし
 - 根拠: \`src/pages/X.tsx\`
 `;
   const withObserve = buildScoreContext({

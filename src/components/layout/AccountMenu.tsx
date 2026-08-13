@@ -12,6 +12,7 @@ const MENU_LINKS = [
   { to: '/announcements', label: 'お知らせ' },
   { to: '/users', label: 'ユーザー管理（追加・編集・削除）' },
   { to: '/import', label: 'CSV取込' },
+  { to: '/feedback', label: 'ご意見・不具合' },
   { to: '/account/contractor', label: '契約者情報' },
   { to: '/account/payments', label: 'お支払い履歴' },
   { to: '/account/contract', label: '契約情報' },

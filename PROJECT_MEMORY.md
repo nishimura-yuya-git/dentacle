@@ -218,7 +218,7 @@
 | 構造化制約（NG/不在/可能枠） | 要確認（テーブル・ファイル未確定） | 割付精度の正。自由記述Wikiではない（§6.13） | 制約マスタ、電話確認昇格、割付ジョブ |
 | 距離行列（住所→移動根拠） | `src/utils/schedule/travelDistance.ts` | 座標/距離の算出。エージェントは結果を読むだけ（§6.16） | 割付ジョブ、ルート最適化 |
 | ログインIP・認証監査 | `auth_audit_logs` + `log_auth_audit_event` + `auth_ip_blocks` + `auth_presence` | 誰がいつどこから認証したか。clinic/memberships・地図・IPブロック・在席心拍。閲覧UIは運営のみ `/auth-audit`（§6.15） | ログイン監査画面 |
-| お知らせ公開判定 | `productUpdatePolicy.ts` + RPC（`propose_product_update` / `publish_product_update` / `reject_product_update`） | 院に見えるのは `published` のみ。提案中・入れないは出さない。デプロイでは自動掲載しない（§6.54） | お知らせ画面 |
+| お知らせ公開判定 | `productUpdatePolicy.ts` + RPC（`propose_product_update` / `publish_product_update` / `reject_product_update`） | 院に見えるのは `published` のみ。提案中・入れないは出さない。デプロイでは自動掲載しない（§6.55） | お知らせ画面 |
 
 ### 禁止
 
@@ -276,6 +276,7 @@ DB上の確定・集計テーブル
 | `[配置/ロール]` | `[table.column]` | `[table.column]` | `[保存時/承認時]` | `[全体失敗にする]` |
 | `[ステータス]` | `[table.column]` | `[table.column]` | `[確定時]` | `[ロールバック/再試行]` |
 | `[金額]` | `[table.column]` | `[table.column]` | `[締め時]` | `[再計算禁止/警告]` |
+| ご意見の正記録 | GitHub Issue（本体／コメント） | `feedback_threads` / `feedback_messages`（履歴） | Issue またはコメント作成成功後 | GitHub 失敗時は履歴も作らない。履歴保存失敗はログのみ（Issue は残す）。§6.54 |
 
 ### 禁止例
 
@@ -566,8 +567,8 @@ DB上の確定・集計テーブル
 - **余白（2026-08-11）**: カード内は広め（目安 `px-10 py-12` 以上、見出し下 `mb-10`、フィールド間 `space-y-8`、ラベル〜入力 `space-y-3`、主ボタン前に一段余白、フッター上 `mt-10`）。入力は `py-4` 前後。詰めすぎない。
 - **MFA確認コードUI（2026-08-12）**: 運営 TOTP の確認／登録コードは横長1欄にしない。**6マス分割**（`OtpCodeInput`）。コピペした6桁は各マスへ展開する（数字以外は除去）。enroll / challenge とも同じコンポーネントを使う（§6.29）。
 - **MFA中の画面切替（2026-08-12）**: セッションがあるあいだはメール・パスワード画面へ戻さない（§10.26）。ゲート解決中は待ち表示。
-- **お知らせ・更新内容（2026-08-13）**: ログイン画面には出さない。正本はログイン後のお知らせ（§6.54）。
-- 関連: `src/pages/Login/LoginPage.tsx`, `OtpCodeInput.tsx`, `MfaChallengePanel.tsx`, `MfaEnrollPanel.tsx`, §6.17, §6.24, §6.29, §6.54, §10.26, `ui-language.mdc`
+- **お知らせ・更新内容（2026-08-13）**: ログイン画面には出さない。正本はログイン後のお知らせ（§6.55）。
+- 関連: `src/pages/Login/LoginPage.tsx`, `OtpCodeInput.tsx`, `MfaChallengePanel.tsx`, `MfaEnrollPanel.tsx`, §6.17, §6.24, §6.29, §6.55, §10.26, `ui-language.mdc`
 
 ### 6.22 開発用Auth運用（2026-08-09 決定）
 
@@ -586,9 +587,9 @@ DB上の確定・集計テーブル
 ### 6.24 アプリヘッダー（アカウントメニュー・ロゴ枠）（2026-08-09 決定 / 2026-08-10 改定 / 2026-08-13 追記）
 
 - ヘッダー右はクリニック名ピル＋右端の▼アカウントメニューとする。
-- メニュー項目: マイページ／お知らせ／ユーザー管理（追加・編集・削除）／CSV取込／契約者情報／お支払い履歴／契約情報／ログアウト。
+- メニュー項目: マイページ／お知らせ／ユーザー管理（追加・編集・削除）／CSV取込／ご意見・不具合／契約者情報／お支払い履歴／契約情報／ログアウト。
 - ヘッダーに単独のログアウトボタンを置かない。
-- ルート: `/mypage`・`/announcements`・`/users`・`/import` は実装画面。契約者情報・お支払い履歴・契約情報は当面 stub「準備中」で導線のみ先に用意する。お知らせの公開ルールは §6.54。
+- ルート: `/mypage`・`/announcements`・`/users`・`/import`・`/feedback` は実装画面。契約者情報・お支払い履歴・契約情報は当面 stub「準備中」で導線のみ先に用意する。お知らせの公開ルールは §6.55。ご意見は §6.54。
 - **業務ナビはヘッダー横並びではなく左サイドバー**（§6.33）。ヘッダーはクリニック名ピル＋ページ見出し帯（`titleAside` / `actions`）を主とする。
 - ブランド「デンタクル」はテキストのみ（緑背景の角丸プレースホルダは置かない）。枠内に「デ」等の仮文字も置かない。将来ロゴ差し替え時は画像/SVG、`alt` は「デンタクル」。
 - ブランド配置: サイドバー表示中はサイドバー上部。サイドバー非表示時・md未満はヘッダー左に出す（モバイルでブランドが消えないようにする）。
@@ -682,8 +683,9 @@ DB上の確定・集計テーブル
 - **自動提案アイコン**: サイドバー「自動提案」とカレンダー「自動提案」ボタンの文字左に `/icon/ai.png`。見た目は `brightness-0` + `opacity` で灰色。
 - **その他ナビアイコン（2026-08-11 / 2026-08-12）**: 診療カレンダー=`/icon/calendar.png`、設定=`/icon/gears.png`、患者管理=`/icon/patient.png`、操作ログ=`/icon/windows.png`、ログイン監査=`/icon/audit.png`（運営のみ・§6.15 / §6.29）。選択時緑・通常灰のマスク着色は既存 `NavIcon` と同じ。
 - **サイドバー「自動提案」（`/proposals`）は運営（`platform_admins`）のみ表示**（`requiresPlatformAdmin`。§6.34 / §6.35）。AI利用状況は別ナビにせず、同ハブ内で切替（§6.46）。
-- **お知らせはサイドバーに置かない**（アカウントメニュー。§6.24 / §6.54）。`/proposals`（AI自動提案）と名前・URLを混ぜない。
+- **お知らせはサイドバーに置かない**（アカウントメニュー。§6.24 / §6.55）。`/proposals`（AI自動提案）と名前・URLを混ぜない。
 - ナビ項目定義の正は `navConfig.ts`（`APP_NAV` / `isNavItemActive`）。描画は `AppSidebar.tsx` / `SidebarNav.tsx`。
+- **ご意見・不具合（2026-08-13）**: 業務ナビには置かない。入口は右下 FAB・アカウントメニュー・`/feedback`（§6.54）。
 - `NavDropdown.tsx` は上部ナビ廃止により未参照。`safety.mdc` に従い承認なしでは削除しない（削除はユーザー明示時のみ）。
 - 関連: `DashboardLayout.tsx`, `AppSidebar.tsx`, `SidebarNav.tsx`, `navConfig.ts`, `CalendarPage.tsx`, `public/icon/grid.png`, `public/icon/ai.png`, `public/icon/calendar.png`, `public/icon/gears.png`, `public/icon/patient.png`, `public/icon/windows.png`, `public/icon/audit.png`, §6.15, §6.24, §6.29, §6.31, §6.34, §6.35, §10.9
 
@@ -911,8 +913,8 @@ DB上の確定・集計テーブル
 - **チーム・担当・稼働枠**: 操作ログと同系の `rounded-[28px]` パネル＋見出し付き表＋下固定の追加フォーム（`SettingsMasterPanel`）。稼働枠はチーム／曜日／時間列。
 - **sticky 見出し**: 表は `border-separate` ＋ `thead sticky`（`border-collapse` だと sticky が効かないことがある。§10.24）。
 - 削除・編集UIは本節のスコープ外（未実装のまま）。
-- お知らせ・プロダクト更新は設定に混ぜない（§6.54）。
-- 関連: `SettingsPage.tsx`, `SettingsMasterPanel.tsx`, `IntroductionLaneSection.tsx`, §6.26, §6.42, §6.43, §6.54
+- お知らせ・プロダクト更新は設定に混ぜない（§6.55）。
+- 関連: `SettingsPage.tsx`, `SettingsMasterPanel.tsx`, `IntroductionLaneSection.tsx`, §6.26, §6.42, §6.43, §6.55
 
 ### 6.52 プラットフォーム保安（シード表削除・漏洩PW・DB SSL）（2026-08-12 決定）
 
@@ -936,7 +938,20 @@ DB上の確定・集計テーブル
 - 環境変数 `CURSOR_MODEL_ID` はフォールバック既定（`grok-4.5`）。runtime の正は運営切替。
 - 関連: `AiUsageModelSwitcher.tsx`, `loadPlatformCursorModel.ts`, `aiModelPricing.ts`, §6.14, §6.36, §6.38
 
-### 6.54 お知らせ（プロダクト更新・2026-08-13 決定）
+### 6.54 ご意見チャット → GitHub Issue（2026-08-13 決定）
+
+アプリ内の「ご意見・不具合」チャットを、開発用の GitHub Issue にする。
+
+- **入口**: 右下 FAB、アカウントメニュー「ご意見・不具合」、専用ページ `/feedback`。**業務サイドバー（`APP_NAV`）には置かない**（§6.33）。
+- **正の記録は GitHub Issue**。同一スレッドの続きは Issue コメント。「新しいご意見」で別 Issue を作る。`feedback_threads` / `feedback_messages` はアプリ内履歴のみ。
+- **API**: `POST /api/feedback/send`。ログイン JWT 必須。公開エラーは固定日本語（内部の GitHub / Postgres 生文言は出さない。§6.40）。
+- **トークン**: サーバ専用 `GITHUB_FEEDBACK_TOKEN`（未設定時は `GITHUB_TOKEN`）。リポジトリは `GITHUB_FEEDBACK_REPO`。`VITE_` 接頭辞は禁止（§6.36 と同じ）。
+- **レート制限**: 同一ユーザー 15 秒に 1 通。
+- **RLS**: 本人または運営のみ SELECT。INSERT のみ（UPDATE/DELETE ポリシーは付けない）。
+- **個人情報**: 患者氏名・カルテ番号は Issue 本文に載せない（§6.20 と同一）。画面に注意文を出す。MEMORY・コミットにも転記しない。
+- 関連: `api/feedback/send.ts`, `server/feedback/`, `src/components/features/feedback/`, `src/pages/Feedback/FeedbackPage.tsx`, `AccountMenu.tsx`, §5, §6.20, §6.33, §7
+
+### 6.55 お知らせ（プロダクト更新・2026-08-13 決定）
 
 - 正本はログイン後 `/announcements`。院も運営も同じ入口。
 - 入口はアカウントメニュー（マイページの次）。業務ナビ（サイドバー）と設定（導入タイプ・チーム・担当・稼働枠）には置かない。
@@ -960,7 +975,10 @@ DB上の確定・集計テーブル
 | `GET /api/cursor/health` | Bearer=`CURSOR_HEALTH_SECRET` | — | — | — | 未設定は401。公開は ok/service/ready のみ（§6.36 / §10.10） |
 | `clinic_members` | 所属メンバー | bootstrap（非運営 owner）/ admin（owner以外・非運営） | admin（owner行以外） | admin（owner行以外・grantなし） | UIロックだけでは不可。§6.40 |
 | `POST /api/schedule/propose` | — | 認可済みロール | — | — | JWT必須。60秒クールダウン＋同時1本。公開エラーは固定文言（§6.40） |
-| お知らせ（`product_updates`） | published は認証済み。提案中・入れないは運営のみ | `propose_product_update` のみ | `publish_product_update` / `reject_product_update` のみ | grant なし | いきなり published 禁止。§6.54 |
+| `feedback_threads` | 本人または運営 | 本人（所属クリニックまたは運営） | 原則不可 | 原則不可 | アプリ内履歴。正の記録は GitHub Issue（§6.54） |
+| `feedback_messages` | 本人または運営 | 本人 | 原則不可 | 原則不可 | INSERT のみ。UPDATE/DELETE ポリシーなし（§6.54） |
+| `POST /api/feedback/send` | — | ログイン済み | — | — | JWT必須。トークンはサーバ専用。15秒クールダウン。公開エラーは固定文言（§6.54） |
+| お知らせ（`product_updates`） | published は認証済み。提案中・入れないは運営のみ | `propose_product_update` のみ | `publish_product_update` / `reject_product_update` のみ | grant なし | いきなり published 禁止。§6.55 |
 | `[table_a]` | `[role]` | `[role]` | `[role]` | `[role]` | `[制約]` |
 | `[table_b]` | `[role]` | `[role]` | `[role]` | `[role]` | `[制約]` |
 
@@ -1363,7 +1381,7 @@ AIは作業開始時に以下を確認する。
 □ 空き枠埋めなら §6.47（副導線のみ・近接分最優先・住所必須明示・レート秒カウントダウン・決定論フォールバック・採用はクライアント・warnings 可・生住所非渡与。主導線を空き枠探しにしない）を守った
 □ 操作ログなら §6.50（表形式日本語・fillViewport・操作/対象/クリニックSelect・ページネーション・全院時のみクリニック列）を守った
 □ 設定画面なら §6.51 / §10.24（見出しSelectでセクション切替・導入タイプはSelect+1面・マスタは表パネル・sticky は border-separate・お知らせは混ぜない）を守った
-□ お知らせなら §6.54（入口はアカウントメニュー／`/announcements`・ログイン非掲載・デプロイ自動掲載禁止・提案→入れる／入れない・`/proposals` と混ぜない・エージェントは提案まで）を守った
+□ お知らせなら §6.55（入口はアカウントメニュー／`/announcements`・ログイン非掲載・デプロイ自動掲載禁止・提案→入れる／入れない・`/proposals` と混ぜない・エージェントは提案まで）を守った
 □ 患者住所・ジオコードなら §6.20 / §6.49 / §10.23（住所の正はApotool・CSVに住所なし・座標化して距離根拠・外れ値はNULL・latitude NULL は再実行）を守った
 □ Cursor SDK 基盤なら §6.36 / §10.10（server/cursor・Private中 local・Cloud URL・鍵を VITE_ に出さない・health は CURSOR_HEALTH_SECRET Bearer 必須・公開DTO最小化）を守った
 □ 本番公開／Vercel デプロイなら §6.36 / §10.10（`CURSOR_HEALTH_SECRET` とサーバー専用 `CURSOR_*` を Environment Variables へ。`VITE_` 禁止。未設定なら手順を案内）を守った
@@ -1372,6 +1390,7 @@ AIは作業開始時に以下を確認する。
 □ 運営AIハブなら §6.45 / §6.46（見出しSelectで画面切替・提案内もセクションSelect・fillViewport+sticky表・最近のジョブはクリニック絞り込み・再利用はジョブの clinic_id・サイドバーは自動提案1項目・旧 `/admin/ai-usage` はリダイレクト）を守った
 □ 自動提案スナップショットなら §6.39（住所必須・距離行列・頻度/期限緊急度・schema v2・生住所非渡与）を守った
 □ セキュリティ是正なら §6.40 / §10.11（clinic_members RLS 分割・運営除外・propose 60秒クールダウン・待機時間明示のレート制限文言・公開エラーは固定文言）を守った
+□ ご意見チャットなら §6.54 / §6.20 / §6.33（入口は FAB・アカウントメニュー・`/feedback`。業務ナビ禁止。正は GitHub Issue。トークンはサーバ専用。`VITE_` 禁止。患者PIIは載せない。公開エラーは固定文言）を守った
 □ Cloud 送信のコンプライアンスなら §6.12（UUID・制約中心。氏名・電話・生住所非渡与。DPA/同意を文書化）を守った
 □ ナビ▼メニューなら §10.8（overflow で消さない。portal＋fixed。主導線はサイドバーアコーディオン）を守った
 □ Cloud 起動時は `cloud` を明示したか（未指定で local に黙って落ちない）を確認した
@@ -1449,5 +1468,6 @@ AIは作業開始時に以下を確認する。
 - `2026-08-12`: ログイン監査の地図UI・Select切替・地方ズーム・clinic紐付け・IPブロックを §6.15 / §7 / §10.27 / §12 に追記（`/project-memory-learn`）
 - `2026-08-12`: 在席ハートビート・件数テキスト配置・九州ズーム再発防止・IP回線共有文言を §6.15 / §7 / §10.28 / §12 に追記（`/project-memory-learn`）
 - `2026-08-13`: 運営モデル切替に grok-4.6 を追加（既定は grok-4.5、カスケード未変更）を §6.14 / §6.36 / §6.38 / §6.53 / §12 に追記（`/project-memory-learn`）
-- `2026-08-13`: お知らせ（提案→入れる／入れない・ログイン非掲載）を §6.54 / §6.21 / §6.24 / §6.33 / §6.51 / §3 / §7 / §12 に追記（`/project-memory-learn`）
+- `2026-08-13`: ご意見チャット→GitHub Issue を §6.54 / §5 / §6.33 / §7 / §12 に追記（`/project-memory-learn`）。入口は FAB・アカウントメニュー・`/feedback`。正の記録は Issue。トークンはサーバ専用。患者PIIは載せない（§6.20）
+- `2026-08-13`: お知らせ（提案→入れる／入れない・ログイン非掲載）を §6.55 / §6.21 / §6.24 / §6.33 / §6.51 / §3 / §7 / §12 に追記（`/project-memory-learn`）。main 上のご意見チャットが先に §6.54 を使っていたため、お知らせは §6.55
 

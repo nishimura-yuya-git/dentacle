@@ -94,7 +94,7 @@ describe('安全性ページの面', () => {
   })
 
   it('298px レールと白パネルを使う', () => {
-    const layout = readSecuritySource('sections/SecurityLayout.tsx')
+    const layout = readFileSync(join(here, '../../components/layout/SecurityLayout.tsx'), 'utf8')
     assert.match(layout, /w-\[298px\]/)
     assert.match(layout, /rounded-\[32px\]/)
     assert.match(layout, /#F8FBF8/)

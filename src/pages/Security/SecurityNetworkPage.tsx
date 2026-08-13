@@ -1,5 +1,5 @@
 import { SecurityTextLink } from '@/pages/Security/sections/SecuritySectionBlock'
-import { SecurityLayout } from '@/pages/Security/sections/SecurityLayout'
+import { SecurityLayout } from '@/components/layout/SecurityLayout'
 import { SecurityNetworkTable } from '@/pages/Security/sections/SecurityNetworkTable'
 import {
   SECURITY_NETWORK_INTRO,

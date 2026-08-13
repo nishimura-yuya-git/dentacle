@@ -39,12 +39,14 @@ export function SecurityRail({ onSignOut, onNavigate }: Props) {
         {SECURITY_RAIL_CTA.label}
       </Link>
 
-      <div className="mt-6 space-y-2.5">
-        {SECURITY_RAIL_BLURBS.map((line) => (
-          <p key={line} className="text-[14px] leading-[1.5] text-slate-500">
-            {line}
-          </p>
-        ))}
+      <div className="mt-6 rounded-2xl border border-dashed border-slate-200 px-3.5 py-3">
+        <div className="space-y-2.5">
+          {SECURITY_RAIL_BLURBS.map((line) => (
+            <p key={line} className="text-[14px] leading-[1.5] text-slate-500">
+              {line}
+            </p>
+          ))}
+        </div>
       </div>
 
       <nav className="mt-8 flex flex-col gap-1" aria-label="安全性">
@@ -61,13 +63,9 @@ export function SecurityRail({ onSignOut, onNavigate }: Props) {
         ))}
       </nav>
 
-      <div className="mt-auto border-t border-slate-100 pt-4">
-        <div className="flex items-center justify-between gap-2">
-          <p className="text-sm font-bold text-slate-700">アカウント</p>
-          <div className="inline-flex items-stretch rounded-full border border-slate-700 bg-white">
-            <AccountMenu alone onSignOut={onSignOut} />
-          </div>
-        </div>
+      <div className="mt-auto flex items-center justify-between gap-2 border-t border-slate-100 pt-4">
+        <p className="text-sm font-bold text-slate-700">アカウント</p>
+        <AccountMenu alone onSignOut={onSignOut} />
       </div>
     </div>
   )

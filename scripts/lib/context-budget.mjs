@@ -34,7 +34,8 @@ export const SOURCE_CATALOG = [
   { path: 'loops/goals/bug-fix.md', tier: 'must', maxLines: 50, goals: ['bug-fix'] },
   { path: 'loops/graphs/bug-fix.mmd', tier: 'compress', maxLines: 40, goals: ['bug-fix'] },
 
-  { path: 'loops/goals/ui-polish.md', tier: 'must', maxLines: 50, goals: ['ui-polish'] },
+  { path: 'loops/goals/ui-polish-gate.md', tier: 'must', maxLines: 50, goals: ['ui-polish'] },
+  { path: 'loops/goals/ui-polish.md', tier: 'must', maxLines: 60, goals: ['ui-polish'] },
   { path: 'loops/graphs/ui-polish.mmd', tier: 'compress', maxLines: 40, goals: ['ui-polish'] },
   { path: '.cursor/skills/better-interface/SKILL.md', tier: 'compress', maxLines: 35, goals: ['ui-polish'] },
   { path: '.cursor/skills/better-ui/SKILL.md', tier: 'compress', maxLines: 30, goals: ['ui-polish'], whenUiChange: true },
@@ -51,8 +52,8 @@ export const SOURCE_CATALOG = [
 export const DEFAULT_BUDGET = {
   mustMaxLines: 60,
   compressMaxLines: 30,
-  // goal 文書 + graph + UI ルール + Interface Review スキルが同時に残る余地を確保
-  maxSelectedSources: 16,
+  // goal 文書 + Hard Gate + graph + UI ルール + Interface Review スキルが同時に残る余地を確保
+  maxSelectedSources: 18,
 }
 
 function isUiChange(changedFiles = []) {

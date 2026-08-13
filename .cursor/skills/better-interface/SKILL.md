@@ -47,7 +47,7 @@ description: >-
 | 順 | ドメイン | 正本 | 見るもの |
 | --- | --- | --- | --- |
 | 1 | Accessibility | `.cursor/rules/ui-design.mdc`（アクセシビリティ節） | focus、キーボード、aria-label、hit area、色だけに頼らない状態 |
-| 2 | Layout | `.cursor/rules/ui-design.mdc` / `ui-design-hp-lp.mdc` | 余白、階層、モバイル別設計、見切れ |
+| 2 | Layout | `.cursor/rules/ui-design.mdc` / `ui-design-hp-lp.mdc` | ページ枠（chrome）、negative inventory、余白、階層、モバイル別設計、見切れ |
 | 3 | Writing | `.cursor/rules/ui-language.mdc` | 日本語優先、装飾英語禁止、空状態・エラーの次行動 |
 | 4 | Typography | `.cursor/rules/ui-design.mdc`（タイポ節） | 見出し/本文/補助の階層。業務UIで装飾明朝の乱用なし |
 | 5 | Colors | `.cursor/rules/ui-design.mdc`（カラー節） | canvas/surface、主色 `#008C01` の役割、状態色の一貫性 |
@@ -65,7 +65,7 @@ description: >-
 
 共有 severity:
 
-- `HIGH`: タスク阻害、誤誘導、操作/内容の隠蔽、データ損失リスク、繰り返し起きる系統障害
+- `HIGH`: タスク阻害、誤誘導、操作/内容の隠蔽、データ損失リスク、繰り返し起きる系統障害。見本があるとき、見本に無い業務枠（サイドバー、FAB、業務ヘッダー）が残っているのも HIGH
 - `MEDIUM`: 理解・効率・適応・一貫性を実質的に損なう
 - `LOW`: 局所 polish。`quick` では出さない
 
@@ -98,6 +98,8 @@ pnpm run loop:evaluate
 pnpm run loop:evaluator
 ```
 
+見本がある改修では、判定の前にページ枠照合を書く。内側パネルだけのスクショでは Layout を Clear にしない。
+
 ### 9. 既定は変更しない
 
 レビュー依頼だけではソースを編集しない。実装も依頼されたら、このレポートの Finding を変更範囲とし、検証を再実行する。Hard Boundary・変更契約ゲートは通常どおり。
@@ -115,6 +117,7 @@ pnpm run loop:evaluator
 | 外部ブランド色へ寄せる提案 | `ui-design.mdc` のトークンを正とする |
 | Lucide 等の禁止アイコン提案 | カスタムSVG / 既存画像のみ |
 | Approve なのに未対応 Finding | `Needs changes` か `Block` |
+| 見本と違うページ枠を Approve | 見本に無い sidebar / FAB / 業務ヘッダーは Layout HIGH。内側パネル一致だけでは Approve しない |
 
 ## Review Output Format
 
@@ -175,3 +178,5 @@ UI Polish の完成宣言に次を足す:
 ```
 
 `Block` または完成条件未達の `Needs changes` は、生成ノードへ差し戻す（iteration が残っている場合）。
+
+見本があるときは Layout を先に見る。ページ枠が違うのに面やタイポだけ Approve しない。

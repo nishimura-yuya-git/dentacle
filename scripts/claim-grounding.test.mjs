@@ -101,6 +101,7 @@ function assertTrue(value, message) {
 - Stop非該当の根拠: \`src/pages/X.tsx\`
 `);
   assertEqual(parsed.hasObserveEvidence, true, '観察証拠を検出');
+  assertEqual(parsed.hasChromeCompare, false, 'ページ枠照合が無い観察だけでは chrome 未充足');
   assertEqual(parsed.observeKind, 'screenshot', '種別 screenshot');
   assertTrue(
     parsed.observePaths.includes('/opt/cursor/artifacts/screenshots/ui-polish.png'),
@@ -122,12 +123,84 @@ function assertTrue(value, message) {
   - 種別: snapshot
   - パス: \`browser_snapshot:home\`
   - Read済み: はい（見出しと CTA の階層が一致）
+- ページ枠照合:
+  - 見本: なし（指示のみ）
+  - 実装: \`/opt/cursor/artifacts/screenshots/home-full.png\`
+  - 差分: 業務サイドバーとご意見FABは見本に無く、実装のページ全体からも外れている
+  - Read済み: はい
 - Stop非該当の根拠: PROJECT_MEMORY.md §2.9 と差分 \`src/pages/Home.tsx\`
 `,
     goal: 'ui-polish',
     changedFiles: ['src/pages/Home.tsx'],
   });
   assertEqual(result.status, 'pass', '観察証拠ありの UI Polish は pass');
+}
+
+{
+  // 期待値根拠: ユーザー報告 — 内側パネルだけ寄せて完成扱いになった。ページ枠照合が無い観察は stop。
+  const result = evaluateClaimGrounding({
+    declarationText: `
+## 完成宣言（UI Polish Loop）
+- Evaluation:
+  - コマンド: pnpm run loop:ui
+  - 結果: pass
+- Regression Guard: pass
+- 観察証拠:
+  - 種別: screenshot
+  - パス: \`/tmp/inner-panel.png\`
+  - Read済み: はい（白パネルの角丸と本文サイズは一致）
+- Stop非該当の根拠: Hard Boundary 未接触。\`src/pages/Home.tsx\`
+`,
+    goal: 'ui-polish',
+  });
+  assertEqual(result.status, 'stop', '内側パネルだけの観察は stop');
+  assertTrue(result.missing.includes('observe-chrome'), 'observe-chrome 欠落');
+}
+
+{
+  const parsed = parseCompletionDeclaration(`
+## 完成宣言（UI Polish Loop）
+- Evaluation:
+  - コマンド: pnpm run loop:ui
+  - 結果: pass
+- 観察証拠:
+  - 種別: screenshot
+  - パス: \`/tmp/inner-panel.png\`
+  - Read済み: はい（白パネルは一致）
+- ページ枠照合:
+  - 見本: \`/tmp/reference-full.png\`
+  - 実装: \`/tmp/impl-full.png\`
+  - 差分: 左レールあり。業務サイドバー・FABは見本に無く実装から除外
+  - Read済み: はい
+- Stop非該当の根拠: \`src/pages/X.tsx\`
+`);
+  assertEqual(parsed.hasChromeCompare, true, 'ページ枠照合を検出');
+  assertTrue(parsed.chromeImplementationPaths.includes('/tmp/impl-full.png'), '実装キャプチャパス');
+  assertEqual(parsed.chromeReference, '/tmp/reference-full.png', '見本パス');
+}
+
+{
+  const result = evaluateClaimGrounding({
+    declarationText: `
+## 完成宣言（UI Polish Loop）
+- Evaluation:
+  - コマンド: pnpm run loop:ui
+  - 結果: pass
+- 観察証拠:
+  - 種別: screenshot
+  - パス: \`/tmp/full.png\`
+  - Read済み: はい（ページ全体を確認）
+- ページ枠照合:
+  - 見本: なし（指示のみ）
+  - 実装: \`/tmp/full.png\`
+  - 差分: 未確認
+  - Read済み: はい
+- Stop非該当の根拠: \`src/pages/Home.tsx\`
+`,
+    goal: 'ui-polish',
+  });
+  assertEqual(result.status, 'stop', 'ページ枠の差分が未確認なら stop');
+  assertTrue(result.missing.includes('observe-chrome'), '未確認差分は chrome 未充足');
 }
 
 {

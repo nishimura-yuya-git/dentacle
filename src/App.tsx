@@ -25,6 +25,8 @@ import {
   PaymentHistoryPage,
 } from '@/pages/Account'
 import { AnnouncementsPage } from '@/pages/Announcements/AnnouncementsPage'
+import { SecurityNetworkPage } from '@/pages/Security/SecurityNetworkPage'
+import { SecurityPage } from '@/pages/Security/SecurityPage'
 
 function ClinicShell() {
   return (
@@ -49,6 +51,8 @@ function App() {
                   <Route path="/users" element={<MembersPage />} />
                   <Route path="/mypage" element={<MyPage />} />
                   <Route path="/announcements" element={<AnnouncementsPage />} />
+                  <Route path="/security" element={<SecurityPage />} />
+                  <Route path="/security/network" element={<SecurityNetworkPage />} />
                   <Route path="/account/contractor" element={<ContractorInfoPage />} />
                   <Route path="/account/payments" element={<PaymentHistoryPage />} />
                   <Route path="/account/contract" element={<ContractInfoPage />} />

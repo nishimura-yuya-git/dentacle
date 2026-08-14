@@ -1,5 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import type { Json } from '@/types/database.types'
+import { readVisitMenuEnabled } from '@/utils/clinic/clinicMetadata'
+import { readVisitCellColor } from '@/utils/visitMenus/visitCellColor'
 import type { CalendarBlock, CalendarVisit } from '@/pages/Calendar/components/DayVisitGrid'
 import {
   ensureVehicleTeams,
@@ -12,7 +15,11 @@ import {
   writeStoredVisibleColumns,
 } from '@/pages/Calendar/utils/visibleVehicleColumns'
 
-export type VisitRow = CalendarVisit & { patient_id: string; staff_id: string | null }
+export type VisitRow = CalendarVisit & {
+  patient_id: string
+  staff_id: string | null
+  metadata?: Json | null
+}
 export type StaffOption = { id: string; display_name: string }
 export type PatientOption = { id: string; name_kanji: string }
 export type LoadOptions = { silent?: boolean }
@@ -35,6 +42,7 @@ export function useCalendarDayData(clinicId: string | undefined, date: string) {
   const [blocks, setBlocks] = useState<CalendarBlock[]>([])
   const [cancelledCount, setCancelledCount] = useState(0)
   const [dayMemo, setDayMemo] = useState('')
+  const [visitMenuEnabled, setVisitMenuEnabled] = useState<Record<string, boolean>>({})
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const loadSeqRef = useRef(0)
@@ -73,6 +81,7 @@ export function useCalendarDayData(clinicId: string | undefined, date: string) {
       blocksRes,
       memoRes,
       cancelledRes,
+      clinicRes,
     ] = await Promise.all([
       supabase
         .from('staff_members')
@@ -90,7 +99,7 @@ export function useCalendarDayData(clinicId: string | undefined, date: string) {
       supabase
         .from('visits')
         .select(
-          'id, patient_id, team_id, staff_id, start_time, end_time, status, source, patients(name_kanji)',
+          'id, patient_id, team_id, staff_id, start_time, end_time, status, source, metadata, patients(name_kanji)',
         )
         .eq('clinic_id', clinicId)
         .eq('scheduled_date', date)
@@ -125,6 +134,12 @@ export function useCalendarDayData(clinicId: string | undefined, date: string) {
         .eq('scheduled_date', date)
         .eq('status', 'cancelled')
         .is('deleted_at', null),
+      supabase
+        .from('clinics')
+        .select('metadata')
+        .eq('id', clinicId)
+        .is('deleted_at', null)
+        .maybeSingle(),
     ])
 
     if (seq !== loadSeqRef.current) return
@@ -142,10 +157,16 @@ export function useCalendarDayData(clinicId: string | undefined, date: string) {
 
     setStaff(staffRes.data ?? [])
     setPatients(patientsRes.data ?? [])
-    setVisits((visitsRes.data ?? []) as VisitRow[])
+    setVisits(
+      ((visitsRes.data ?? []) as VisitRow[]).map((row) => ({
+        ...row,
+        cell_color: readVisitCellColor(row.metadata),
+      })),
+    )
     setBlocks((blocksRes.data ?? []) as CalendarBlock[])
     setDayMemo(memoRes.data?.body ?? '')
     setCancelledCount(cancelledRes.count ?? 0)
+    setVisitMenuEnabled(readVisitMenuEnabled(clinicRes.data?.metadata ?? null))
 
     setVisibleColumns((current) => {
       const stored = readStoredVisibleColumns(clinicId) ?? current
@@ -201,6 +222,7 @@ export function useCalendarDayData(clinicId: string | undefined, date: string) {
     visits,
     blocks,
     cancelledCount,
+    visitMenuEnabled,
     dayMemo,
     setDayMemo,
     loading,

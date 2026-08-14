@@ -39,7 +39,7 @@ type Props = {
     startTime: string
     endTime: string
   }) => Promise<boolean>
-  onOpenManualCreate: (seed: GapFillSeed) => void
+  onOpenManualCreate: (seed: GapFillSeed, mode?: 'visit' | 'block') => void
 }
 
 const PANEL_WIDTH = 380
@@ -347,20 +347,39 @@ export function GapFillPanel({
               ) : null}
 
               <div className="mt-4 flex items-center justify-between gap-2">
-                <button
-                  type="button"
-                  className="text-xs font-bold text-slate-500 underline-offset-2 hover:text-slate-800 hover:underline"
-                  onClick={() => {
-                    onOpenManualCreate({
-                      teamId,
-                      startTime,
-                      endTime,
-                    })
-                    close()
-                  }}
-                >
-                  手動で登録
-                </button>
+                <div className="flex flex-wrap items-center gap-3">
+                  <button
+                    type="button"
+                    className="text-xs font-bold text-slate-500 underline-offset-2 hover:text-slate-800 hover:underline"
+                    onClick={() => {
+                      onOpenManualCreate({
+                        teamId,
+                        startTime,
+                        endTime,
+                      })
+                      close()
+                    }}
+                  >
+                    手動で登録
+                  </button>
+                  <button
+                    type="button"
+                    className="text-xs font-bold text-slate-500 underline-offset-2 hover:text-slate-800 hover:underline"
+                    onClick={() => {
+                      onOpenManualCreate(
+                        {
+                          teamId,
+                          startTime,
+                          endTime,
+                        },
+                        'block',
+                      )
+                      close()
+                    }}
+                  >
+                    斜線でブロック
+                  </button>
+                </div>
                 <Button
                   variant="secondary"
                   className="!px-3 !py-1.5 !text-xs"

@@ -46,7 +46,7 @@ export function AiProposeConfirmModal({
         <ul className="list-disc space-y-2 pl-5 text-xs font-medium leading-relaxed text-slate-500">
           <li>登録される予約は「仮予約」です。電話確認後に本予約へ進めます。</li>
           <li>号車列がある場合は、提案を順に振り分けて表示します。</li>
-          <li>点線の仮枠をクリックすると本予約に確定します。</li>
+          <li>点線の仮枠をクリックすると詳細が開きます。内容を確認してから本予約に確定します。</li>
         </ul>
         {!canPropose ? (
           <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-bold text-amber-800">

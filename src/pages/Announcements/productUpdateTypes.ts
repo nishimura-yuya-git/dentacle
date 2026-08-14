@@ -1,4 +1,5 @@
 import type { Tables } from '@/types/database.types'
+import type { ProductUpdateMark } from '@/pages/Announcements/productUpdateMark'
 import type {
   ProductUpdateKind,
   ProductUpdatePlatform,
@@ -18,6 +19,8 @@ export type ProductUpdateView = {
   surfaces: ProductUpdateSurface[]
   platform: ProductUpdatePlatform
   updateNumber: number | null
+  showInProgressBadge: boolean
+  timelineMark: ProductUpdateMark
   proposedAt: string
   publishedAt: string | null
 }

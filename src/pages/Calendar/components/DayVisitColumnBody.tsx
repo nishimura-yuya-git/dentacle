@@ -6,6 +6,7 @@ import {
   SLOT_MINUTES,
   visitBlockStyle,
 } from '@/pages/Calendar/utils/calendarGrid'
+import { calendarBlockClassName } from '@/pages/Calendar/utils/calendarBlockAppearance'
 import {
   isAutoProposalTentative,
   provisionalBlockHeightPx,
@@ -139,7 +140,7 @@ export function DayVisitColumnBody({
                   event.stopPropagation()
                   onSelectBlock?.(block)
                 }}
-                className="absolute left-1 right-1 z-[1] overflow-hidden rounded-md border border-slate-300 bg-slate-200/80 px-1.5 py-1 text-left"
+                className={calendarBlockClassName()}
                 style={{ top, height }}
               >
                 <p className="truncate text-[10px] font-bold text-slate-500">
@@ -176,11 +177,11 @@ export function DayVisitColumnBody({
                 type="button"
                 data-visit-block="true"
                 title={
-                  provisionalAuto ? 'クリックで本予約に確定' : undefined
+                  provisionalAuto ? 'クリックで詳細を開く' : undefined
                 }
                 aria-label={
                   provisionalAuto
-                    ? `${visit.patients?.name_kanji ?? '患者'}の仮予約。クリックで本予約に確定`
+                    ? `${visit.patients?.name_kanji ?? '患者'}の仮予約。クリックで詳細を開く`
                     : undefined
                 }
                 onPointerDown={(event) => onVisitPointerDown(visit, event)}

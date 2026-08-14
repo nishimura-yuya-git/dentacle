@@ -1,3 +1,5 @@
+import type { VisitCellColor } from '@/utils/visitMenus/visitCellColor'
+
 export type CalendarVisit = {
   id: string
   team_id: string | null
@@ -6,6 +8,7 @@ export type CalendarVisit = {
   status: string
   /** manual / auto_proposal / import */
   source: string
+  cell_color?: VisitCellColor
   patients: { name_kanji: string } | null
 }
 

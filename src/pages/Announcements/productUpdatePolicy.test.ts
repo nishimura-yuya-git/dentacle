@@ -5,6 +5,10 @@ import {
   PRODUCT_UPDATE_SURFACES,
   assertProductUpdateCreatedAsProposal,
   canReviewProductUpdate,
+  canSetInProgressBadge,
+  canDeleteProductUpdate,
+  canEditProductUpdateCopy,
+  canSetTimelineMark,
   isProductUpdateVisibleToClinic,
 } from './productUpdatePolicy.ts'
 
@@ -27,6 +31,38 @@ describe('canReviewProductUpdate', () => {
     assert.equal(canReviewProductUpdate('proposed'), true)
     assert.equal(canReviewProductUpdate('published'), false)
     assert.equal(canReviewProductUpdate('rejected'), false)
+  })
+})
+
+describe('canSetInProgressBadge', () => {
+  it('提案中だけ開発中表示を切り替えられる', () => {
+    assert.equal(canSetInProgressBadge('proposed'), true)
+    assert.equal(canSetInProgressBadge('published'), false)
+    assert.equal(canSetInProgressBadge('rejected'), false)
+  })
+})
+
+describe('canSetTimelineMark', () => {
+  it('提案中と公開中だけアイコンを変えられる', () => {
+    assert.equal(canSetTimelineMark('proposed'), true)
+    assert.equal(canSetTimelineMark('published'), true)
+    assert.equal(canSetTimelineMark('rejected'), false)
+  })
+})
+
+describe('canEditProductUpdateCopy', () => {
+  it('提案中と公開中だけ文言を直せる', () => {
+    assert.equal(canEditProductUpdateCopy('proposed'), true)
+    assert.equal(canEditProductUpdateCopy('published'), true)
+    assert.equal(canEditProductUpdateCopy('rejected'), false)
+  })
+})
+
+describe('canDeleteProductUpdate', () => {
+  it('提案中・公開中・入れないを削除できる', () => {
+    assert.equal(canDeleteProductUpdate('proposed'), true)
+    assert.equal(canDeleteProductUpdate('published'), true)
+    assert.equal(canDeleteProductUpdate('rejected'), true)
   })
 })
 

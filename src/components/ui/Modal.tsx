@@ -2,7 +2,7 @@ import { useEffect, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { Button } from '@/components/ui/Button'
 
-type ModalSize = 'md' | 'xl'
+type ModalSize = 'md' | 'lg' | 'xl'
 
 type Props = {
   isOpen: boolean
@@ -10,7 +10,7 @@ type Props = {
   onClose: () => void
   children: ReactNode
   footer?: ReactNode
-  /** md: 通常 / xl: 連絡者リストなど広い表 */
+  /** md: 通常 / lg: 訪問詳細などフォームが広いとき / xl: 連絡者リストなど広い表 */
   size?: ModalSize
   /** true のとき背景クリック・ESC・閉じるボタンを無効化（処理中など） */
   closeDisabled?: boolean
@@ -18,6 +18,7 @@ type Props = {
 
 const SIZE_CLASS: Record<ModalSize, string> = {
   md: 'max-w-2xl',
+  lg: 'max-w-4xl',
   xl: 'max-w-6xl',
 }
 

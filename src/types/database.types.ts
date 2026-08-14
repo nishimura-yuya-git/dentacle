@@ -1134,6 +1134,9 @@ export type Database = {
           published_at: string | null
           reviewed_at: string | null
           reviewed_by: string | null
+          show_in_progress_badge: boolean
+          timeline_mark: string
+          version: number
           status: string
           surfaces: string[]
           title: string
@@ -1152,6 +1155,9 @@ export type Database = {
           published_at?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
+          show_in_progress_badge?: boolean
+          timeline_mark?: string
+          version?: number
           status?: string
           surfaces?: string[]
           title: string
@@ -1170,6 +1176,9 @@ export type Database = {
           published_at?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
+          show_in_progress_badge?: boolean
+          timeline_mark?: string
+          version?: number
           status?: string
           surfaces?: string[]
           title?: string
@@ -1938,6 +1947,22 @@ export type Database = {
       }
       publish_product_update: { Args: { p_id: string }; Returns: number }
       reject_product_update: { Args: { p_id: string }; Returns: boolean }
+      set_product_update_in_progress_badge: {
+        Args: { p_id: string; p_show: boolean }
+        Returns: boolean
+      }
+      set_product_update_timeline_mark: {
+        Args: { p_id: string; p_mark: string }
+        Returns: boolean
+      }
+      update_product_update_copy: {
+        Args: { p_body?: string; p_id: string; p_title: string }
+        Returns: boolean
+      }
+      delete_product_update: {
+        Args: { p_id: string }
+        Returns: boolean
+      }
       set_improvement_item_status: {
         Args: { p_id: string; p_status: string }
         Returns: boolean

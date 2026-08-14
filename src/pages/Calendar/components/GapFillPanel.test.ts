@@ -19,4 +19,9 @@ describe('GapFillPanel', () => {
     assert.equal(source.includes('"Composing"'), false)
     assert.equal(/lucide/i.test(source), false)
   })
+
+  it('空き枠から斜線ブロックを登録できる', () => {
+    assert.match(source, /斜線でブロック/)
+    assert.match(source, /'block'/)
+  })
 })

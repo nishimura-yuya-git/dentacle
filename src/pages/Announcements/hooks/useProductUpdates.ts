@@ -1,71 +1,14 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import { toProductUpdatePublicError, toProductUpdateView } from '@/pages/Announcements/productUpdateMap'
 import {
-  PRODUCT_UPDATE_KINDS,
-  PRODUCT_UPDATE_PLATFORMS,
-  PRODUCT_UPDATE_STATUSES,
-  PRODUCT_UPDATE_SURFACES,
   assertProductUpdateCreatedAsProposal,
   type ProductUpdateKind,
   type ProductUpdatePlatform,
-  type ProductUpdateStatus,
   type ProductUpdateSurface,
 } from '@/pages/Announcements/productUpdatePolicy'
-import type { ProductUpdateRow, ProductUpdateView } from '@/pages/Announcements/productUpdateTypes'
-
-function isKind(value: string): value is ProductUpdateKind {
-  return (PRODUCT_UPDATE_KINDS as readonly string[]).includes(value)
-}
-
-function isStatus(value: string): value is ProductUpdateStatus {
-  return (PRODUCT_UPDATE_STATUSES as readonly string[]).includes(value)
-}
-
-function isSurface(value: string): value is ProductUpdateSurface {
-  return (PRODUCT_UPDATE_SURFACES as readonly string[]).includes(value)
-}
-
-function isPlatform(value: string): value is ProductUpdatePlatform {
-  return (PRODUCT_UPDATE_PLATFORMS as readonly string[]).includes(value)
-}
-
-function toView(row: ProductUpdateRow): ProductUpdateView | null {
-  if (!isKind(row.kind) || !isStatus(row.status) || !isPlatform(row.platform)) return null
-  const surfaces = (row.surfaces ?? []).filter(isSurface)
-  return {
-    id: row.id,
-    status: row.status,
-    kind: row.kind,
-    title: row.title,
-    body: row.body,
-    detailUrl: row.detail_url,
-    surfaces,
-    platform: row.platform,
-    updateNumber: row.update_number,
-    proposedAt: row.proposed_at,
-    publishedAt: row.published_at,
-  }
-}
-
-function toPublicError(message: string, fallback: string): string {
-  if (message.includes('権限がありません')) {
-    return 'この操作は運営アカウントのみ行えます。'
-  }
-  if (message.includes('提案中の更新だけ')) {
-    return message
-  }
-  if (message.includes('見出しを入力')) {
-    return '見出しを入力してください。'
-  }
-  if (message.includes('対象環境を選んで')) {
-    return '対象環境を選んでください。'
-  }
-  const lower = message.toLowerCase()
-  if (lower.includes('row-level security') || lower.includes('permission denied')) {
-    return 'この操作を行う権限がありません。'
-  }
-  return fallback
-}
+import type { ProductUpdateMark } from '@/pages/Announcements/productUpdateMark'
+import type { ProductUpdateView } from '@/pages/Announcements/productUpdateTypes'
 
 export function useProductUpdates() {
   const [items, setItems] = useState<ProductUpdateView[]>([])
@@ -81,7 +24,7 @@ export function useProductUpdates() {
       supabase
         .from('product_updates')
         .select(
-          'id, status, kind, title, body, detail_url, surfaces, platform, update_number, proposed_at, published_at, proposed_by, reviewed_at, reviewed_by, created_at, updated_at',
+          'id, status, kind, title, body, detail_url, surfaces, platform, update_number, show_in_progress_badge, timeline_mark, proposed_at, published_at, proposed_by, reviewed_at, reviewed_by, created_at, updated_at',
         )
         .order('proposed_at', { ascending: false }),
       supabase.rpc('is_platform_admin'),
@@ -96,7 +39,11 @@ export function useProductUpdates() {
       return
     }
 
-    setItems((listResult.data ?? []).map(toView).filter((row): row is ProductUpdateView => row != null))
+    setItems(
+      (listResult.data ?? [])
+        .map(toProductUpdateView)
+        .filter((row): row is ProductUpdateView => row != null),
+    )
     setLoading(false)
   }, [])
 
@@ -128,9 +75,10 @@ export function useProductUpdates() {
       detailUrl: string
       surfaces: ProductUpdateSurface[]
       platform: ProductUpdatePlatform
+      timelineMark?: ProductUpdateMark
     }) => {
       assertProductUpdateCreatedAsProposal({ status: 'proposed' })
-      const { error: rpcError } = await supabase.rpc('propose_product_update', {
+      const { data, error: rpcError } = await supabase.rpc('propose_product_update', {
         p_kind: input.kind,
         p_title: input.title,
         p_body: input.body.trim() === '' ? undefined : input.body,
@@ -138,11 +86,26 @@ export function useProductUpdates() {
         p_surfaces: input.surfaces,
         p_platform: input.platform,
       })
-      if (rpcError) {
-        return { ok: false as const, message: toPublicError(rpcError.message, '提案の保存に失敗しました。') }
+      if (rpcError || typeof data !== 'string' || data === '') {
+        return {
+          ok: false as const,
+          message: toProductUpdatePublicError(rpcError?.message ?? '', '提案の保存に失敗しました。'),
+        }
+      }
+      if (input.timelineMark) {
+        const markResult = await supabase.rpc('set_product_update_timeline_mark', {
+          p_id: data,
+          p_mark: input.timelineMark,
+        })
+        if (markResult.error) {
+          return {
+            ok: false as const,
+            message: toProductUpdatePublicError(markResult.error.message, 'アイコンの保存に失敗しました。'),
+          }
+        }
       }
       await refresh()
-      return { ok: true as const }
+      return { ok: true as const, id: data }
     },
     [refresh],
   )
@@ -153,7 +116,10 @@ export function useProductUpdates() {
       const { error: rpcError } = await supabase.rpc('publish_product_update', { p_id: id })
       setBusyId(null)
       if (rpcError) {
-        return { ok: false as const, message: toPublicError(rpcError.message, '公開に失敗しました。') }
+        return {
+          ok: false as const,
+          message: toProductUpdatePublicError(rpcError.message, '公開に失敗しました。'),
+        }
       }
       await refresh()
       return { ok: true as const }
@@ -167,7 +133,10 @@ export function useProductUpdates() {
       const { error: rpcError } = await supabase.rpc('reject_product_update', { p_id: id })
       setBusyId(null)
       if (rpcError) {
-        return { ok: false as const, message: toPublicError(rpcError.message, '判定の保存に失敗しました。') }
+        return {
+          ok: false as const,
+          message: toProductUpdatePublicError(rpcError.message, '判定の保存に失敗しました。'),
+        }
       }
       await refresh()
       return { ok: true as const }
@@ -175,5 +144,118 @@ export function useProductUpdates() {
     [refresh],
   )
 
-  return { published, proposed, loading, error, busyId, isPlatformAdmin, propose, publish, reject, refresh }
+  const setInProgressBadge = useCallback(
+    async (id: string, show: boolean) => {
+      setBusyId(id)
+      const { error: rpcError } = await supabase.rpc('set_product_update_in_progress_badge', {
+        p_id: id,
+        p_show: show,
+      })
+      setBusyId(null)
+      if (rpcError) {
+        return {
+          ok: false as const,
+          message: toProductUpdatePublicError(rpcError.message, '開発中表示の保存に失敗しました。'),
+        }
+      }
+      await refresh()
+      return { ok: true as const }
+    },
+    [refresh],
+  )
+
+  const setTimelineMark = useCallback(
+    async (id: string, mark: ProductUpdateMark) => {
+      setBusyId(id)
+      const { error: rpcError } = await supabase.rpc('set_product_update_timeline_mark', {
+        p_id: id,
+        p_mark: mark,
+      })
+      setBusyId(null)
+      if (rpcError) {
+        return {
+          ok: false as const,
+          message: toProductUpdatePublicError(rpcError.message, 'アイコンの保存に失敗しました。'),
+        }
+      }
+      await refresh()
+      return { ok: true as const }
+    },
+    [refresh],
+  )
+
+  const updateCopy = useCallback(
+    async (id: string, input: { title: string; body?: string }) => {
+      setBusyId(id)
+      const { error: rpcError } = await supabase.rpc('update_product_update_copy', {
+        p_id: id,
+        p_title: input.title,
+        p_body: input.body,
+      })
+      setBusyId(null)
+      if (rpcError) {
+        return {
+          ok: false as const,
+          message: toProductUpdatePublicError(rpcError.message, '文言の保存に失敗しました。'),
+        }
+      }
+      await refresh()
+      return { ok: true as const }
+    },
+    [refresh],
+  )
+
+  const remove = useCallback(
+    async (id: string) => {
+      setBusyId(id)
+      const { error: rpcError } = await supabase.rpc('delete_product_update', { p_id: id })
+      setBusyId(null)
+      if (rpcError) {
+        return {
+          ok: false as const,
+          message: toProductUpdatePublicError(rpcError.message, '削除に失敗しました。'),
+        }
+      }
+      await refresh()
+      return { ok: true as const }
+    },
+    [refresh],
+  )
+
+  const proposeAndPublish = useCallback(
+    async (input: {
+      kind: ProductUpdateKind
+      title: string
+      body: string
+      detailUrl: string
+      surfaces: ProductUpdateSurface[]
+      platform: ProductUpdatePlatform
+      timelineMark?: ProductUpdateMark
+    }) => {
+      const proposed = await propose(input)
+      if (!proposed.ok) return proposed
+      const published = await publish(proposed.id)
+      if (!published.ok) return published
+      return { ok: true as const, id: proposed.id }
+    },
+    [propose, publish],
+  )
+
+  return {
+    published,
+    proposed,
+    loading,
+    error,
+    busyId,
+    isPlatformAdmin,
+    propose,
+    proposeAndPublish,
+    publish,
+    reject,
+    setInProgressBadge,
+    setTimelineMark,
+    updateCopy,
+    remove,
+    refresh,
+  }
 }

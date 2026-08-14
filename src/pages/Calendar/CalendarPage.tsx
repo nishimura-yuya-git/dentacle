@@ -15,46 +15,34 @@ import {
   DayVisitGrid,
   type CalendarVisit,
 } from '@/pages/Calendar/components/DayVisitGrid'
+import { CalendarVisitModals } from '@/pages/Calendar/components/CalendarVisitModals'
 import {
-  VisitCreateModal,
+  EMPTY_VISIT_CREATE_FORM,
   type VisitCreateForm,
 } from '@/pages/Calendar/components/VisitCreateModal'
-import { VisitDetailModal } from '@/pages/Calendar/components/VisitDetailModal'
-import { useCalendarDayData } from '@/pages/Calendar/hooks/useCalendarDayData'
+import { useCalendarDayData, type VisitRow } from '@/pages/Calendar/hooks/useCalendarDayData'
 import {
-  asSubmit,
-  cancelVisit,
   clearAutoProposalTentatives,
   confirmAutoProposalTentatives,
-  confirmTentativeVisit,
   createTentativeAutoProposal,
-  createVisitOrBlock,
-  duplicateVisitAfter,
   persistMoveVisit,
   persistResizeVisit,
   saveDayMemo,
   softDeleteBlock,
-  updateVisitDetail,
 } from '@/pages/Calendar/hooks/useCalendarVisitActions'
+import { DEFAULT_VISIT_CELL_COLOR, readVisitCellColor } from '@/utils/visitMenus/visitCellColor'
+import {
+  EMPTY_VISIT_MENU_FORM,
+  visitMenusToForm,
+  readVisitMenus,
+} from '@/utils/visitMenus/visitMenuState'
 import { isAutoProposalTentative } from '@/pages/Calendar/utils/visitBlockAppearance'
+import { shouldOpenDetailOnVisitClick } from '@/pages/Calendar/utils/visitClickAction'
 import { ComposingOrb } from '@/components/ui/ComposingOrb'
 import { AiComposingOverlay } from '@/pages/Calendar/components/AiComposingOverlay'
 import { useProposeProgress } from '@/pages/Calendar/hooks/useProposeProgress'
 import { runCalendarAutoPropose } from '@/features/calendar/runCalendarAutoPropose'
 import { todayISO } from '@/utils/dates'
-
-type VisitRow = CalendarVisit & { patient_id: string; staff_id: string | null }
-
-const CREATE_FORM: VisitCreateForm = {
-  patient_id: '',
-  team_id: '',
-  staff_id: '',
-  start_time: '09:00',
-  end_time: '09:30',
-  mode: 'visit',
-  block_type: 'break',
-  block_title: '',
-}
 
 export function CalendarPage() {
   const { user } = useAuth()
@@ -65,12 +53,15 @@ export function CalendarPage() {
   const data = useCalendarDayData(clinic?.id, date)
 
   const [createOpen, setCreateOpen] = useState(false)
-  const [createForm, setCreateForm] = useState<VisitCreateForm>(CREATE_FORM)
+  const [createForm, setCreateForm] = useState<VisitCreateForm>(EMPTY_VISIT_CREATE_FORM)
   const [detailOpen, setDetailOpen] = useState(false)
   const [selectedVisit, setSelectedVisit] = useState<VisitRow | null>(null)
+  const [detailStaffId, setDetailStaffId] = useState('')
   const [detailTeamId, setDetailTeamId] = useState('')
   const [detailStart, setDetailStart] = useState('09:00')
   const [detailEnd, setDetailEnd] = useState('09:30')
+  const [detailMenus, setDetailMenus] = useState(EMPTY_VISIT_MENU_FORM)
+  const [detailCellColor, setDetailCellColor] = useState(DEFAULT_VISIT_CELL_COLOR)
   const [patientFilter, setPatientFilter] = useState('')
   const [busy, setBusy] = useState(false)
   const [memoSaving, setMemoSaving] = useState(false)
@@ -220,10 +211,16 @@ export function CalendarPage() {
     }
   }
 
-  const openCreate = (teamId: string, startTime: string, endTime: string) => {
+  const openCreate = (
+    teamId: string,
+    startTime: string,
+    endTime: string,
+    mode: 'visit' | 'block' = 'visit',
+  ) => {
     if (!canWriteOperations) return
     setCreateForm({
-      ...CREATE_FORM,
+      ...EMPTY_VISIT_CREATE_FORM,
+      mode,
       team_id: teamId,
       start_time: startTime.slice(0, 5),
       end_time: endTime.slice(0, 5),
@@ -253,29 +250,19 @@ export function CalendarPage() {
     const row = data.visits.find((item) => item.id === visit.id) ?? null
     if (!row) return
     setSelectedVisit(row)
+    setDetailStaffId(row.staff_id ?? '')
     setDetailTeamId(row.team_id ?? '')
     setDetailStart(String(row.start_time).slice(0, 5))
     setDetailEnd(String(row.end_time).slice(0, 5))
+    setDetailMenus(visitMenusToForm(readVisitMenus(row.metadata)))
+    setDetailCellColor(readVisitCellColor(row.metadata))
     setDetailOpen(true)
   }
 
-  /** 仮予約クリック → 本予約確定。本予約は詳細モーダル */
+  /** 仮予約も本予約も詳細を開く。確定は詳細の主操作 */
   const handleSelectVisit = (visit: CalendarVisit) => {
-    if (!actionCtx) {
-      openDetail(visit)
-      return
-    }
-    if (visit.status !== 'tentative') {
-      openDetail(visit)
-      return
-    }
-    if (!canWriteOperations) {
-      toast.error('確定する権限がありません')
-      return
-    }
-    /** 二重クリックで詳細が開かないよう、先に楽観更新してから確定 */
-    data.patchVisitLocal(visit.id, { status: 'confirmed' })
-    void confirmTentativeVisit(actionCtx, visit.id)
+    if (!shouldOpenDetailOnVisitClick(visit.status)) return
+    openDetail(visit)
   }
 
   if (!clinicReady) {
@@ -350,8 +337,8 @@ export function CalendarPage() {
                   if (!actionCtx) return false
                   return createTentativeAutoProposal(actionCtx, input)
                 }}
-                onOpenManualCreate={(seed) => {
-                  openCreate(seed.teamId, seed.startTime, seed.endTime)
+                onOpenManualCreate={(seed, mode) => {
+                  openCreate(seed.teamId, seed.startTime, seed.endTime, mode)
                 }}
               />
             ) : null}
@@ -434,63 +421,34 @@ export function CalendarPage() {
         </section>
       </div>
 
-      <VisitCreateModal
-        open={createOpen}
+      <CalendarVisitModals
+        createOpen={createOpen}
+        createForm={createForm}
+        detailOpen={detailOpen}
         busy={busy}
         date={date}
-        form={createForm}
-        patientOptions={patientOptions}
-        teamOptions={teamOptions}
-        staffOptions={staffOptions}
-        onClose={() => setCreateOpen(false)}
-        onChange={setCreateForm}
-        onSubmit={asSubmit(async () => {
-          if (!actionCtx) return
-          const ok = await createVisitOrBlock(actionCtx, createForm, {
-            start: CREATE_FORM.start_time,
-            end: CREATE_FORM.end_time,
-          })
-          if (ok) setCreateOpen(false)
-        })}
-      />
-
-      <VisitDetailModal
-        open={detailOpen}
-        busy={busy}
         patientName={selectedVisit?.patients?.name_kanji ?? '患者不明'}
+        selectedVisit={selectedVisit}
+        staffId={detailStaffId}
         teamId={detailTeamId}
         startTime={detailStart}
         endTime={detailEnd}
+        menus={detailMenus}
+        cellColor={detailCellColor}
+        menuEnabled={data.visitMenuEnabled}
+        patientOptions={patientOptions}
         teamOptions={teamOptions}
-        onClose={() => setDetailOpen(false)}
+        staffOptions={staffOptions}
+        actionCtx={actionCtx}
+        onCloseCreate={() => setCreateOpen(false)}
+        onChangeCreate={setCreateForm}
+        onCloseDetail={() => setDetailOpen(false)}
+        onChangeStaff={setDetailStaffId}
         onChangeTeam={setDetailTeamId}
         onChangeStart={setDetailStart}
         onChangeEnd={setDetailEnd}
-        onSubmit={asSubmit(async () => {
-          if (!actionCtx || !selectedVisit) return
-          const ok = await updateVisitDetail(actionCtx, selectedVisit.id, {
-            teamId: detailTeamId,
-            startTime: detailStart,
-            endTime: detailEnd,
-          })
-          if (ok) setDetailOpen(false)
-        })}
-        onCancel={() => {
-          if (!actionCtx || !selectedVisit) return
-          void cancelVisit(actionCtx, selectedVisit.id).then((ok) => {
-            if (ok) setDetailOpen(false)
-          })
-        }}
-        onCopyNext={() => {
-          if (!actionCtx || !selectedVisit) return
-          void duplicateVisitAfter(actionCtx, selectedVisit, {
-            teamId: detailTeamId,
-            startTime: detailStart,
-            endTime: detailEnd,
-          }).then((ok) => {
-            if (ok) setDetailOpen(false)
-          })
-        }}
+        onChangeMenus={setDetailMenus}
+        onChangeCellColor={setDetailCellColor}
       />
     </DashboardLayout>
   )

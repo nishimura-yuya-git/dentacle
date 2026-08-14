@@ -31,6 +31,26 @@ export function canReviewProductUpdate(status: ProductUpdateStatus): boolean {
   return status === 'proposed'
 }
 
+/** 開発中バッジのON/OFF対象か。公開済み・非採用は変えない。 */
+export function canSetInProgressBadge(status: ProductUpdateStatus): boolean {
+  return status === 'proposed'
+}
+
+/** タイムラインアイコンを変えられるか。入れないにした件は変えない。 */
+export function canSetTimelineMark(status: ProductUpdateStatus): boolean {
+  return status === 'proposed' || status === 'published'
+}
+
+/** 見出し・本文を直せるか。 */
+export function canEditProductUpdateCopy(status: ProductUpdateStatus): boolean {
+  return status === 'proposed' || status === 'published'
+}
+
+/** 削除できるか。進捗連動の有無は RPC 側で見る。 */
+export function canDeleteProductUpdate(status: ProductUpdateStatus): boolean {
+  return status === 'proposed' || status === 'published' || status === 'rejected'
+}
+
 export type ProductUpdateInsertIntent = {
   status: ProductUpdateStatus
 }

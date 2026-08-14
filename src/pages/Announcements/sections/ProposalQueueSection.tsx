@@ -1,60 +1,70 @@
-import { Button } from '@/components/ui/Button'
-import { UpdateTimelineItem } from '@/pages/Announcements/components/UpdateTimelineItem'
-import { canReviewProductUpdate } from '@/pages/Announcements/productUpdatePolicy'
+import { useEffect, useRef, useState } from 'react'
+import { ProposalEditModal } from '@/pages/Announcements/components/ProposalEditModal'
+import { ReleaseChipList } from '@/pages/Announcements/components/ReleaseChipList'
+import { ReleaseChipPanel } from '@/pages/Announcements/components/ReleaseChipPanel'
 import type { ProductUpdateView } from '@/pages/Announcements/productUpdateTypes'
+import {
+  formatReleaseChipEmptyCopy,
+  formatReleaseSectionTitle,
+  releaseSectionMarkSrc,
+} from '@/pages/Announcements/releaseChipDisplay'
 
 export function ProposalQueueSection({
   items,
   busyId,
-  onPublish,
-  onReject,
+  onToggleInProgressBadge,
+  onSaveTitle,
+  onDelete,
 }: {
   items: ProductUpdateView[]
   busyId: string | null
-  onPublish: (id: string) => void
-  onReject: (id: string) => void
+  onToggleInProgressBadge: (id: string, show: boolean) => void
+  onSaveTitle: (id: string, title: string) => void
+  onDelete: (id: string) => void
 }) {
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const selectedAnchorRef = useRef<HTMLDivElement>(null)
+  const editing = items.find((item) => item.id === editingId) ?? null
+
+  useEffect(() => {
+    if (editingId != null && editing == null) {
+      setEditingId(null)
+    }
+  }, [editing, editingId])
+
   return (
-    <section className="rounded-[28px] border border-amber-100 bg-amber-50/60 p-6">
-      <h2 className="text-sm font-bold text-slate-900">入れるか判定する</h2>
-      <p className="mt-1 text-xs font-medium leading-relaxed text-slate-500">
-        提案しただけではお知らせに出ません。入れる／入れないを選んでください。
-      </p>
+    <ReleaseChipPanel
+      title={formatReleaseSectionTitle('upcoming')}
+      markSrc={releaseSectionMarkSrc('upcoming')}
+    >
       {items.length === 0 ? (
-        <p className="mt-4 text-sm font-medium text-slate-500">未判定の提案はありません。</p>
+        <p className="text-sm font-medium text-slate-500">{formatReleaseChipEmptyCopy('upcoming')}</p>
       ) : (
-        <div className="mt-5">
-          {items.map((item, index) => (
-            <UpdateTimelineItem
-              key={item.id}
-              item={item}
-              dateValue={item.proposedAt}
-              showDashedLine={index < items.length - 1}
-              footer={
-                canReviewProductUpdate(item.status) ? (
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    <Button
-                      variant="primary"
-                      disabled={busyId != null}
-                      loading={busyId === item.id}
-                      onClick={() => onPublish(item.id)}
-                    >
-                      入れる
-                    </Button>
-                    <Button
-                      variant="secondary"
-                      disabled={busyId != null}
-                      onClick={() => onReject(item.id)}
-                    >
-                      入れない
-                    </Button>
-                  </div>
-                ) : null
-              }
-            />
-          ))}
-        </div>
+        <ReleaseChipList
+          items={items}
+          selectedId={editingId}
+          selectedAnchorRef={selectedAnchorRef}
+          onSelect={(item) => {
+            setEditingId((current) => (current === item.id ? null : item.id))
+          }}
+        />
       )}
-    </section>
+      <ProposalEditModal
+        item={editing}
+        anchorRef={selectedAnchorRef}
+        locked={busyId != null}
+        onClose={() => setEditingId(null)}
+        onToggleInProgressBadge={(show) => {
+          if (editing) onToggleInProgressBadge(editing.id, show)
+        }}
+        onSaveTitle={(title) => {
+          if (editing) onSaveTitle(editing.id, title)
+        }}
+        onDelete={() => {
+          if (!editing) return
+          onDelete(editing.id)
+        }}
+      />
+    </ReleaseChipPanel>
   )
 }

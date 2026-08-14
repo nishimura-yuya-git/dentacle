@@ -1,9 +1,9 @@
-import type { Json } from '@/types/database.types'
+import type { Json } from '../../types/database.types.ts'
 import {
   DEFAULT_INTRODUCTION_LANE,
   isIntroductionLane,
   type IntroductionLane,
-} from '@/utils/schedule/proposalLanePresets'
+} from '../schedule/proposalLanePresets.ts'
 
 type MetadataRecord = Record<string, unknown>
 
@@ -28,5 +28,33 @@ export function withIntroductionLane(
   return {
     ...asRecord(metadata),
     introduction_lane: lane,
+  }
+}
+
+/** 無いキーは ON。false だけ OFF として残す */
+export function readVisitMenuEnabled(
+  metadata: Json | null | undefined,
+): Record<string, boolean> {
+  const raw = asRecord(metadata).visit_menu_enabled
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return {}
+  const enabled: Record<string, boolean> = {}
+  for (const [code, value] of Object.entries(raw as Record<string, unknown>)) {
+    if (typeof value === 'boolean') enabled[code] = value
+  }
+  return enabled
+}
+
+/** visit_menu_enabled だけをマージする。ON はキーを消す */
+export function withVisitMenuEnabled(
+  metadata: Json | null | undefined,
+  enabled: Record<string, boolean>,
+): MetadataRecord {
+  const stored: Record<string, boolean> = {}
+  for (const [code, value] of Object.entries(enabled)) {
+    if (value === false) stored[code] = false
+  }
+  return {
+    ...asRecord(metadata),
+    visit_menu_enabled: stored,
   }
 }

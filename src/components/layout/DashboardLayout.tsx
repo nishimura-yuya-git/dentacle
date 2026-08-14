@@ -2,6 +2,12 @@ import { useCallback, useState, type ReactNode } from 'react'
 import { NavLink } from 'react-router-dom'
 import { AccountMenu } from '@/components/layout/AccountMenu'
 import { AppSidebar } from '@/components/layout/AppSidebar'
+import {
+  APP_SHELL_ATTR,
+  APP_SHELL_COLUMN_CLASS,
+  APP_SHELL_ROOT_CLASS,
+  appShellMainClass,
+} from '@/components/layout/appShell'
 import { ClinicSwitcher } from '@/components/layout/ClinicSwitcher'
 import { FeedbackChatLauncher } from '@/components/features/feedback/FeedbackChatLauncher'
 import { env } from '@/config/env'
@@ -48,13 +54,7 @@ export function DashboardLayout({
   const hasHeadingText = Boolean(title.trim() || description)
 
   return (
-    <div
-      className={
-        fillViewport
-          ? 'flex h-dvh overflow-hidden bg-[#FAFAFA]'
-          : 'flex min-h-screen bg-[#FAFAFA]'
-      }
-    >
+    <div {...{ [APP_SHELL_ATTR]: '' }} className={`${APP_SHELL_ROOT_CLASS} bg-[#FAFAFA]`}>
       <AppSidebar
         open={navOpen}
         onClose={closeNav}
@@ -62,13 +62,7 @@ export function DashboardLayout({
         onToggleDesktop={() => setSidebarVisible((current) => !current)}
       />
 
-      <div
-        className={
-          fillViewport
-            ? 'flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden'
-            : 'flex min-w-0 flex-1 flex-col'
-        }
-      >
+      <div className={APP_SHELL_COLUMN_CLASS}>
         <header className="z-20 shrink-0 border-b border-[#DCDEDE] bg-white">
           <div className="flex h-[52px] items-center gap-3 px-3 md:px-4">
             {/* サイドバー非表示時・モバイル時のみ。表示中はブランド右（サイドバー内）に置く */}
@@ -89,7 +83,7 @@ export function DashboardLayout({
                 setNavOpen(true)
               }}
             >
-              <img src="/icon/grid.png" alt="" width={20} height={20} className="h-5 w-5" />
+              <img src="/icon/layouting.png" alt="" width={20} height={20} className="h-5 w-5" />
             </button>
 
             <NavLink
@@ -195,8 +189,8 @@ export function DashboardLayout({
         <main
           className={
             fillViewport
-              ? 'flex min-h-0 flex-1 flex-col overflow-hidden px-3 py-2 md:px-4 md:py-3'
-              : 'px-4 py-4 md:px-5 md:py-5'
+              ? `${appShellMainClass(true)} px-3 py-2 md:px-4 md:py-3`
+              : `${appShellMainClass(false)} px-4 py-4 md:px-5 md:py-5`
           }
         >
           {children}

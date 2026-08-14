@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
+import { APP_SHELL_SIDEBAR_CLASS } from '@/components/layout/appShell'
 import { SidebarNav } from '@/components/layout/SidebarNav'
 import { env } from '@/config/env'
 
@@ -9,7 +10,7 @@ type Props = {
   onClose: () => void
   /** md以上でサイドバー本体を表示するか */
   desktopVisible: boolean
-  /** デスクトップ側の表示切替（ブランド右の grid アイコン） */
+  /** デスクトップ側の表示切替（ブランド右の layouting アイコン） */
   onToggleDesktop: () => void
 }
 
@@ -40,10 +41,10 @@ export function AppSidebar({ open, onClose, desktopVisible, onToggleDesktop }: P
       {desktopVisible ? (
         <aside
           id="app-sidebar"
-          className="hidden w-56 shrink-0 flex-col border-r border-[#DCDEDE] bg-white md:flex"
+          className={`hidden w-56 shrink-0 flex-col border-r border-[#DCDEDE] bg-white md:flex ${APP_SHELL_SIDEBAR_CLASS}`}
         >
           <Brand onToggle={onToggleDesktop} />
-          <div className="min-h-0 flex-1 overflow-y-auto px-3 py-4">
+          <div className="min-h-0 flex-1 overflow-y-auto overscroll-none px-3 py-4">
             <SidebarNav />
           </div>
         </aside>
@@ -74,7 +75,7 @@ export function AppSidebar({ open, onClose, desktopVisible, onToggleDesktop }: P
                 <CloseIcon />
               </button>
             </div>
-            <div className="min-h-0 flex-1 overflow-y-auto px-3 py-4">
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-none px-3 py-4">
               <SidebarNav onNavigate={onClose} />
             </div>
           </div>
@@ -113,7 +114,7 @@ function Brand({ onToggle }: { onToggle: () => void }) {
         aria-label="サイドバーを隠す"
         onClick={onToggle}
       >
-        <img src="/icon/grid.png" alt="" width={20} height={20} className="h-5 w-5" />
+        <img src="/icon/layouting.png" alt="" width={20} height={20} className="h-5 w-5" />
       </button>
     </div>
   )

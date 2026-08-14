@@ -28,7 +28,7 @@ const SURFACE_LABEL: Record<ProductUpdateSurface, string> = {
 }
 
 const STATUS_LABEL: Record<ProductUpdateStatus, string> = {
-  proposed: '提案中',
+  proposed: 'リリース予定',
   published: '公開',
   rejected: '入れない',
 }
@@ -57,8 +57,8 @@ export function formatProductUpdateDate(iso: string | null | undefined): string 
   return `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日`
 }
 
-/** 公開後だけ付く通し番号。英語の update # は使わない。 */
+/** 公開後だけ付く通し番号。表記は update #N。 */
 export function formatProductUpdateNumber(updateNumber: number | null | undefined): string | null {
   if (updateNumber == null || updateNumber < 1) return null
-  return `更新 ${updateNumber}`
+  return `update #${updateNumber}`
 }

@@ -27,9 +27,21 @@ assert.doesNotMatch(
   visitBlockClassName({ status: 'confirmed', source: 'auto_proposal' }),
   /border-dashed/,
 )
+assert.match(
+  visitBlockClassName({ status: 'confirmed', source: 'manual', cell_color: 'orange' }),
+  /bg-orange-50/,
+)
+assert.match(
+  visitBlockClassName({ status: 'tentative', source: 'auto_proposal', cell_color: 'sky' }),
+  /border-dashed/,
+)
+assert.match(
+  visitBlockClassName({ status: 'tentative', source: 'auto_proposal', cell_color: 'sky' }),
+  /bg-sky-50/,
+)
 
 assert.equal(provisionalBlockHeightPx(54), 64)
-assert.equal(provisionalStatusLabel(64), '仮（クリックで確定）')
+assert.equal(provisionalStatusLabel(64), '仮（クリックで詳細）')
 assert.equal(provisionalStatusLabel(40), '仮')
 
 console.log('visitBlockAppearance.test.ts: ok')

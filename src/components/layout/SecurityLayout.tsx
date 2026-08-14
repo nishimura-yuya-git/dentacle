@@ -1,6 +1,13 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { AccountMenu } from '@/components/layout/AccountMenu'
+import {
+  APP_SHELL_ATTR,
+  APP_SHELL_COLUMN_CLASS,
+  APP_SHELL_ROOT_CLASS,
+  APP_SHELL_SIDEBAR_CLASS,
+  appShellMainClass,
+} from '@/components/layout/appShell'
 import { env } from '@/config/env'
 import { useAuth } from '@/features/auth/useAuth'
 import { SecurityRail } from '@/pages/Security/sections/SecurityRail'
@@ -30,8 +37,13 @@ export function SecurityLayout({ children, surface = 'article' }: Props) {
   }, [navOpen])
 
   return (
-    <div className="flex min-h-dvh bg-[linear-gradient(-15deg,#F8FBF8,#F0F9F0,#E7F4E8_85%)]">
-      <aside className="sticky top-0 hidden h-dvh w-56 shrink-0 border-r border-slate-200/70 bg-white md:flex md:flex-col">
+    <div
+      {...{ [APP_SHELL_ATTR]: '' }}
+      className={`${APP_SHELL_ROOT_CLASS} bg-[linear-gradient(-15deg,#F8FBF8,#F0F9F0,#E7F4E8_85%)]`}
+    >
+      <aside
+        className={`sticky top-0 hidden w-56 shrink-0 border-r border-slate-200/70 bg-white md:flex md:flex-col ${APP_SHELL_SIDEBAR_CLASS}`}
+      >
         <SecurityRail onSignOut={() => void signOut()} />
       </aside>
 
@@ -57,8 +69,8 @@ export function SecurityLayout({ children, surface = 'article' }: Props) {
         </div>
       ) : null}
 
-      <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex h-[52px] items-center gap-3 border-b border-slate-200/70 bg-white px-3 md:hidden">
+      <div className={APP_SHELL_COLUMN_CLASS}>
+        <header className="flex h-[52px] shrink-0 items-center gap-3 border-b border-slate-200/70 bg-white px-3 md:hidden">
           <button
             type="button"
             className="inline-flex shrink-0 items-center justify-center rounded-lg p-1.5 transition-colors hover:bg-slate-100"
@@ -76,7 +88,7 @@ export function SecurityLayout({ children, surface = 'article' }: Props) {
           </div>
         </header>
 
-        <main className="flex-1 px-5 py-10 md:px-8 md:py-12">
+        <main className={`${appShellMainClass(false)} px-5 py-10 md:px-8 md:py-12`}>
           <div className="mx-auto w-full max-w-4xl">
             {surface === 'article' ? (
               <article className="rounded-[32px] bg-white p-5 font-normal leading-[1.7] text-[16px] text-slate-900 shadow-[0_2px_5px_-2px_rgba(0,20,40,0.08)] sm:p-7 md:p-8">

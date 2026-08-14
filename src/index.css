@@ -5,6 +5,13 @@
 @layer base {
   html {
     font-family: 'Zen Maru Gothic', sans-serif;
+    overscroll-behavior: none;
+  }
+
+  html:has([data-app-shell]),
+  body:has([data-app-shell]) {
+    overflow: hidden;
+    overscroll-behavior: none;
   }
 
   body {
@@ -17,5 +24,31 @@
     color: rgb(17, 24, 39);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+@layer components {
+  /* 空きブロックの斜線。訪問セルの5色とは別 */
+  .calendar-hatch-fill {
+    background-color: #ffffff;
+    background-image: repeating-linear-gradient(
+      45deg,
+      #c8d6e8 0,
+      #c8d6e8 2px,
+      #ffffff 2px,
+      #ffffff 8px
+    );
+  }
+
+  /* お知らせのリリース面。Nani changelog の斜線密度。ページ枠は借りない */
+  .announcement-release-hatch {
+    background-color: #ebf6ff;
+    background-image: repeating-linear-gradient(
+      135deg,
+      #ffffff 0,
+      #ffffff 1.5px,
+      transparent 1.5px,
+      transparent 4.5px
+    );
   }
 }

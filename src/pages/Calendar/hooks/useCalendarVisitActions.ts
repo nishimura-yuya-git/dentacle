@@ -2,16 +2,28 @@ import type { FormEvent } from 'react'
 import { ensurePhoneConfirmationForVisit } from '@/features/calendar/ensurePhoneConfirmation'
 import { writeOperationTrace } from '@/features/calendar/writeOperationTrace'
 import { supabase } from '@/lib/supabase'
+import type { Json } from '@/types/database.types'
 import type { VisitCreateForm } from '@/pages/Calendar/components/VisitCreateModal'
 import type { CalendarBlock } from '@/pages/Calendar/components/dayVisitGrid.types'
 import { minutesToLabel } from '@/pages/Calendar/utils/calendarGrid'
+import {
+  DEFAULT_VISIT_CELL_COLOR,
+  withVisitCellColor,
+  type VisitCellColor,
+} from '@/utils/visitMenus/visitCellColor'
+import {
+  buildVisitMenuSnapshots,
+  resolveManualVisitEndTime,
+  withVisitMenus,
+  type VisitMenuForm,
+} from '@/utils/visitMenus/visitMenuState'
 import type {
   LoadOptions,
   VisitLocalPatch,
   VisitRow,
 } from '@/pages/Calendar/hooks/useCalendarDayData'
 
-type Ctx = {
+export type VisitActionCtx = {
   clinicId: string
   userId: string
   date: string
@@ -26,7 +38,7 @@ type Ctx = {
 }
 
 export async function createVisitOrBlock(
-  ctx: Ctx,
+  ctx: VisitActionCtx,
   form: VisitCreateForm,
   defaultStartEnd: { start: string; end: string },
 ): Promise<boolean> {
@@ -70,21 +82,25 @@ export async function createVisitOrBlock(
   }
 
   let endTime = form.end_time
-  const { data: condition } = await supabase
-    .from('patient_visit_conditions')
-    .select('standard_duration_minutes')
-    .eq('clinic_id', ctx.clinicId)
-    .eq('patient_id', form.patient_id)
-    .is('deleted_at', null)
-    .maybeSingle()
-  if (
-    condition?.standard_duration_minutes &&
-    form.start_time === defaultStartEnd.start &&
-    form.end_time === defaultStartEnd.end
-  ) {
-    const start =
-      Number(form.start_time.slice(0, 2)) * 60 + Number(form.start_time.slice(3, 5))
-    endTime = minutesToLabel(start + condition.standard_duration_minutes)
+  if (form.menu_1) {
+    endTime = resolveManualVisitEndTime(form, form.end_time)
+  } else {
+    const { data: condition } = await supabase
+      .from('patient_visit_conditions')
+      .select('standard_duration_minutes')
+      .eq('clinic_id', ctx.clinicId)
+      .eq('patient_id', form.patient_id)
+      .is('deleted_at', null)
+      .maybeSingle()
+    if (
+      condition?.standard_duration_minutes &&
+      form.start_time === defaultStartEnd.start &&
+      form.end_time === defaultStartEnd.end
+    ) {
+      const start =
+        Number(form.start_time.slice(0, 2)) * 60 + Number(form.start_time.slice(3, 5))
+      endTime = minutesToLabel(start + condition.standard_duration_minutes)
+    }
   }
 
   const { data: visit, error } = await supabase
@@ -99,6 +115,10 @@ export async function createVisitOrBlock(
       end_time: endTime,
       status: 'tentative',
       source: 'manual',
+      metadata: withVisitCellColor(
+        withVisitMenus(null, buildVisitMenuSnapshots(form)),
+        form.cell_color,
+      ) as Json,
       created_by: ctx.userId,
       updated_by: ctx.userId,
     })
@@ -142,7 +162,7 @@ export async function createVisitOrBlock(
  * 空き枠埋めの採用: 自動提案と同じ source で仮予約を1件作成する。
  */
 export async function createTentativeAutoProposal(
-  ctx: Ctx,
+  ctx: VisitActionCtx,
   input: {
     patientId: string
     teamId: string
@@ -217,9 +237,9 @@ export async function createTentativeAutoProposal(
   return true
 }
 
-/** 仮予約をクリックで本予約へ確定する（電話確認キューがあれば OK に同期） */
+/** 仮予約を本予約へ確定する（電話確認キューがあれば OK に同期）。呼び出し元は詳細の確定ボタン */
 export async function confirmTentativeVisit(
-  ctx: Ctx,
+  ctx: VisitActionCtx,
   visitId: string,
 ): Promise<boolean> {
   if (!ctx.canWrite) {
@@ -288,17 +308,33 @@ export async function confirmTentativeVisit(
 }
 
 export async function updateVisitDetail(
-  ctx: Ctx,
+  ctx: VisitActionCtx,
   visitId: string,
-  patch: { teamId: string; startTime: string; endTime: string },
+  patch: {
+    teamId: string
+    startTime: string
+    endTime: string
+    menus: VisitMenuForm
+    cellColor: VisitCellColor
+    staffId?: string
+    currentMetadata?: Json | null
+  },
 ): Promise<boolean> {
   ctx.setBusy(true)
   const { error } = await supabase
     .from('visits')
     .update({
       team_id: patch.teamId || null,
+      ...(patch.staffId !== undefined ? { staff_id: patch.staffId || null } : {}),
       start_time: patch.startTime,
       end_time: patch.endTime,
+      metadata: withVisitCellColor(
+        withVisitMenus(
+          patch.currentMetadata ?? null,
+          buildVisitMenuSnapshots(patch.menus),
+        ),
+        patch.cellColor ?? DEFAULT_VISIT_CELL_COLOR,
+      ) as Json,
       updated_by: ctx.userId,
       updated_at: new Date().toISOString(),
     })
@@ -321,7 +357,7 @@ export async function updateVisitDetail(
   return true
 }
 
-export async function cancelVisit(ctx: Ctx, visitId: string): Promise<boolean> {
+export async function cancelVisit(ctx: VisitActionCtx, visitId: string): Promise<boolean> {
   ctx.setBusy(true)
   const { error } = await supabase
     .from('visits')
@@ -352,7 +388,7 @@ export async function cancelVisit(ctx: Ctx, visitId: string): Promise<boolean> {
 }
 
 export async function duplicateVisitAfter(
-  ctx: Ctx,
+  ctx: VisitActionCtx,
   source: VisitRow,
   detail: { teamId: string; startTime: string; endTime: string },
 ): Promise<boolean> {
@@ -377,6 +413,7 @@ export async function duplicateVisitAfter(
       end_time: nextEnd,
       status: 'tentative',
       source: 'manual',
+      metadata: source.metadata ?? {},
       created_by: ctx.userId,
       updated_by: ctx.userId,
     })
@@ -406,7 +443,7 @@ export async function duplicateVisitAfter(
 }
 
 export async function persistMoveVisit(
-  ctx: Ctx,
+  ctx: VisitActionCtx,
   visitId: string,
   teamId: string,
   startTime: string,
@@ -447,7 +484,7 @@ export async function persistMoveVisit(
 }
 
 export async function persistResizeVisit(
-  ctx: Ctx,
+  ctx: VisitActionCtx,
   visitId: string,
   endTime: string,
 ): Promise<void> {
@@ -482,7 +519,7 @@ export async function persistResizeVisit(
  * 当日の自動提案仮予約を一括で本予約確定する。
  * @returns 確定件数
  */
-export async function confirmAutoProposalTentatives(ctx: Ctx): Promise<number> {
+export async function confirmAutoProposalTentatives(ctx: VisitActionCtx): Promise<number> {
   if (!ctx.canWrite) {
     ctx.setError('確定する権限がありません')
     return 0
@@ -546,7 +583,7 @@ export async function confirmAutoProposalTentatives(ctx: Ctx): Promise<number> {
  * 当日の自動提案仮予約を一括取消（キャンセルリストに残す）。
  * @returns 取消件数
  */
-export async function clearAutoProposalTentatives(ctx: Ctx): Promise<number> {
+export async function clearAutoProposalTentatives(ctx: VisitActionCtx): Promise<number> {
   if (!ctx.canWrite) {
     ctx.setError('クリアする権限がありません')
     return 0
@@ -586,7 +623,7 @@ export async function clearAutoProposalTentatives(ctx: Ctx): Promise<number> {
   return ids.length
 }
 
-export async function softDeleteBlock(ctx: Ctx, block: CalendarBlock): Promise<void> {
+export async function softDeleteBlock(ctx: VisitActionCtx, block: CalendarBlock): Promise<void> {
   if (!ctx.canWrite) return
   if (!window.confirm('この空きブロックを削除しますか？')) return
   const { error } = await supabase
@@ -605,7 +642,7 @@ export async function softDeleteBlock(ctx: Ctx, block: CalendarBlock): Promise<v
   await ctx.reload()
 }
 
-export async function saveDayMemo(ctx: Ctx, body: string): Promise<boolean> {
+export async function saveDayMemo(ctx: VisitActionCtx, body: string): Promise<boolean> {
   if (!ctx.canWrite) return false
   const { data: existing } = await supabase
     .from('clinic_day_memos')

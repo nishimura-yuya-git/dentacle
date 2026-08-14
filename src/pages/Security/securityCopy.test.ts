@@ -10,6 +10,7 @@ import {
   SECURITY_NETWORK_ROWS,
   SECURITY_RAIL_BLURBS,
   SECURITY_RAIL_CTA,
+  SECURITY_RAIL_NAV,
   SECURITY_SECTIONS,
 } from './securityCopy.ts'
 
@@ -107,6 +108,18 @@ describe('安全性ページの文言', () => {
     assert.equal(/端末上に保存/.test(copy), false)
     assert.equal(SECURITY_RAIL_CTA.label, 'カレンダーへ戻る')
   })
+
+  it('レールとフッターにヘルプを置く', () => {
+    assert.equal(
+      SECURITY_RAIL_NAV.some((item) => item.href === '/help' && item.label === 'ヘルプ'),
+      true,
+    )
+    const support = SECURITY_FOOTER_COLUMNS.find((column) => column.title === 'サポート')
+    assert.equal(
+      support?.links.some((item) => item.href === '/help' && item.label === 'ヘルプ'),
+      true,
+    )
+  })
 })
 
 describe('安全性ページの面', () => {
@@ -122,6 +135,7 @@ describe('安全性ページの面', () => {
     assert.match(layout, /\bw-56\b/)
     assert.match(layout, /rounded-\[32px\]/)
     assert.match(layout, /#F8FBF8/)
+    assert.match(layout, /surface = 'article'/)
     assert.equal(layout.includes('FeedbackChatLauncher'), false)
   })
 

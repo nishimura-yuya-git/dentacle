@@ -10,6 +10,7 @@ export const ACCOUNT_MENU_LINKS: AccountMenuLink[] = [
   { to: '/announcements', label: 'お知らせ' },
   { to: '/progress', label: '改善の進捗', requiresPlatformAdmin: true },
   { to: '/security', label: '安全性' },
+  { to: '/help', label: 'ヘルプ' },
   { to: '/users', label: 'ユーザー管理（追加・編集・削除）' },
   { to: '/import', label: 'CSV取込' },
   { to: '/feedback', label: 'ご意見・不具合' },

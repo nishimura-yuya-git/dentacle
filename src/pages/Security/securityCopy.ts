@@ -167,6 +167,7 @@ export const SECURITY_RAIL_BLURBS = [
 
 export const SECURITY_RAIL_NAV: SecurityLink[] = [
   { href: '/security', label: '安全性' },
+  { href: '/help', label: 'ヘルプ' },
   { href: '/security/network', label: 'ネットワーク許可設定' },
 ]
 
@@ -189,6 +190,7 @@ export const SECURITY_FOOTER_COLUMNS: SecurityFooterColumn[] = [
     title: 'サポート',
     links: [
       { href: '/announcements', label: 'お知らせ' },
+      { href: '/help', label: 'ヘルプ' },
       { href: '/feedback', label: 'ご意見・不具合' },
       { href: '/security', label: '安全性' },
     ],

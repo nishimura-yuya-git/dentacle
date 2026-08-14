@@ -28,4 +28,12 @@ describe('visibleAccountMenuLinks', () => {
     assert.equal(clinic.some((item) => item.to === '/announcements'), true)
     assert.equal(clinic.some((item) => item.to === '/feedback'), true)
   })
+
+  it('安全性の次にヘルプを置く', () => {
+    const clinic = visibleAccountMenuLinks(false)
+    const security = clinic.findIndex((item) => item.to === '/security')
+    const help = clinic.findIndex((item) => item.to === '/help')
+    assert.equal(help, security + 1)
+    assert.equal(clinic[help]?.label, 'ヘルプ')
+  })
 })

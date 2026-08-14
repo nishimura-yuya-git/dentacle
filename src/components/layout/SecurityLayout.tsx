@@ -6,11 +6,17 @@ import { useAuth } from '@/features/auth/useAuth'
 import { SecurityRail } from '@/pages/Security/sections/SecurityRail'
 import { SecuritySiteFooter } from '@/pages/Security/sections/SecuritySiteFooter'
 
+type Props = {
+  children: ReactNode
+  /** article は安全性の白パネル。plain はヘルプのFAQグループをキャンバスに置く */
+  surface?: 'article' | 'plain'
+}
+
 /**
- * 安全性ページ専用シェル。
+ * 文書シェル（安全性・ヘルプ）。
  * 業務サイドバー・クリニック名ピル・ご意見 FAB は出さない。
  */
-export function SecurityLayout({ children }: { children: ReactNode }) {
+export function SecurityLayout({ children, surface = 'article' }: Props) {
   const { signOut } = useAuth()
   const [navOpen, setNavOpen] = useState(false)
 
@@ -40,7 +46,7 @@ export function SecurityLayout({ children }: { children: ReactNode }) {
           <div
             role="dialog"
             aria-modal="true"
-            aria-label="安全性メニュー"
+            aria-label="案内メニュー"
             className="absolute inset-y-0 left-0 flex w-56 flex-col border-r border-slate-200/70 bg-white shadow-lg"
           >
             <SecurityRail
@@ -72,9 +78,13 @@ export function SecurityLayout({ children }: { children: ReactNode }) {
 
         <main className="flex-1 px-5 py-10 md:px-8 md:py-12">
           <div className="mx-auto w-full max-w-4xl">
-            <article className="rounded-[32px] bg-white p-5 font-normal leading-[1.7] text-[16px] text-slate-900 shadow-[0_2px_5px_-2px_rgba(0,20,40,0.08)] sm:p-7 md:p-8">
-              {children}
-            </article>
+            {surface === 'article' ? (
+              <article className="rounded-[32px] bg-white p-5 font-normal leading-[1.7] text-[16px] text-slate-900 shadow-[0_2px_5px_-2px_rgba(0,20,40,0.08)] sm:p-7 md:p-8">
+                {children}
+              </article>
+            ) : (
+              children
+            )}
             <SecuritySiteFooter />
           </div>
         </main>

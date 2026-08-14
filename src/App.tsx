@@ -26,6 +26,7 @@ import {
   PaymentHistoryPage,
 } from '@/pages/Account'
 import { AnnouncementsPage } from '@/pages/Announcements/AnnouncementsPage'
+import { HelpPage } from '@/pages/Help/HelpPage'
 import { SecurityNetworkPage } from '@/pages/Security/SecurityNetworkPage'
 import { SecurityPage } from '@/pages/Security/SecurityPage'
 
@@ -48,6 +49,7 @@ function App() {
               <>
                 <Route path="/__preview__/security" element={<SecurityPage />} />
                 <Route path="/__preview__/security/network" element={<SecurityNetworkPage />} />
+                <Route path="/__preview__/help" element={<HelpPage />} />
               </>
             ) : null}
             <Route element={<ProtectedRoute />}>
@@ -60,6 +62,7 @@ function App() {
                   <Route path="/announcements" element={<AnnouncementsPage />} />
                   <Route path="/security" element={<SecurityPage />} />
                   <Route path="/security/network" element={<SecurityNetworkPage />} />
+                  <Route path="/help" element={<HelpPage />} />
                   <Route path="/account/contractor" element={<ContractorInfoPage />} />
                   <Route path="/account/payments" element={<PaymentHistoryPage />} />
                   <Route path="/account/contract" element={<ContractInfoPage />} />

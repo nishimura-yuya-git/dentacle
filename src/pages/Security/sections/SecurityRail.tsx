@@ -49,12 +49,12 @@ export function SecurityRail({ onSignOut, onNavigate }: Props) {
         </div>
       </div>
 
-      <nav className="mt-8 flex flex-col gap-1" aria-label="安全性">
+      <nav className="mt-8 flex flex-col gap-1" aria-label="案内">
         {SECURITY_RAIL_NAV.map((item) => (
           <NavLink
             key={item.href}
             to={item.href}
-            end={item.href === '/security'}
+            end={item.href === '/security' || !item.href.startsWith('/security/')}
             className={navClass}
             onClick={onNavigate}
           >

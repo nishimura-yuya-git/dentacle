@@ -1,8 +1,11 @@
 import { useEffect, useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { useToast } from '@/components/ui/Toast'
+import { useAuth } from '@/features/auth/useAuth'
+import { writeOperationTrace } from '@/features/calendar/writeOperationTrace'
 import { ClinicAccessPlaceholder } from '@/features/clinic/ClinicAccessPlaceholder'
 import { useClinic } from '@/features/clinic/useClinic'
 import {
@@ -11,6 +14,13 @@ import {
 } from '@/features/patientImport/importPatientCsv'
 import { normalizePatientCsvRows } from '@/features/patientImport/normalizePatientCsv'
 import { parsePatientCsv } from '@/features/patientImport/parsePatientCsv'
+import {
+  RECECON_IMPORT_ACTION,
+  RECECON_IMPORT_ENTITY,
+  RECECON_IMPORT_PAGE_AUDIT_NOTE,
+  buildRececonImportAuditPayload,
+  formatRececonImportAllowedColumnsLabel,
+} from '@/features/patientImport/receconImportPolicy'
 import {
   ImportProgressModal,
   type ImportResultSummary,
@@ -34,6 +44,7 @@ async function readCsvText(file: File): Promise<string> {
 
 export function PatientImportPage() {
   const { clinic, canWriteOperations, clinicReady } = useClinic()
+  const { user } = useAuth()
   const toast = useToast()
   const [fileName, setFileName] = useState<string | null>(null)
   const [rawText, setRawText] = useState('')
@@ -91,6 +102,16 @@ export function PatientImportPage() {
     setResult(null)
     setActiveStep('準備')
     setDetail('取込を開始します')
+    const parsedCount = preview.normalized.patients.length
+    const recordAudit = (input: Parameters<typeof buildRececonImportAuditPayload>[0]) => {
+      void writeOperationTrace({
+        clinicId: clinic.id,
+        userId: user?.id ?? null,
+        action: RECECON_IMPORT_ACTION,
+        entityType: RECECON_IMPORT_ENTITY,
+        payload: buildRececonImportAuditPayload(input),
+      })
+    }
     try {
       const imported = await importNormalizedPatients({
         clinicId: clinic.id,
@@ -102,12 +123,30 @@ export function PatientImportPage() {
         },
       })
       setResult(imported)
+      recordAudit({
+        parsedCount,
+        staffUpserted: imported.staffUpserted,
+        patientsInserted: imported.patientsInserted,
+        patientsUpdated: imported.patientsUpdated,
+        conditionsUpserted: imported.conditionsUpserted,
+        errorCount: imported.errors.length,
+        outcome: imported.errors.length > 0 ? 'partial' : 'success',
+      })
       if (imported.errors.length > 0) {
         toast.error(`一部エラーがあります（${imported.errors.length} 件）。先頭のみ表示します。`)
       } else {
         toast.success('患者CSVの取込が完了しました')
       }
     } catch (err) {
+      recordAudit({
+        parsedCount,
+        staffUpserted: 0,
+        patientsInserted: 0,
+        patientsUpdated: 0,
+        conditionsUpserted: 0,
+        errorCount: 1,
+        outcome: 'failed',
+      })
       toast.error(err instanceof Error ? err.message : '取込に失敗しました')
       setDetail(err instanceof Error ? err.message : '取込に失敗しました')
     } finally {
@@ -161,8 +200,18 @@ export function PatientImportPage() {
             ）を想定しています。Apotoolのエクスポートではありません。当面はレセコンAPI連携の代わりに、このCSV取込で患者種まきを行います。
           </p>
           <p className="mt-3 max-w-2xl text-sm font-medium leading-relaxed text-slate-500">
-            登録する列: カルテ番号・氏名（漢字/カナ）・主担当医・最終日付。住所・頻度・可能曜日・NG
+            登録する列: {formatRececonImportAllowedColumnsLabel()}
+            。住所・頻度・可能曜日・NG
             は空のまま仮条件で入れ、あとから患者カルテで育てます。会計・点数列は無視します。
+          </p>
+          <p className="mt-3 max-w-2xl text-sm font-medium leading-relaxed text-slate-500">
+            {RECECON_IMPORT_PAGE_AUDIT_NOTE}{' '}
+            <Link
+              to="/security#rececon"
+              className="font-bold text-[#008C01] underline decoration-dotted underline-offset-4"
+            >
+              安全性の説明を見る
+            </Link>
           </p>
           <div className="mt-6 grid max-w-xl gap-4 sm:grid-cols-2">
             <Input

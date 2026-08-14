@@ -32,6 +32,42 @@ describe('formatOperationTrace', () => {
   it('entity_type を日本語にする', () => {
     assert.equal(formatOperationEntityLabel('visit'), '訪問')
     assert.equal(formatOperationEntityLabel('calendar_block'), '空きブロック')
+    assert.equal(formatOperationEntityLabel('patient_import'), '患者取込')
+  })
+
+  it('レセコンCSV取込を日本語にし、件数と成否だけ詳細に出す', () => {
+    assert.equal(
+      formatOperationActionLabel('patient.import_rececon_csv'),
+      'レセコンCSVを取り込んだ',
+    )
+    assert.equal(
+      formatOperationDetail({
+        action: 'patient.import_rececon_csv',
+        entity_id: null,
+        payload: {
+          source: 'rececon_csv',
+          outcome: 'partial',
+          patientsInserted: 8,
+          patientsUpdated: 2,
+          errorCount: 1,
+        },
+      }),
+      '一部エラー・新規 8・更新 2・エラー 1',
+    )
+    assert.equal(
+      formatOperationDetail({
+        action: 'patient.import_rececon_csv',
+        entity_id: null,
+        payload: {
+          source: 'rececon_csv',
+          outcome: 'failed',
+          patientsInserted: 0,
+          patientsUpdated: 0,
+          errorCount: 1,
+        },
+      }),
+      '失敗・新規 0・更新 0・エラー 1',
+    )
   })
 
   it('payload の件数・対象日を詳細に出す', () => {

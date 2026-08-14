@@ -42,6 +42,22 @@ export const SECURITY_SECTIONS: SecuritySection[] = [
     ],
   },
   {
+    id: 'rececon',
+    title: 'レセコンとの連携',
+    paragraphs: [
+      'レセコン本体への常時接続や API 直結は行いません。院内で書き出した個人別全集計の CSV を、正規化して訪問スケジュールの種まきに使います。',
+      '取り込むのはカルテ番号、氏名（漢字・カナ）、担当医、最終来院日、診療回数です。会計、点数、保険者番号は取り込みません。',
+      '取込の記録は操作ログに、実行者・時刻・件数・成否だけ残します。氏名やカルテ番号はログに出しません。ログイン監査とは別の記録です。',
+      '外部の監視サービスへ患者データを送りません。利用目的は訪問スケジュールの種まきです。取込完了は導入完了ではありません。',
+      '保存期間の短縮や削除が必要な場合は、運営へ連絡してください。',
+    ],
+    callout: {
+      title: '取込画面',
+      body: '患者CSV取込から、院内ファイルを選択して種まきできます。レセコン本体への接続先追加は不要です。',
+      link: { href: '/import', label: '患者CSV取込を開く' },
+    },
+  },
+  {
     id: 'infra',
     title: '通信とインフラのセキュリティ',
     paragraphs: [
@@ -135,7 +151,7 @@ export const SECURITY_NETWORK_ROWS: NetworkAllowRow[] = [
 ]
 
 export const SECURITY_NETWORK_NOTE =
-  '自動提案とご意見の外部連携はサーバー側で行います。院内ブラウザの許可リストへ追加する必要はありません。'
+  '自動提案とご意見の外部連携はサーバー側で行います。院内ブラウザの許可リストへ追加する必要はありません。レセコンCSVの取込は院内ファイルを画面から送ります。レセコン本体への接続先追加は不要です。'
 
 /** 左レール（業務ナビと同じ w-56。文言はデンタクル） */
 export const SECURITY_RAIL_CTA: SecurityLink = {
@@ -146,6 +162,7 @@ export const SECURITY_RAIL_CTA: SecurityLink = {
 export const SECURITY_RAIL_BLURBS = [
   '患者情報と予約情報は、クリニック単位で保存します。',
   '画面から見える範囲は、所属クリニックの権限で制限します。',
+  'レセコンはCSVの種まきだけです。常時接続はしません。',
 ] as const
 
 export const SECURITY_RAIL_NAV: SecurityLink[] = [

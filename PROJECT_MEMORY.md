@@ -254,6 +254,7 @@
 | ログインIP・認証監査 | `auth_audit_logs` + `log_auth_audit_event` + `auth_ip_blocks` + `auth_presence` | 誰がいつどこから認証したか。clinic/memberships・地図・IPブロック・在席心拍。閲覧UIは運営のみ `/auth-audit`（§6.15） | ログイン監査画面 |
 | お知らせ公開判定 | `productUpdatePolicy.ts` + RPC（`propose_product_update` / `publish_product_update` / `reject_product_update`） | 院に見えるのは `published` のみ。提案中・入れないは出さない。デプロイでは自動掲載しない（§6.55） | お知らせ画面 |
 | 進捗→お知らせ文面 | `improvementAnnouncement.ts` + SQL `improvement_page_to_surfaces` | 反映済みのときだけ院向け見出し・本文・対象画面を決める。GitHub / Issue は出さない（§6.55 / §6.57） | 改善の進捗、お知らせ |
+| レセコンCSV取込監査 | `src/features/patientImport/receconImportPolicy.ts` | 件数・成否だけ残す。PII・ファイル名・例外文は禁止。監視SaaSは置かない（§6.58） | `/import`、`/operations`、`/security#rececon` |
 
 ### 禁止
 
@@ -463,7 +464,8 @@ DB上の確定・集計テーブル
 - **レセコン等の外部 API は正規化 Adapter 経由のみ。** エージェントがレセコンを直接叩かない。取り込んだデータは訪問条件マスタ等へ正規化してから割付に使う。
 - Cloud からツール連携する場合の MCP は **HTTP MCP** を使う。`headers` / `auth` は SDK 経由。stdio MCP の `env` に鍵を載せることは避ける。
 - **Cursor Cloud 送信時のコンプライアンス（2026-08-11）**: UUID・制約・距離行列など割付に必要なメタを送る一方、氏名・電話・生住所は載せない方針を維持する。第三者 AI 処理に該当しうるため、DPA / プライバシーポリシー / 利用者同意の文書化を必須とする（漏洩経路というより処理記録の論点）。
-- 関連: §6.10、Supabase、レセコン連携、スケジュール自動提案、§6.13, §6.39
+- 2026-08-14 追記: 当面は監視SaaSを足さない。取込監査と院向け説明は §6.58。
+- 関連: §6.10、Supabase、レセコン連携、スケジュール自動提案、§6.13, §6.39, §6.58
 
 ### 6.13 精度最優先: 知識ではなく制約を貯める（2026-08-06 決定 / 2026-08-11 改定）
 
@@ -531,7 +533,8 @@ DB上の確定・集計テーブル
   - **IPの意味**: 記録・ブロック対象は回線の出口（グローバルIP）。Mac等の端末単体番号ではない。同じWi‑Fiの別端末でも一致しうる。ブロック確認文言で別端末照合と回線共有影響を案内する（`formatAuthIpBlockConfirmMessage`）。
 - ログイン系監査と業務操作ログ（`operation_traces`）はテーブル/責務を分離する。
 - エージェント（Cursor SDK）経路に監査テーブルを直結させない（§6.12）。
-- 関連: `recordAuthAudit.ts`, `authPresence.ts`, `AuthAuditPage.tsx`, `AuthPresencePanel.tsx`, `AuthAuditJapanMap.tsx`, `japanMapZoom.ts`, `formatAuthAudit.ts`, `formatAuthIpBlock.ts`, `lookupIpRegion.ts`, `navConfig.ts`, `public/icon/map-full.svg`, `20260812151000_auth_audit_platform_admin_only.sql`, `20260812160000_auth_audit_clinic_and_ip_blocks.sql`, `20260812170000_auth_presence_heartbeat.sql`, §6.29, §6.50, §7, §10.27, §10.28
+- 2026-08-14 追記: レセコンCSV取込の監査は `operation_traces` に件数・成否だけ残す。ログイン監査へ流さない。詳細は §6.58。
+- 関連: `recordAuthAudit.ts`, `authPresence.ts`, `AuthAuditPage.tsx`, `AuthPresencePanel.tsx`, `AuthAuditJapanMap.tsx`, `japanMapZoom.ts`, `formatAuthAudit.ts`, `formatAuthIpBlock.ts`, `lookupIpRegion.ts`, `navConfig.ts`, `public/icon/map-full.svg`, `20260812151000_auth_audit_platform_admin_only.sql`, `20260812160000_auth_audit_clinic_and_ip_blocks.sql`, `20260812170000_auth_presence_heartbeat.sql`, §6.29, §6.50, §6.58, §7, §10.27, §10.28
 
 ### 6.16 距離算出とルート最適化の責務（2026-08-08 決定 / 2026-08-11 改定）
 
@@ -591,7 +594,8 @@ DB上の確定・集計テーブル
 - **CSVは訪問条件の完成データではない。** 取込完了＝導入完了とみなさない（§6.18）。
 - MEMORY・コミットメッセージ・Issue に患者の氏名・カルテ番号などの個人情報を転記しない。開発利用時のマスキング／サンプリング方針の細部は要確認。
 - Adapter検証は実CSVでも**件数のみ**報告する。DBへ書き込むデモ・E2Eは合成CSV（`[TEST]`接頭辞・カルテ番号は数字のみ）を優先し、実個人情報をリモートDBへ広げない。
-- 関連: `doc/患者データ.csv`, §6.12, §6.13, §6.18, §8.3, §10.3
+- 2026-08-14 追記: 常時接続・API直結・監視SaaSはまだ入れない。取込監査と院向け説明は §6.58。
+- 関連: `doc/患者データ.csv`, §6.12, §6.13, §6.18, §6.58, §8.3, §10.3
 
 ### 6.21 ログイン画面UI（2026-08-09 決定 / 2026-08-11 改定 / 2026-08-12 追記 / 2026-08-13 追記）
 
@@ -840,6 +844,7 @@ DB上の確定・集計テーブル
 - `doc/患者データ.csv` はレセコン系の個人別全集計であり、Apotool出力として扱わない。`/import` は全件取込、UTF-8 / Shift_JIS、令和年を含む期間行からの年推定に対応する。
 - 患者漢字氏名の先頭「・」は正規化時に除去するが、欠けた漢字を推測復元しない。
 - CSV選択後の進捗と結果は `ImportProgressModal` に表示し、取込実行中は閉じられないようにする。ページ内に重複する進捗セクションを置かない。
+- 2026-08-14 追記: レセコンCSV取込の監査 payload と院向け説明は §6.58。
 
 ### 6.43 共通画面・入力・通知（2026-08-09 決定 / 2026-08-11 追記）
 
@@ -956,7 +961,8 @@ DB上の確定・集計テーブル
 - **クリニック**: 運営または複数院ではクリニック Select（「すべてのクリニック」可）。すべて選択時のみ表にクリニック列を出す（AI利用状況と同型）。
 - **ページネーション**: 絞り込み後を右下で件数切替（10/20/50・既定20）＋前後ページ。フィルタ／件数変更時は1ページ目へ戻す。右下固定操作はご意見 FAB（`h-14` + `right-5`）分の右余白を空ける（§10.42）。
 - 本格帳票・高度な監査UIは後段のまま（§6.19）。
-- 関連: `OperationsTracesPage.tsx`, `OperationsTracesTable.tsx`, `OperationsTracesPagination.tsx`, `formatOperationTrace.ts`, §6.19, §6.29, §6.32, §10.42
+- 2026-08-14 追記: レセコンCSV取込の操作ログは件数・成否だけ出す。詳細は §6.58。
+- 関連: `OperationsTracesPage.tsx`, `OperationsTracesTable.tsx`, `OperationsTracesPagination.tsx`, `formatOperationTrace.ts`, §6.19, §6.29, §6.32, §6.58, §10.42
 
 ### 6.51 設定画面UI（セクション切替・表形式マスタ）（2026-08-11 決定 / 2026-08-14 改定）
 
@@ -1043,7 +1049,8 @@ DB上の確定・集計テーブル
 - アカウントメニューは上に開く（レール下端のため。下開きだと見切れる）。開く方向は案件SSoT。見本の下開きは借りない。位置の再計測でガクつかせない（§10.31）。
 - **文言の正（2026-08-13）**: 骨格（白パネル・見出し下線・囲み・点線リンク・カード外フッター）は Nani!? を参考にしてよい。事実はデンタクル。翻訳非保存・Google OAuth・Stripe は書かない。業務データは保存する。認証はメールとパスワード。決済は銀行振替。AI には氏名・電話・生住所を送らない。正本は `securityCopy.ts`。
 - 自動提案ハブは業務枠のまま主面を白 article にするが、**本文幅は本節を適用しない**（§6.45）。
-- 関連: `SecurityLayout.tsx`, `SecurityRail.tsx`, `securityCopy.ts`, `placeAccountMenu.ts`, `AccountMenu.tsx`, §6.24, §6.45, §10.31
+- 2026-08-14 追記: レセコン連携の院向け説明は `/security#rececon`。詳細は §6.58。
+- 関連: `SecurityLayout.tsx`, `SecurityRail.tsx`, `securityCopy.ts`, `placeAccountMenu.ts`, `AccountMenu.tsx`, §6.24, §6.45, §6.58, §10.31
 
 ### 6.57 改善の進捗（`/progress`・2026-08-14 決定）
 
@@ -1058,6 +1065,21 @@ DB上の確定・集計テーブル
 - **件数UI**: 受付／確認中／対応中／反映済みは見出し帯右端（`actions`）。本文に大きな件数カードを置かない。一覧は本文幅いっぱい（`max-w-3xl` で狭めない）。
 - **運営画面の GitHub リンクは可**。院向けお知らせには出さない（§6.55 / §10.43）。
 - 関連: `ProgressPage.tsx`, `improvementAnnouncement.ts`, `improvement_items`, `AccountMenu.tsx`, `accountMenuLinks.ts`, §6.29, §6.54, §6.55
+
+### 6.58 レセコン連携方針（案A・2026-08-14 決定）
+
+- 当面のレセコン／レセプト連携は、院内CSVの種まき取込だけにする。常時接続、API直結、エージェント常駐は入れない。
+- 監視SaaS（Datadog 等）は今は入れない。レセコン連携の主リスクは監視不足ではなく、取りすぎ・ログ漏洩・院外再委託である。
+- 本番APIの常時同期や、院・法人からのSOC相当の要求が出てから、監視SaaSを再検討する。入れる場合も患者データを送らない。
+- 取込監査の正は `operation_traces`。`action` は `patient.import_rececon_csv`。残してよいのは件数（解析行・担当医upsert・新規・更新・訪問条件upsert・エラー・取込件数）と成否（成功／一部エラー／失敗）と実行者・時刻だけ。
+- 取込監査にファイル名、患者氏名、カルテ番号、生年月日、保険番号、例外メッセージ、CSV原文を載せない。
+- ログイン監査 `auth_audit_logs` と操作ログ `operation_traces` は混ぜない。取込監査をログイン監査へ流さない。
+- 院向け説明の正は `/security#rececon`。常時接続なし、取込項目限定、操作ログは件数のみ、外部監視サービスへ患者データを送らない、削除は運営へ、を書く。
+- 院向け文言に Datadog / Sentry などの製品名を出さない。
+- 取込画面 `/import` から安全性ページへ案内してよい。案内先は `/security#rececon`。
+- 監査 payload のSSoTは `src/features/patientImport/receconImportPolicy.ts`。画面ごとに監査項目を増やさない。
+- 既存の Adapter 禁止（§6.12）、監査分離（§6.15）、CSV種まき（§6.20）、取込画面（§6.42）、操作ログ画面（§6.50）、安全性ページ枠（§6.56）は維持する。この節は監視SaaSを足さないことと、取込監査・院向け説明の置き場を足す。
+- 院名やレセコン製品名は、確認できるまで MEMORY に確定事実として書かない。
 
 ---
 
@@ -1091,6 +1113,7 @@ DB上の確定・集計テーブル
 - 患者・予約・制約・監査の正データは Supabase に置く
 - API レスポンスに内部エラーメッセージ（Postgres/SDK 生文言）を載せない（§6.40 / §10.11）
 - `clinic_members` のオーナー保護・運営除外は UI だけでなく RLS で強制する（§6.40）
+- レセコンCSV取込の監査にファイル名や患者データを載せない。外部監視SaaSへ患者データを送らない（§6.58）
 
 ---
 
@@ -1540,6 +1563,7 @@ AIが自分の実装に合わせて期待値を作ることは禁止。
 - `doc/Apotool管理ツール調査結果_訪問歯科スケジュール自動化.md` — Apotool調査（2026-06-14）。機能骨格の正本。模倣対象・個人情報なし（§6.5 / §6.18）
 - Obsidian写し: `提案書・案/株式会社Cスリー/Apotool管理ツール調査結果_訪問歯科スケジュール自動化.md`
 - `doc/患者データ.csv` — 開発・デモの患者種まきソース（§6.20）。個人情報を仕様へ転記しない
+- `src/features/patientImport/receconImportPolicy.ts` — レセコンCSV取込監査（件数・成否のみ。§6.58）
 - Cursor SDK スキル（`.cursor/skills-cursor/sdk/SKILL.md`）— AI裏処理（自動提案・ルート最適化）実装時の API 正本（§6.10）
 - Cursor SDK 公式: https://cursor.com/docs/sdk/typescript — `@cursor/sdk` 参照
 
@@ -1582,6 +1606,7 @@ AIは作業開始時に以下を確認する。
 □ サービス名・画面コピーなら §6.17（対外名はデンタクル。内部識別子は Detacle。装飾英語見出しを増やさない。SEOはサブタイトル側）を守った
 □ 初期機能・導入なら §6.18 / §6.19（Apotool骨格＋ボタン1つ。v0はMustのみ。立ち上げ/既存の2レーン）を守った
 □ 患者種まきなら §6.20 / §10.3（`doc/患者データ.csv`・Adapter経由・完成データ扱い禁止・個人情報をMEMORYに書かない・DB書込は合成CSV優先）を守った
+□ レセコン連携なら §6.58（当面はCSV種まきのみ。常時接続・API直結・監視SaaSは足さない。取込監査は operation_traces に件数・成否だけ。院向け説明は /security#rececon。製品名は出さない。院名は未確認のまま MEMORY に書かない）を守った
 □ ログイン画面UIなら §6.21 / §10.26（パスワード表示切替・カード内左寄せログイン＋縦線・背景白・広め余白・MFA確認は6マス＋コピペ一括・MFA中にPASS画面を出さない・お知らせを出さない・Lucide禁止）を守った
 □ 開発Authなら §6.22 / §10.5（メール確認オフ推奨・指定ログイン以外の検証ユーザー削除・パスワードをMEMORYに書かない）を守った
 □ フォントなら §6.23（Zen Maru Gothic・本文500/14px/20px/`rgb(17,24,39)`）を守った
@@ -1705,4 +1730,5 @@ AIは作業開始時に以下を確認する。
 - `2026-08-14`: ご意見処理コマンドの名前を `/resolve-issue` から `/issues` に変更（`.cursor/commands/issues.md`）。§6.54 / §6.55 / §11 / §12（`/project-memory-learn`）
 - `2026-08-14`: 未反映23件を反映。改善の進捗（§6.57）・反映済みでお知らせ（§6.55）・患者/電話確認UI改定（§6.44）・操作ログ白1枚（§6.50）・Select sm（§6.26）・FABは動かさずページ送りで余白（§6.54/§10.42）・再発防止（§10.41〜10.43）・§3 / §5 / §7 / §11 / §12（`/project-memory-learn`）。`chat-20260814-patients-contacts-later` は後続実装済みのため破棄
 - `2026-08-14`: 設定UI改定を §6.51 / §6.54 / §10.42 / §12 に追記（`/project-memory-learn`）。見出し右テキストタブ・白 article・導入タイプはボタン・追加フォーム Select は残す・追加ボタンはFABと重ねない
+- `2026-08-14`: レセコン連携方針（案A）を §6.58 に追記。当面はCSV種まきのみ。監視SaaSは入れない。取込監査は `operation_traces` に件数・成否だけ。院向け説明は `/security#rececon`。§6.12 / §6.15 / §6.20 / §6.42 / §6.50 / §6.56 から参照。SSoT表、§7 必須、§11、§12 を更新（`/project-memory-learn`）
 

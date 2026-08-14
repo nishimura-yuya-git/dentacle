@@ -160,6 +160,7 @@ async function submitFeedbackInner(
       isNewIssue: true,
     })
 
+    let threadSaved = false
     try {
       await deps.store.insertThread({
         id: threadId,
@@ -170,6 +171,7 @@ async function submitFeedbackInner(
         title,
         pagePath,
       })
+      threadSaved = true
       await deps.store.insertMessage({
         id: userMessageId,
         threadId,
@@ -188,6 +190,14 @@ async function submitFeedbackInner(
       })
     } catch (err) {
       logFeedbackError('save', err)
+    }
+
+    if (threadSaved) {
+      try {
+        await deps.store.createImprovementItem(threadId)
+      } catch (err) {
+        logFeedbackError('improvement', err)
+      }
     }
 
     return {

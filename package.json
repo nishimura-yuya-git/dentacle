@@ -64,7 +64,7 @@
     "schedule:test-travel": "node --experimental-strip-types src/utils/schedule/travelDistance.test.ts",
     "schedule:test-due": "node --experimental-strip-types src/utils/schedule/visitDueUrgency.test.ts",
     "cursor:test-usage": "node --experimental-strip-types server/cursor/usageTypes.test.ts",
-    "feedback:test": "node --experimental-strip-types --test server/feedback/buildIssue.test.ts server/feedback/githubIssues.test.ts server/feedback/publicErrors.test.ts server/feedback/submitFeedback.test.ts src/features/feedback/feedbackCopy.test.ts src/components/features/feedback/FeedbackChatLauncher.test.ts src/pages/Security/securityCopy.test.ts"
+    "feedback:test": "node --experimental-strip-types --test server/feedback/buildIssue.test.ts server/feedback/githubIssues.test.ts server/feedback/publicErrors.test.ts server/feedback/submitFeedback.test.ts src/features/feedback/feedbackCopy.test.ts src/components/features/feedback/FeedbackChatLauncher.test.ts src/pages/Security/securityCopy.test.ts src/pages/Progress/improvementItemPolicy.test.ts src/pages/Progress/formatImprovementItem.test.ts src/pages/Progress/improvementAnnouncement.test.ts src/components/layout/accountMenuLinks.test.ts"
   },
   "dependencies": {
     "@cursor/sdk": "1.0.27",

@@ -25,7 +25,7 @@ type Props = {
 }
 
 const TH =
-  'sticky top-0 z-10 whitespace-nowrap border-b border-slate-200 bg-slate-50 px-3 py-2.5 text-left text-xs font-bold text-slate-600'
+  'whitespace-nowrap border-b border-slate-200 bg-slate-50 px-3 py-2.5 text-left text-xs font-bold text-slate-600'
 
 const TD = 'border-b border-slate-100 px-3 py-3 align-middle text-sm text-slate-700'
 
@@ -53,10 +53,9 @@ export function OperationsTracesTable({
   }
 
   return (
-    <div className="min-h-0 flex-1 overflow-auto rounded-2xl border border-slate-200 bg-white">
-      <table className="min-w-[720px] w-full border-collapse">
-        <thead>
-          <tr>
+    <table className="min-w-[720px] w-full border-separate border-spacing-0 text-left text-sm">
+      <thead className="sticky top-0 z-10 shadow-sm">
+        <tr>
             <th className={TH}>操作日時</th>
             {showClinicColumn ? <th className={TH}>クリニック</th> : null}
             <th className={TH}>操作</th>
@@ -103,6 +102,5 @@ export function OperationsTracesTable({
           })}
         </tbody>
       </table>
-    </div>
   )
 }

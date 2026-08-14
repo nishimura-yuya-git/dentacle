@@ -19,6 +19,10 @@ import {
   type OperationsTraceRow,
 } from '@/pages/Operations/OperationsTracesTable'
 
+/** 患者一覧の白1枚と同型。角丸カード・外枠・影は置かない。 */
+const OPERATIONS_ARTICLE_CLASS =
+  '-mx-3 -my-2 flex min-h-0 flex-1 flex-col overflow-hidden bg-white px-5 py-5 font-normal leading-[1.7] text-[16px] text-slate-900 md:-mx-4 md:-my-3 md:px-8 md:py-6'
+
 type TraceQueryRow = {
   id: string
   clinic_id: string
@@ -124,27 +128,35 @@ export function OperationsTracesPage() {
 
   if (!clinicReady) {
     return (
-      <DashboardLayout title="操作ログ">
-        <ClinicAccessPlaceholder />
+      <DashboardLayout title="操作ログ" fillViewport>
+        <article className={OPERATIONS_ARTICLE_CLASS}>
+          <ClinicAccessPlaceholder />
+        </article>
       </DashboardLayout>
     )
   }
 
   if (!clinic && clinics.length === 0) {
     return (
-      <DashboardLayout title="操作ログ">
-        <p className="text-sm text-slate-500">クリニックを選択または作成してください。</p>
+      <DashboardLayout title="操作ログ" fillViewport>
+        <article className={OPERATIONS_ARTICLE_CLASS}>
+          <p className="text-sm text-slate-500">クリニックを選択または作成してください。</p>
+        </article>
       </DashboardLayout>
     )
   }
 
   const hasFilter = Boolean(clinicFilter || actionFilter || entityFilter)
   const showClinicColumn = showClinicFilter && clinicFilter === ''
+  const countLabel = loading
+    ? '—'
+    : hasFilter
+      ? `${filtered.length}件 ／ 取得 ${rows.length}件`
+      : `${rows.length}件`
 
   return (
     <DashboardLayout
       title="操作ログ"
-      description="カレンダー・電話確認まわりの直近操作を確認します"
       fillViewport
       actions={
         <div className="flex shrink-0 flex-nowrap items-center gap-2 overflow-x-auto">
@@ -195,32 +207,24 @@ export function OperationsTracesPage() {
         </div>
       }
     >
-      <section className="flex h-full min-h-0 flex-1 flex-col overflow-hidden rounded-[28px] border border-slate-100 bg-white p-5 shadow-sm md:p-6">
-        <div className="mb-4 flex shrink-0 items-end justify-between gap-3">
-          <div>
-            <h2 className="text-sm font-bold text-slate-900">直近の操作</h2>
-            <p className="mt-1 text-xs font-medium text-slate-400">
-              新しい順に最大100件まで表示します
-            </p>
-          </div>
-          {!loading ? (
-            <p className="shrink-0 text-xs font-bold text-slate-500">
-              {hasFilter
-                ? `${filtered.length}件 / 取得 ${rows.length}件`
-                : `${rows.length}件`}
-            </p>
-          ) : null}
+      <article className={OPERATIONS_ARTICLE_CLASS}>
+        <div className="flex shrink-0 items-end justify-between gap-3">
+          <p className="text-sm font-bold text-slate-500">{countLabel}</p>
         </div>
-        <OperationsTracesTable
-          rows={paged.pageRows}
-          loading={loading}
-          showClinicColumn={showClinicColumn}
-          emptyMessage={
-            rows.length === 0
-              ? '操作ログはまだありません。カレンダーで仮予約を作成するとここに記録されます。'
-              : '条件に一致する操作はありません。絞り込みを変更してください。'
-          }
-        />
+
+        <div className="mt-4 flex min-h-0 flex-1 flex-col overflow-auto rounded-2xl border border-slate-200 bg-white">
+          <OperationsTracesTable
+            rows={paged.pageRows}
+            loading={loading}
+            showClinicColumn={showClinicColumn}
+            emptyMessage={
+              rows.length === 0
+                ? '操作ログはまだありません。カレンダーで仮予約を作成するとここに記録されます。'
+                : '条件に一致する操作はありません。絞り込みを変更してください。'
+            }
+          />
+        </div>
+
         {!loading ? (
           <OperationsTracesPagination
             page={paged.page}
@@ -234,7 +238,7 @@ export function OperationsTracesPage() {
             }}
           />
         ) : null}
-      </section>
+      </article>
     </DashboardLayout>
   )
 }

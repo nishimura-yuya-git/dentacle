@@ -112,5 +112,12 @@ export function createSupabaseFeedbackStore(
       })
       if (error) throw new Error(error.message)
     },
+
+    async createImprovementItem(threadId) {
+      const { error } = await supabase.rpc('create_improvement_item_for_thread', {
+        p_thread_id: threadId,
+      })
+      if (error) throw new Error(error.message)
+    },
   }
 }

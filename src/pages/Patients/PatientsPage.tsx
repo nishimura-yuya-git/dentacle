@@ -15,6 +15,10 @@ import { PatientsTable } from '@/pages/Patients/PatientsTable'
 import { downloadPatientsCsv } from '@/pages/Patients/exportPatientsCsv'
 import type { PatientListRow, StaffOption } from '@/pages/Patients/patientListTypes'
 
+/** 自動提案の白1枚と同型。角丸カード・外枠・影は置かない。 */
+const PATIENTS_ARTICLE_CLASS =
+  '-mx-3 -my-2 flex min-h-0 flex-1 flex-col overflow-hidden bg-white px-5 py-5 font-normal leading-[1.7] text-[16px] text-slate-900 md:-mx-4 md:-my-3 md:px-8 md:py-6'
+
 /** Asia/Tokyo の当月開始（ISO）。今月新規は created_at 基準 */
 function startOfMonthTokyoIso(): string {
   const parts = new Intl.DateTimeFormat('en-CA', {
@@ -60,7 +64,6 @@ export function PatientsPage() {
   const [busy, setBusy] = useState(false)
   const [modalOpen, setModalOpen] = useState(false)
   const [form, setForm] = useState(EMPTY_FORM)
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [totalPatients, setTotalPatients] = useState(0)
   const [newPatientsThisMonth, setNewPatientsThisMonth] = useState(0)
 
@@ -153,7 +156,6 @@ export function PatientsPage() {
       sourceRows.filter((row) => isCreatedThisMonthTokyo(row.created_at, monthStartMs)).length,
     )
     setStaff(staffRes.data ?? [])
-    setSelectedIds(new Set())
   }, [clinic, toast])
 
   useEffect(() => {
@@ -236,103 +238,86 @@ export function PatientsPage() {
     toast.success(`${filtered.length}件をCSV出力しました`)
   }
 
+  const listActions = (
+    <div className="flex flex-wrap items-center gap-2">
+      <Button
+        variant="soft"
+        className="!px-4 !py-2.5 !text-sm !font-medium"
+        onClick={handleExport}
+      >
+        <DownloadIcon />
+        データ出力
+      </Button>
+      <Button
+        variant="soft"
+        className="!px-4 !py-2.5 !text-sm !font-medium"
+        onClick={() => setModalOpen(true)}
+      >
+        <PlusIcon />
+        新規患者登録
+      </Button>
+    </div>
+  )
+
   if (!clinicReady) {
     return (
-      <DashboardLayout title="患者管理">
-        <ClinicAccessPlaceholder />
+      <DashboardLayout title="患者管理" fillViewport>
+        <article className={PATIENTS_ARTICLE_CLASS}>
+          <ClinicAccessPlaceholder />
+        </article>
       </DashboardLayout>
     )
   }
 
   if (!clinic) {
     return (
-      <DashboardLayout title="患者管理">
-        <p className="text-sm text-slate-500">クリニックを選択または作成してください。</p>
+      <DashboardLayout title="患者管理" fillViewport>
+        <article className={PATIENTS_ARTICLE_CLASS}>
+          <p className="text-sm text-slate-500">クリニックを選択または作成してください。</p>
+        </article>
       </DashboardLayout>
     )
   }
 
   return (
-    <DashboardLayout
-      title="患者管理"
-      description="訪問先患者の一覧と新規登録"
-      titleAside={
-        <div className="w-full min-w-[200px] max-w-xs md:w-64">
-          <Input
-            label="氏名で検索"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="例: 山田"
-            className="!py-2.5"
-          />
-        </div>
-      }
-      actions={
-        <div className="flex flex-wrap items-center gap-2">
-          <Button
-            variant="soft"
-            className="!px-4 !py-2.5 !text-sm !font-medium"
-            onClick={handleExport}
-          >
-            <DownloadIcon />
-            データ出力
-          </Button>
-          <Button
-            variant="soft"
-            className="!px-4 !py-2.5 !text-sm !font-medium"
-            onClick={() => setModalOpen(true)}
-          >
-            <PlusIcon />
-            新規患者登録
-          </Button>
-        </div>
-      }
-    >
-      <div className="space-y-6">
-        <section className="space-y-4">
-          <div>
-            <h2 className="text-lg font-bold text-slate-900">全ての患者</h2>
-            <p className="mt-1 text-xs font-medium text-slate-400">
-              {selectedIds.size > 0 ? `選択 ${selectedIds.size}件 ／ ` : ''}
-              お名前または「編集」から患者情報を変更できます
-              {search.trim() ? ` ／ 検索結果 ${filtered.length}件` : ''}
-            </p>
-          </div>
-
+    <DashboardLayout title="患者管理" fillViewport actions={listActions}>
+      <article className={PATIENTS_ARTICLE_CLASS}>
+        <div className="flex shrink-0 flex-wrap items-end justify-between gap-3">
           <PatientSummaryBar
             totalPatients={totalPatients}
             newPatientsThisMonth={newPatientsThisMonth}
+            visibleCount={filtered.length}
+            searching={Boolean(search.trim())}
             loading={loading}
           />
-
-          {loading ? (
-            <p className="text-sm text-slate-400">患者一覧を読み込んでいます…</p>
-          ) : filtered.length === 0 ? (
-            <p className="rounded-2xl border border-dashed border-slate-200 bg-white px-6 py-10 text-center text-sm text-slate-400">
-              該当する患者がありません。右上の「新規患者登録」またはアカウントメニューの「CSV取込」から追加してください。
-            </p>
-          ) : (
-            <PatientsTable
-              patients={filtered}
-              selectedIds={selectedIds}
-              onToggleOne={(id) => {
-                setSelectedIds((prev) => {
-                  const next = new Set(prev)
-                  if (next.has(id)) next.delete(id)
-                  else next.add(id)
-                  return next
-                })
-              }}
-              onToggleAll={() => {
-                setSelectedIds((prev) => {
-                  if (filtered.every((p) => prev.has(p.id))) return new Set()
-                  return new Set(filtered.map((p) => p.id))
-                })
-              }}
+          <div className="w-full min-w-[12rem] max-w-xs md:w-64">
+            <Input
+              id="patient-list-search"
+              label="氏名・カルテで検索"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="例: 山田"
+              className="!py-2"
             />
+          </div>
+        </div>
+
+        <div className="mt-4 flex min-h-0 flex-1 flex-col overflow-auto rounded-2xl border border-slate-200 bg-white">
+          {loading ? (
+            <div className="flex min-h-[8rem] flex-1 items-center justify-center">
+              <p className="text-sm text-slate-400">患者一覧を読み込んでいます…</p>
+            </div>
+          ) : filtered.length === 0 ? (
+            <div className="flex min-h-[8rem] flex-1 items-center justify-center px-4">
+              <p className="text-center text-sm text-slate-400">
+                該当する患者がありません。右上の「新規患者登録」またはアカウントメニューの「CSV取込」から追加してください。
+              </p>
+            </div>
+          ) : (
+            <PatientsTable patients={filtered} />
           )}
-        </section>
-      </div>
+        </div>
+      </article>
 
       <Modal
         isOpen={modalOpen}

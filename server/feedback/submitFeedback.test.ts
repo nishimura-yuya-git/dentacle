@@ -8,6 +8,8 @@ import type { FeedbackStore, FeedbackThreadRecord } from './types.ts'
 type Memory = {
   threads: FeedbackThreadRecord[]
   messages: { id: string; threadId: string; body: string; authorRole: string }[]
+  improvementThreadIds: string[]
+  improvementError?: Error
 }
 
 function createMemoryStore(input: {
@@ -52,6 +54,12 @@ function createMemoryStore(input: {
         authorRole: row.authorRole,
       })
     },
+    async createImprovementItem(threadId) {
+      if (input.memory.improvementError) {
+        throw input.memory.improvementError
+      }
+      input.memory.improvementThreadIds.push(threadId)
+    },
   }
 }
 
@@ -78,7 +86,7 @@ describe('submitFeedback', () => {
   })
 
   it('未ログインは unauthorized', async () => {
-    const memory: Memory = { threads: [], messages: [] }
+    const memory: Memory = { threads: [], messages: [], improvementThreadIds: [] }
     const result = await submitFeedback(
       { accessToken: '', body: '不具合です' },
       {
@@ -91,7 +99,7 @@ describe('submitFeedback', () => {
   })
 
   it('空本文は bad_request', async () => {
-    const memory: Memory = { threads: [], messages: [] }
+    const memory: Memory = { threads: [], messages: [], improvementThreadIds: [] }
     const result = await submitFeedback(
       { accessToken: 'token', body: '   ' },
       {
@@ -107,7 +115,7 @@ describe('submitFeedback', () => {
   })
 
   it('権限がなければ forbidden', async () => {
-    const memory: Memory = { threads: [], messages: [] }
+    const memory: Memory = { threads: [], messages: [], improvementThreadIds: [] }
     const result = await submitFeedback(
       { accessToken: 'token', body: '不具合です', clinicId: 'clinic-1' },
       {
@@ -120,7 +128,7 @@ describe('submitFeedback', () => {
   })
 
   it('新規送信で Issue を作り、受付メッセージを返す', async () => {
-    const memory: Memory = { threads: [], messages: [] }
+    const memory: Memory = { threads: [], messages: [], improvementThreadIds: [] }
     const calls = { issues: 0, comments: 0 }
     let idSeq = 0
     const result = await submitFeedback(
@@ -148,6 +156,7 @@ describe('submitFeedback', () => {
     assert.equal(result.messages[1]?.role, 'system')
     assert.match(result.messages[1]?.body ?? '', /受け付けました/)
     assert.equal(/issue/i.test(result.messages[1]?.body ?? ''), false)
+    assert.deepEqual(memory.improvementThreadIds, [result.threadId])
   })
 
   it('同じスレッドへの続きはコメントにする', async () => {
@@ -164,6 +173,7 @@ describe('submitFeedback', () => {
         },
       ],
       messages: [],
+      improvementThreadIds: [],
     }
     const calls = { issues: 0, comments: 0 }
     const result = await submitFeedback(
@@ -186,10 +196,11 @@ describe('submitFeedback', () => {
     assert.equal(calls.issues, 0)
     assert.equal(calls.comments, 1)
     assert.match(result.messages[1]?.body ?? '', /追記しました/)
+    assert.deepEqual(memory.improvementThreadIds, [])
   })
 
   it('同じユーザーの連続送信は rate_limited', async () => {
-    const memory: Memory = { threads: [], messages: [] }
+    const memory: Memory = { threads: [], messages: [], improvementThreadIds: [] }
     const deps = {
       store: createMemoryStore({ user, memory }),
       github: createGithubMock({ issues: 0, comments: 0 }),
@@ -209,5 +220,29 @@ describe('submitFeedback', () => {
     )
     assert.equal(second.ok, false)
     if (!second.ok) assert.equal(second.code, 'rate_limited')
+  })
+
+  it('進捗行の作成に失敗しても送信は成功する', async () => {
+    const memory: Memory = {
+      threads: [],
+      messages: [],
+      improvementThreadIds: [],
+      improvementError: new Error('進捗の保存に失敗'),
+    }
+    const result = await submitFeedback(
+      { accessToken: 'token', body: '進捗失敗でも受け付ける', clinicId: 'clinic-1' },
+      {
+        store: createMemoryStore({ user, memory }),
+        github: createGithubMock({ issues: 0, comments: 0 }),
+        createId: (() => {
+          let n = 0
+          return () => `p-${++n}`
+        })(),
+      },
+    )
+    assert.equal(result.ok, true)
+    if (!result.ok) return
+    assert.equal(result.issueNumber, 7)
+    assert.deepEqual(memory.improvementThreadIds, [])
   })
 })

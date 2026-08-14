@@ -20,12 +20,18 @@ import {
   SettingsTable,
 } from '@/pages/Settings/SettingsMasterPanel'
 import { IntroductionLaneSection } from '@/pages/Settings/sections/IntroductionLaneSection'
+import { SettingsHubNav } from '@/pages/Settings/sections/SettingsHubNav'
+import { type SettingsSection } from '@/pages/Settings/settingsHub'
 import { WEEKDAY_LABELS } from '@/utils/roleLabels'
 import {
   DEFAULT_INTRODUCTION_LANE,
   getProposalLanePreset,
   type IntroductionLane,
 } from '@/utils/schedule/proposalLanePresets'
+
+/** 患者一覧・自動提案の白1枚と同型。角丸カード・外枠・影は置かない。 */
+const SETTINGS_ARTICLE_CLASS =
+  '-mx-3 -my-2 flex min-h-0 flex-1 flex-col overflow-hidden bg-white px-5 py-5 font-normal leading-[1.7] text-[16px] text-slate-900 md:-mx-4 md:-my-3 md:px-8 md:py-6'
 
 type Team = { id: string; name: string; color: string | null; sort_order: number }
 type Staff = { id: string; display_name: string; staff_type: string; external_code: string | null }
@@ -37,15 +43,6 @@ type Slot = {
   start_time: string
   end_time: string
 }
-
-type SettingsSection = 'lane' | 'teams' | 'staff' | 'slots'
-
-const SETTINGS_SECTION_OPTIONS: Array<{ value: SettingsSection; label: string }> = [
-  { value: 'lane', label: '導入タイプ' },
-  { value: 'teams', label: 'チーム' },
-  { value: 'staff', label: '担当' },
-  { value: 'slots', label: '稼働枠' },
-]
 
 function staffTypeLabel(staffType: string): string {
   if (staffType === 'doctor') return '医師'
@@ -234,23 +231,9 @@ export function SettingsPage() {
     <DashboardLayout
       title="設定"
       fillViewport
-      actions={
-        <div className="w-[11rem]">
-          <Select
-            id="settings-section"
-            label="表示"
-            labelTone="muted"
-            size="sm"
-            options={SETTINGS_SECTION_OPTIONS}
-            value={section}
-            onChange={(event) =>
-              setSection(event.target.value as SettingsSection)
-            }
-          />
-        </div>
-      }
+      actions={<SettingsHubNav section={section} onSelect={setSection} />}
     >
-      <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden">
+      <article className={SETTINGS_ARTICLE_CLASS}>
         {section === 'lane' ? (
           <IntroductionLaneSection
             lane={lane}
@@ -442,7 +425,7 @@ export function SettingsPage() {
             </SettingsTable>
           </SettingsMasterPanel>
         ) : null}
-      </div>
+      </article>
     </DashboardLayout>
   )
 }

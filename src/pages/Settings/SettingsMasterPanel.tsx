@@ -12,7 +12,7 @@ type Props = {
 const TH =
   'whitespace-nowrap border-b border-slate-200 bg-slate-50 px-3 py-2.5 text-left text-xs font-bold text-slate-600'
 
-/** 設定マスタ用パネル（操作ログと同系の見出し・スクロール・下固定フォーム） */
+/** 設定マスタ（白 article 内。見出しはタブで足りるので重ねない） */
 export function SettingsMasterPanel({
   title,
   count,
@@ -22,15 +22,12 @@ export function SettingsMasterPanel({
   emptyMessage = 'まだデータがありません',
 }: Props) {
   return (
-    <section className="flex h-full min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-[28px] border border-slate-100 bg-white p-4 shadow-sm md:p-5">
-      <div className="mb-3 flex shrink-0 items-end justify-between gap-3">
-        <div>
-          <h2 className="text-sm font-bold text-slate-900">{title}</h2>
-          <p className="mt-0.5 text-[11px] font-medium text-slate-400">
-            一覧を確認し、下のフォームから追加できます
-          </p>
-        </div>
-        <p className="shrink-0 text-xs font-bold text-slate-500">{count}件</p>
+    <section
+      aria-label={title}
+      className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden"
+    >
+      <div className="mb-4 flex shrink-0 items-center justify-between gap-3">
+        <p className="text-xs font-bold text-slate-400">{count}件</p>
       </div>
 
       <div className="min-h-0 flex-1 overflow-auto rounded-2xl border border-slate-200 bg-white">
@@ -44,7 +41,10 @@ export function SettingsMasterPanel({
       </div>
 
       {footer ? (
-        <div className="mt-3 shrink-0 border-t border-slate-100 pt-3">{footer}</div>
+        // pr-20 はご意見FAB（bottom-5 right-5 h-14）との重なり回避。FABは動かさない。
+        <div className="mt-4 shrink-0 border-t border-slate-100 pt-4 pr-20">
+          {footer}
+        </div>
       ) : null}
     </section>
   )

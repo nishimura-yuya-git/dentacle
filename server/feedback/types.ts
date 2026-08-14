@@ -46,6 +46,8 @@ export type FeedbackStore = {
     body: string
     createdAt: string
   }) => Promise<void>
+  /** 新規ご意見の進捗行。失敗しても送信自体は成功扱いにする */
+  createImprovementItem: (threadId: string) => Promise<void>
 }
 
 export type FeedbackMessageDto = {

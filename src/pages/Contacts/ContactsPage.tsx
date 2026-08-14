@@ -17,6 +17,10 @@ import { ContactsTable } from '@/pages/Contacts/ContactsTable'
 import { generateAndAdoptDay0ForDate } from '@/pages/Proposals/hooks/proposalActions'
 import { phoneStatusLabel } from '@/utils/roleLabels'
 
+/** 患者一覧の白1枚と同型。角丸カード・外枠・影は置かない。 */
+const CONTACTS_ARTICLE_CLASS =
+  '-mx-3 -my-2 flex min-h-0 flex-1 flex-col overflow-hidden bg-white px-5 py-5 font-normal leading-[1.7] text-[16px] text-slate-900 md:-mx-4 md:-my-3 md:px-8 md:py-6'
+
 const STATUS_OPTIONS: Array<{ value: string; label: string }> = [
   { value: 'open', label: '未完了（OK以外）' },
   { value: 'all', label: 'すべて' },
@@ -263,72 +267,73 @@ export function ContactsPage() {
     await applyStatus(noteTarget, noteStatus, noteText.trim() || null)
   }
 
+  const filterAction = (
+    <div className="w-[12rem]">
+      <Select
+        id="contacts-status-filter"
+        label="状態"
+        labelTone="muted"
+        size="sm"
+        value={filter}
+        onChange={(event) => setFilter(event.target.value)}
+        options={STATUS_OPTIONS}
+      />
+    </div>
+  )
+
   if (!clinicReady) {
     return (
-      <DashboardLayout title="患者管理">
-        <ClinicAccessPlaceholder />
+      <DashboardLayout title="患者管理" fillViewport>
+        <article className={CONTACTS_ARTICLE_CLASS}>
+          <ClinicAccessPlaceholder />
+        </article>
       </DashboardLayout>
     )
   }
 
   if (!clinic) {
     return (
-      <DashboardLayout title="患者管理">
-        <p className="text-sm text-slate-500">クリニックを選択または作成してください。</p>
+      <DashboardLayout title="患者管理" fillViewport>
+        <article className={CONTACTS_ARTICLE_CLASS}>
+          <p className="text-sm text-slate-500">クリニックを選択または作成してください。</p>
+        </article>
       </DashboardLayout>
     )
   }
 
   return (
-    <DashboardLayout
-      title="患者管理"
-      description="電話確認が必要な仮予約を一覧し、結果を反映します"
-      titleAside={
-        <div className="w-full min-w-[200px] max-w-xs md:w-64">
-          <Input
-            label="氏名で検索"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="例: 山田"
-            className="!py-2.5"
-          />
-        </div>
-      }
-      actions={
-        <div className="w-full min-w-[12rem] md:w-56">
-          <Select
-            label="状態フィルタ"
-            value={filter}
-            onChange={(event) => setFilter(event.target.value)}
-            options={STATUS_OPTIONS}
-          />
-        </div>
-      }
-    >
-      <div className="space-y-6">
-        <section className="space-y-4">
-          <div>
-            <h2 className="text-lg font-bold text-slate-900">電話確認一覧</h2>
-            <p className="mt-1 text-xs font-medium text-slate-400">
-              {selectedIds.size > 0 ? `選択 ${selectedIds.size}件 ／ ` : ''}
-              OK で本予約、NG は取消＋同日再提案
-              {search.trim() ? ` ／ 検索結果 ${filtered.length}件` : ''}
-            </p>
-          </div>
-
+    <DashboardLayout title="患者管理" fillViewport actions={filterAction}>
+      <article className={CONTACTS_ARTICLE_CLASS}>
+        <div className="flex shrink-0 flex-wrap items-end justify-between gap-3">
           <ContactsSummaryBar
             visibleCount={filtered.length}
             openCount={openCount}
             pendingCount={pendingCount}
             loading={loading}
           />
+          <div className="w-full min-w-[12rem] max-w-xs md:w-64">
+            <Input
+              id="contacts-list-search"
+              label="氏名・カルテで検索"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="例: 山田"
+              className="!py-2"
+            />
+          </div>
+        </div>
 
+        <div className="mt-4 flex min-h-0 flex-1 flex-col overflow-auto rounded-2xl border border-slate-200 bg-white">
           {loading ? (
-            <p className="text-sm text-slate-400">電話確認一覧を読み込んでいます…</p>
+            <div className="flex min-h-[8rem] flex-1 items-center justify-center">
+              <p className="text-sm text-slate-400">電話確認一覧を読み込んでいます…</p>
+            </div>
           ) : filtered.length === 0 ? (
-            <p className="rounded-2xl border border-dashed border-slate-200 bg-white px-6 py-10 text-center text-sm text-slate-400">
-              該当する電話確認はありません。自動提案で採用するか、フィルタ・検索を変更してください。
-            </p>
+            <div className="flex min-h-[8rem] flex-1 items-center justify-center px-4">
+              <p className="text-center text-sm text-slate-400">
+                該当する電話確認はありません。自動提案で採用するか、フィルタ・検索を変更してください。
+              </p>
+            </div>
           ) : (
             <ContactsTable
               rows={filtered}
@@ -355,8 +360,8 @@ export function ContactsPage() {
               }}
             />
           )}
-        </section>
-      </div>
+        </div>
+      </article>
 
       <Modal
         isOpen={noteModalOpen}

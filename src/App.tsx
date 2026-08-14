@@ -18,6 +18,7 @@ import { AuthAuditPage } from '@/pages/AuthAudit/AuthAuditPage'
 import { PatientImportPage } from '@/pages/Import/PatientImportPage'
 import { AiUsagePage } from '@/pages/Admin/AiUsagePage'
 import { FeedbackPage } from '@/pages/Feedback/FeedbackPage'
+import { ProgressPage } from '@/pages/Progress/ProgressPage'
 import {
   ContractInfoPage,
   ContractorInfoPage,
@@ -71,6 +72,7 @@ function App() {
                     <Route path="/proposals" element={<ProposalsPage />} />
                     <Route path="/admin/ai-usage" element={<AiUsagePage />} />
                     <Route path="/auth-audit" element={<AuthAuditPage />} />
+                    <Route path="/progress" element={<ProgressPage />} />
                   </Route>
                   <Route path="/contacts" element={<ContactsPage />} />
                   <Route path="/operations" element={<OperationsTracesPage />} />

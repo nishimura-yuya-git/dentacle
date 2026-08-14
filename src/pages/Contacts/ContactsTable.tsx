@@ -70,10 +70,9 @@ export function ContactsTable({
   const allSelected = rows.length > 0 && rows.every((row) => selectedIds.has(row.id))
 
   return (
-    <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white">
-      <table className="min-w-[1180px] w-full border-collapse">
-        <thead>
-          <tr>
+    <table className="min-w-[1180px] w-full border-separate border-spacing-0 text-left text-sm">
+      <thead className="sticky top-0 z-10 shadow-sm">
+        <tr>
             <th className={`${TH} w-10`}>
               <input
                 type="checkbox"
@@ -100,7 +99,7 @@ export function ContactsTable({
             const rowBg = index % 2 === 0 ? 'bg-white' : 'bg-slate-50/80'
             const name = row.patients?.name_kanji ?? '患者不明'
             return (
-              <tr key={row.id} className={`${rowBg} hover:bg-emerald-50/40`}>
+              <tr key={row.id} className={`group ${rowBg} hover:bg-emerald-50/40`}>
                 <td className={TD}>
                   <input
                     type="checkbox"
@@ -113,25 +112,27 @@ export function ContactsTable({
                 <td className={TD}>
                   <Link
                     to={`/patients/${row.patient_id}`}
-                    className="flex min-w-[220px] items-start gap-3 hover:opacity-90"
+                    className="flex min-w-[220px] items-start gap-3"
                   >
                     <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-200 text-xs font-bold text-slate-600">
                       {patientInitial(name)}
                     </span>
                     <span className="min-w-0">
                       <span className="block truncate font-bold text-slate-900">
-                        {name}
-                        {row.patients?.name_kana ? (
-                          <span className="ml-2 font-medium text-slate-500">
-                            {row.patients.name_kana}
-                          </span>
-                        ) : null}
+                        <span className="underline-offset-[3px] decoration-slate-400 group-hover:underline group-hover:decoration-dotted">
+                          {name}
+                          {row.patients?.name_kana ? (
+                            <span className="ml-2 font-medium text-slate-500">
+                              {row.patients.name_kana}
+                            </span>
+                          ) : null}
+                        </span>
                       </span>
                       <span className="mt-0.5 block truncate text-xs font-medium text-slate-400">
                         {row.patients?.chart_number
                           ? `- - ${row.patients.chart_number}`
                           : '—'}
-                        {row.patients?.phone ? `　${row.patients.phone}` : ''}
+                        {row.patients?.phone ? ` ${row.patients.phone}` : ''}
                       </span>
                     </span>
                   </Link>
@@ -158,7 +159,7 @@ export function ContactsTable({
                     </span>
                   )}
                 </td>
-                <td className={`${TD} tabular-nums`}>
+                <td className={`${TD} whitespace-nowrap tabular-nums`}>
                   {row.patients?.phone || '未登録'}
                 </td>
                 <td className={`${TD} whitespace-nowrap`}>
@@ -167,9 +168,9 @@ export function ContactsTable({
                 <td className={`${TD} whitespace-nowrap tabular-nums`}>
                   {formatTime(row.visits?.start_time)}〜{formatTime(row.visits?.end_time)}
                 </td>
-                <td className={TD}>
+                <td className={`${TD} whitespace-nowrap`}>
                   <span
-                    className={`inline-flex rounded-md border px-2 py-1 text-xs font-bold ${statusBadgeClass(row.status)}`}
+                    className={`inline-flex items-center whitespace-nowrap rounded-md border px-2 py-1 text-xs font-bold ${statusBadgeClass(row.status)}`}
                   >
                     {phoneStatusLabel(row.status)}
                   </span>
@@ -186,6 +187,5 @@ export function ContactsTable({
           })}
         </tbody>
       </table>
-    </div>
   )
 }

@@ -1,0 +1,31 @@
+import assert from 'node:assert/strict'
+import { describe, it } from 'node:test'
+import { visibleAccountMenuLinks } from './accountMenuLinks.ts'
+
+describe('visibleAccountMenuLinks', () => {
+  it('運営だけ「改善の進捗」を出す', () => {
+    const admin = visibleAccountMenuLinks(true)
+    const clinic = visibleAccountMenuLinks(false)
+    assert.equal(
+      admin.some((item) => item.to === '/progress' && item.label === '改善の進捗'),
+      true,
+    )
+    assert.equal(
+      clinic.some((item) => item.to === '/progress'),
+      false,
+    )
+  })
+
+  it('お知らせの次に改善の進捗を置く', () => {
+    const admin = visibleAccountMenuLinks(true)
+    const announcement = admin.findIndex((item) => item.to === '/announcements')
+    const progress = admin.findIndex((item) => item.to === '/progress')
+    assert.equal(progress, announcement + 1)
+  })
+
+  it('院ユーザーにもお知らせとご意見は残す', () => {
+    const clinic = visibleAccountMenuLinks(false)
+    assert.equal(clinic.some((item) => item.to === '/announcements'), true)
+    assert.equal(clinic.some((item) => item.to === '/feedback'), true)
+  })
+})

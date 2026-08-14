@@ -9,6 +9,8 @@ import {
 import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
 import { placeAccountMenu } from '@/components/layout/placeAccountMenu'
+import { visibleAccountMenuLinks } from '@/components/layout/accountMenuLinks'
+import { useClinic } from '@/features/clinic/useClinic'
 
 type Props = {
   onSignOut: () => void
@@ -16,21 +18,9 @@ type Props = {
   alone?: boolean
 }
 
-const MENU_LINKS = [
-  { to: '/mypage', label: 'マイページ' },
-  { to: '/announcements', label: 'お知らせ' },
-  { to: '/security', label: '安全性' },
-  { to: '/users', label: 'ユーザー管理（追加・編集・削除）' },
-  { to: '/import', label: 'CSV取込' },
-  { to: '/feedback', label: 'ご意見・不具合' },
-  { to: '/account/contractor', label: '契約者情報' },
-  { to: '/account/payments', label: 'お支払い履歴' },
-  { to: '/account/contract', label: '契約情報' },
-] as const
-
 const MENU_WIDTH = 280
-/** 下に足りるかの判定用。実測して位置を打ち直すとガクつくので見積もり固定 */
-const ESTIMATED_MENU_HEIGHT = MENU_LINKS.length * 40 + 56
+const MENU_ITEM_HEIGHT = 40
+const MENU_CHROME_HEIGHT = 56
 
 function sameMenuStyle(current: CSSProperties | null, next: CSSProperties): boolean {
   if (!current) return false
@@ -45,6 +35,9 @@ function sameMenuStyle(current: CSSProperties | null, next: CSSProperties): bool
 
 /** クリニック名の右▼。アカウント系メニューを開く */
 export function AccountMenu({ onSignOut, alone = false }: Props) {
+  const { isPlatformAdmin } = useClinic()
+  const menuLinks = visibleAccountMenuLinks(isPlatformAdmin)
+  const estimatedMenuHeight = menuLinks.length * MENU_ITEM_HEIGHT + MENU_CHROME_HEIGHT
   const [open, setOpen] = useState(false)
   const [menuStyle, setMenuStyle] = useState<CSSProperties | null>(null)
   const rootRef = useRef<HTMLDivElement>(null)
@@ -72,7 +65,7 @@ export function AccountMenu({ onSignOut, alone = false }: Props) {
           height: rect.height,
         },
         menuWidth: MENU_WIDTH,
-        menuHeight: ESTIMATED_MENU_HEIGHT,
+        menuHeight: estimatedMenuHeight,
         viewportWidth: window.innerWidth,
         viewportHeight: window.innerHeight,
       })
@@ -95,7 +88,7 @@ export function AccountMenu({ onSignOut, alone = false }: Props) {
       window.removeEventListener('resize', place)
       window.removeEventListener('scroll', place, true)
     }
-  }, [open])
+  }, [open, estimatedMenuHeight])
 
   useEffect(() => {
     if (!open) return
@@ -150,7 +143,7 @@ export function AccountMenu({ onSignOut, alone = false }: Props) {
               style={menuStyle}
               className="overflow-y-auto overscroll-contain rounded-2xl border border-slate-200 bg-white py-1 shadow-lg"
             >
-              {MENU_LINKS.map((item) => (
+              {menuLinks.map((item) => (
                 <Link
                   key={item.to}
                   to={item.to}

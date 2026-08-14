@@ -592,6 +592,79 @@ export type Database = {
           },
         ]
       }
+      improvement_items: {
+        Row: {
+          clinic_id: string | null
+          created_at: string
+          feedback_thread_id: string
+          github_issue_number: number | null
+          github_issue_url: string | null
+          id: string
+          page_path: string | null
+          product_update_id: string | null
+          share_summary: string | null
+          share_title: string
+          status: string
+          status_changed_at: string | null
+          status_changed_by: string | null
+          updated_at: string
+        }
+        Insert: {
+          clinic_id?: string | null
+          created_at?: string
+          feedback_thread_id: string
+          github_issue_number?: number | null
+          github_issue_url?: string | null
+          id?: string
+          page_path?: string | null
+          product_update_id?: string | null
+          share_summary?: string | null
+          share_title: string
+          status?: string
+          status_changed_at?: string | null
+          status_changed_by?: string | null
+          updated_at?: string
+        }
+        Update: {
+          clinic_id?: string | null
+          created_at?: string
+          feedback_thread_id?: string
+          github_issue_number?: number | null
+          github_issue_url?: string | null
+          id?: string
+          page_path?: string | null
+          product_update_id?: string | null
+          share_summary?: string | null
+          share_title?: string
+          status?: string
+          status_changed_at?: string | null
+          status_changed_by?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "improvement_items_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "improvement_items_feedback_thread_id_fkey"
+            columns: ["feedback_thread_id"]
+            isOneToOne: true
+            referencedRelation: "feedback_threads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "improvement_items_product_update_id_fkey"
+            columns: ["product_update_id"]
+            isOneToOne: true
+            referencedRelation: "product_updates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       feedback_threads: {
         Row: {
           clinic_id: string | null
@@ -1818,6 +1891,14 @@ export type Database = {
         Args: { p_code?: string; p_name: string }
         Returns: string
       }
+      create_improvement_item_for_thread: {
+        Args: { p_thread_id: string }
+        Returns: string
+      }
+      improvement_page_to_surfaces: {
+        Args: { p_page_path: string }
+        Returns: string[]
+      }
       has_clinic_role: {
         Args: { p_clinic_id: string; p_roles: string[] }
         Returns: boolean
@@ -1857,6 +1938,10 @@ export type Database = {
       }
       publish_product_update: { Args: { p_id: string }; Returns: number }
       reject_product_update: { Args: { p_id: string }; Returns: boolean }
+      set_improvement_item_status: {
+        Args: { p_id: string; p_status: string }
+        Returns: boolean
+      }
       request_client_ip: { Args: never; Returns: string }
       touch_auth_presence: {
         Args: { p_clinic_id?: string }

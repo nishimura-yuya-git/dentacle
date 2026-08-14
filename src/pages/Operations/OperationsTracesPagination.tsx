@@ -10,7 +10,7 @@ type Props = {
   onPageSizeChange: (pageSize: number) => void
 }
 
-/** 右下: 表示件数切替 + 前後ページ（ユーザー管理と同系） */
+/** 右下: 表示件数切替 + 前後ページ。pr-20 はご意見FAB（bottom-5 right-5 h-14）との重なり回避。 */
 export function OperationsTracesPagination({
   page,
   totalPages,
@@ -25,7 +25,7 @@ export function OperationsTracesPagination({
   const to = Math.min(page * pageSize, totalCount)
 
   return (
-    <div className="mt-3 flex shrink-0 flex-wrap items-center justify-end gap-3 border-t border-slate-100 pt-3">
+    <div className="mt-3 flex shrink-0 flex-wrap items-center justify-end gap-3 border-t border-slate-100 pt-3 pr-20">
       <p className="text-xs font-medium text-slate-400">
         {from}–{to} / {totalCount}件
       </p>

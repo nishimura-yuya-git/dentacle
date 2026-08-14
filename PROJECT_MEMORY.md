@@ -201,11 +201,12 @@
 - 内側パネルだけのスクショは観察として数えない。見本キャプチャと実装キャプチャ（ページ全体）のペアと `ページ枠照合` が必須。欠落は `observe-chrome` で `stop`（§2.15）。
 - **ライブ見本（2026-08-13）**: 見本が `http(s)` URL なら、そのページを開いてページ全体スクショを見本にする。URL 文字列・記憶・「なし（指示のみ）」では寄せない（§2.15 / §10.39）。
 - **操作観察（2026-08-14）**: 端の▼・アカウントメニュー・セレクトは開いてから snapshot / screenshot する。閉じた静止画だけでは見切れを完成根拠にしない。端の開閉が無い画面は完成宣言に `なし（端の開閉なし）`。欠落は `observe-edge` で `stop`。敵対シナリオ `ui-complete-without-edge-observe`。
+- **AI処理観察（2026-08-14）**: 裏でAI/エージェントを動かすボタンは実行中の Composing を動かして snapshot / screenshot する。AI処理が無い画面は完成宣言に `なし（AI処理なし）`。欠落は `observe-ai-processing` で `stop`。敵対シナリオ `ui-complete-without-ai-processing-observe`。`ComposingOrb` 等を触った差分で「AI処理なし」は不可（§10.44）。ログイン・CSV・通常 Button の「処理中…」は対象外。
 - **観察阻害クリア（2026-08-13 追記）**: 観察証拠があっても、Read差分に未解消の重複・重なり・隠蔽・見切れ・二重・衝突が残っている完成申告は無効。完成宣言に `観察で残した阻害: なし` が必須。Eval template `observe-blockers-cleared` 欠落は `stop`。敵対シナリオ `ui-complete-with-unresolved-observe`。「重複は解消」「FAB衝突なし」は未解消ではない（§2.16 / §10.40）。
 - 知覚の優先順位: 構造 `browser_snapshot` → 見た目 screenshot（ページ全体） → vision による推測は最終手段。
 - 出典の原則名: Verify, don't assume / Observe loop（[desktop-harness](https://github.com/xfreeze2/desktop-harness) から借りるのは思想だけ。Mac CLI は入れない）。
 - Interface Review（§2.11）と併用する。観察証拠があっても Verdict が `Block` なら完成報告禁止。**2026-08-14 改定**: 業務ハブを文書シェル化した Layout Finding は HIGH。対象の業務枠が残っているだけでは HIGH にしない（§2.15）。開閉で端メニューが見切れる、固定枠が動く・ガクつくのも Layout HIGH。
-- 関連: `scripts/lib/claim-grounding.mjs`, `loops/goals/ui-polish-gate.md`, `loops/goals/ui-polish.md`, `loops/evals/ui-polish.completion.json`, `loops/simulations/adversarial-scenarios.json`, `.cursor/skills/playwright-mcp-testing/SKILL.md`, `docs/agent-loop-harness.md` §12.2.2, §2.15, §2.16, §10.38, §10.40
+- 関連: `scripts/lib/claim-grounding.mjs`, `loops/goals/ui-polish-gate.md`, `loops/goals/ui-polish.md`, `loops/evals/ui-polish.completion.json`, `loops/simulations/adversarial-scenarios.json`, `.cursor/skills/playwright-mcp-testing/SKILL.md`, `docs/agent-loop-harness.md` §12.2.2, §2.15, §2.16, §10.38, §10.40, §10.44
 
 ### 2.15 UI Polish ページ枠照合ゲート（2026-08-13 決定 / 2026-08-14 改定）
 
@@ -214,14 +215,16 @@
 - **参照の正体（2026-08-14）**: 見本の名前を書く。この案件の文書シェル見本は **Nani!?**。Cursor Cloud と決めつけない。ウィジェット見本（スライダー等）は部品だけ。ページ枠まで借りない。
 - **対象枠ロック（2026-08-14）**: 対象画面の既存枠が正。見本が専用シェルでも、業務ハブ（`/proposals` 等）の `DashboardLayout` は残す。`SecurityLayout` は `/security` だけ。原子（`Button` / `Modal` / `Toast`）の再利用とページ枠は別。2026-08-13 の「見本が専用シェルなら DashboardLayout で包まない」は、**対象が文書シェルのときだけ**に限定する。
 - **借り契約（2026-08-14）**: 完成宣言に参照の正体・対象枠（ロックまたは変更承認）・借りてよい・借りないを書く。欠落は `borrow-inventory` で `stop`。Eval template の `borrow-inventory` と敵対シナリオ `ui-complete-without-borrow-inventory` で監視する。既定で借りない: ページ枠、レール幅 px、暗い面、見本の段階数、「詳細設定」、装飾英語、見本文言、**共有メニューの下開き**。既存ナビ幅（業務ナビ `w-56`）とメニューの開く方向は案件SSoT。Nani の 298px を丸コピーしない。見本のブランド色・フォント・3D・製品CTA・事実（OAuth / Stripe / 翻訳非保存など）も借りない。正は案件（緑 `#008C01` / Zen Maru / 日本語 / デンタクルの実仕様）。
+- **Nani設定行の適用範囲（2026-08-14）**: 借りてよいのはご意見入力欄上のラベル＋補足＋スイッチだけ。設定・自動提案の見出しタブ、導入タイプ、AccountMenu、Proバッジ、その他の設定は借りない（§6.54）。見出し切替の灰トラック＋白ピルは案件側の `SegmentedControl`（§6.45 / §6.51）。
 - **ライブ見本（2026-08-13）**: 見本が `http(s)` URL ならそのページを開き、ページ全体スクショを見本にする。完成宣言の見本欄に URL を書いたまま、または「なし（指示のみ）」のまま完成にしない。
 - **操作観察（2026-08-14）**: 完成宣言に `操作観察`（対象 / 種別 / パス / Read済み、または `なし（端の開閉なし）`）を書く。欠落は `observe-edge` で `stop`。Eval template の `observe-edge` と敵対シナリオ `ui-complete-without-edge-observe` で監視する。開閉で固定枠が動く・ガクつく・見切れる完成は禁止。枠幅を変えたら本文幅も見る。Iteration は対象枠ロック → 借り一覧 → 面 → タイポ → 主ボタン → 余白 → 端の開閉。
+- **AI処理観察（2026-08-14）**: 完成宣言に `AI処理観察`（実行中、または `なし（AI処理なし）`）を書く。欠落は `observe-ai-processing` で `stop`。Eval template の `observe-ai-processing` と敵対シナリオ `ui-complete-without-ai-processing-observe` / `ui-complete-ai-processing-skip-when-orb-changed` で監視する。Thinking orbs の Composing 部品は借りてよい。デモの暗い面・英語 "Composing"・他 state は借りない。
 - 画面種別は業務UI / HP-LP / **文書シェル（その画面だけ）** の三択。文書シェル定型の正は案件トークン。見本から借りるのは部品の形・余白リズム・面の静けさだけ（§6.56）。
 - Stop の分割: 他画面ナビ・**対象枠の変更**は確認停止。見本枠の移植・借りない物の実装・端の見切れは差し戻し（完成禁止）。
 - Context Budget: 完成禁止条件は短い `loops/goals/ui-polish-gate.md` を must として残す。長い `ui-polish.md` の後半は窓から落ちる前提（§2.9）。
 - 関連: `loops/goals/ui-polish-gate.md`, `loops/goals/ui-polish.md`, `scripts/lib/claim-grounding.mjs`, `scripts/lib/context-budget.mjs`, `loops/evals/ui-polish.completion.json`, `.cursor/rules/ui-design.mdc`, `.cursor/rules/agent-loops.mdc`, §2.9, §2.14, §2.16, §6.45, §6.56, §10.29, §10.37, §10.38, §10.39
 
-### 2.16 Overlay / Chat 検査と Nani!? 思想（2026-08-13 決定）
+### 2.16 Overlay / Chat 検査と Nani!? 思想（2026-08-13 決定 / 2026-08-14 追記）
 
 - [Nani翻訳](https://nani.now/ja/blog/developing-nani-ai-translator) から借りるのは **思想だけ**。見た目・トークン・ブランド・298px レールはコピーしない。正本は `ui-design.mdc` / `ui-language.mdc`。文書シェル見本名の Nani!? は §2.15。
 - 思想: すごそうなUIより楽なUI。説明文に頼らない（同じ注意を二重にしない）。操作をブロックしない。脇役は主役を奪わない。デフォルトがベスト。スクロールは安全寄り。
@@ -233,8 +236,9 @@
   4. モバイルで FAB / 閉じる丸が送信・入力を覆わない
   5. 専用ページでは入口FABを出さない
 - 新規 FAB / オーバーレイ / アプリ内チャットを含む機能実装は、見た目依頼がなくても Main Doctor + UI Polish + Regression Guard（`.cursor/rules/agent-loops.mdc`）。
+- **AI処理検査（2026-08-14）**: 裏でAI/エージェントを動かすボタン時は必須。実行中は `ComposingOrb`（theme light・日本語）。`thinking-orbs` 直 import 禁止。ログイン・CSV・通常 Button の「処理中…」には強制しない。`thinking-orbs` は §6.4 の3日ルール（2026-08-14 時点の採用は 0.2.0。0.3.1 は公開3日未満のため見送り）。新規の AI 裏処理 UI は見た目依頼がなくても Main Doctor + UI Polish + Regression Guard。完成宣言に `AI処理観察`。欠落は `observe-ai-processing` で `stop`（§2.14 / §10.44）。
 - 完成宣言に `観察で残した阻害: なし`。欠落や未解消の重複・重なりは `observe-blockers-cleared` で `stop`（§2.14 / §10.40）。
-- 関連: `loops/goals/ui-polish-gate.md`, `loops/goals/ui-polish.md`, `docs/agent-loop-harness.md` §12.2.2, `.cursor/rules/ui-design.mdc`, `.cursor/skills/better-interface/SKILL.md`, §2.14, §2.15, §6.54, §10.40
+- 関連: `loops/goals/ui-polish-gate.md`, `loops/goals/ui-polish.md`, `docs/agent-loop-harness.md` §12.2.2, `.cursor/rules/ui-design.mdc`, `.cursor/skills/better-interface/SKILL.md`, `ComposingOrb.tsx`, §2.14, §2.15, §6.34, §6.45, §6.47, §6.54, §10.40, §10.44
 
 ---
 
@@ -255,6 +259,7 @@
 | お知らせ公開判定 | `productUpdatePolicy.ts` + RPC（`propose_product_update` / `publish_product_update` / `reject_product_update`） | 院に見えるのは `published` のみ。提案中・入れないは出さない。デプロイでは自動掲載しない（§6.55） | お知らせ画面 |
 | 進捗→お知らせ文面 | `improvementAnnouncement.ts` + SQL `improvement_page_to_surfaces` | 反映済みのときだけ院向け見出し・本文・対象画面を決める。GitHub / Issue は出さない（§6.55 / §6.57） | 改善の進捗、お知らせ |
 | レセコンCSV取込監査 | `src/features/patientImport/receconImportPolicy.ts` | 件数・成否だけ残す。PII・ファイル名・例外文は禁止。監視SaaSは置かない（§6.58） | `/import`、`/operations`、`/security#rececon` |
+| AI処理中表示 | `ComposingOrb.tsx` | thinking-orbs composing の唯一の入口。直 import 禁止。theme light・日本語（§2.16） | カレンダー自動提案、空き枠埋め、運営ハブ生成 |
 
 ### 禁止
 
@@ -736,7 +741,7 @@ DB上の確定・集計テーブル
 - `NavDropdown.tsx` は上部ナビ廃止により未参照。`safety.mdc` に従い承認なしでは削除しない（削除はユーザー明示時のみ）。
 - 関連: `DashboardLayout.tsx`, `AppSidebar.tsx`, `SidebarNav.tsx`, `navConfig.ts`, `CalendarPage.tsx`, `public/icon/grid.png`, `public/icon/ai.png`, `public/icon/calendar.png`, `public/icon/gears.png`, `public/icon/patient.png`, `public/icon/windows.png`, `public/icon/audit.png`, §6.15, §6.24, §6.29, §6.31, §6.34, §6.35, §10.9
 
-### 6.34 カレンダー自動提案は遷移せずその日を一括実行（2026-08-10 決定 / 同日改定 / 2026-08-11 改定）
+### 6.34 カレンダー自動提案は遷移せずその日を一括実行（2026-08-10 決定 / 同日改定 / 2026-08-11 改定 / 2026-08-14 追記）
 
 - カレンダー右上の **「自動提案」** は `/proposals` や設定画面へ遷移しない。**確認モーダルは出さず、押下ですぐ実行**する。
 - **カレンダー主導線の実行経路（2026-08-11 / 同日改定）**: `runCalendarAutoPropose` → `POST /api/schedule/propose` → スナップショット作成 → **Cursor SDK（既定）** → `packProposeSlots`（号車内密正規化）→ 精度ゲート（§6.37）→ 仮予約書き戻し。フロントで割付本体を再実装しない（§6.11）。
@@ -745,7 +750,7 @@ DB上の確定・集計テーブル
 - **節の追加**: 自動提案の改善を MEMORY に書いたら、必要なら `PROPOSE_MEMORY_SECTION_IDS` に節番号を足す（例: 新設 `6.49`）。
 - **Day0 ローカル**（`generateAndAdoptDay0ForDate` / `model: day0-local`）は、電話確認 NG 後の同日再提案など**補助経路で当面残す**。カレンダー主導線の正は SDK Adapter 経路。
 - **号車への載せ方（2026-08-11 改定）**: ラウンドロビンで薄く横展開しない。エージェントが作った**号車別ルート**を尊重し、各号車内を密に正規化する（§6.8 / §6.48）。同時刻の複数号車スタートは禁止しない。登録される予約は仮予約（§6.6）。本予約にはしない（確定は §6.35）。
-- 実行中のUI: ヘッダー・日付ナビなど外枠はそのまま。**`DayVisitGrid` の中身だけスケルトン**（`loading`）。ボタン文言は「提案中…」にし連打を防ぐ。
+- 実行中のUI: ヘッダー・日付ナビなど外枠はそのまま。**`DayVisitGrid` の中身だけスケルトン**（`loading`）は維持。処理中表示は `ComposingOrb`（ボタン内 20px、「提案中… N%」、グリッド上オーバーレイ 64px・日本語）。デモの暗い面・英語ラベルは出さない（§2.16 / §6.47）。連打を防ぐ。
 - 実行権限: オーナー / 管理者 / コーディネーター（および運営）。権限不足時はトーストで案内。
 - **提案をクリア（2026-08-11）**: 当日の `auto_proposal` × `tentative` を一括 `cancelled`（キャンセルリストに残る）。**本予約（`confirmed`）は対象外**。確認は `window.confirm` ではなく近傍ポップオーバー（`ClearAutoProposalsConfirm` + `useAnchoredPopover`）。
 - **一括確定（2026-08-11）**: 当日の自動提案仮予約を一括 `confirmed`（`ConfirmAutoProposalsConfirm`）。電話確認同期は背面。
@@ -754,7 +759,7 @@ DB上の確定・集計テーブル
 - **空振り時**: 候補0のトーストに「空きを埋める」への案内を付けてよい（§6.47）。主導線を空き枠探しばかりにしない（§6.5）。
 - **`/proposals` は運営（`platform_admins`）専用**（ナビ非表示＋`PlatformAdminRoute` で直URL拒否）。履歴・個別の採用／却下の監査用。クリニック一般ユーザーの主導線は診療カレンダー。
 - `AiProposeConfirmModal.tsx` は未使用。承認なしでは削除しない（`safety.mdc`）。
-- 関連: `CalendarPage.tsx`, `runCalendarAutoPropose.ts`, `ClearAutoProposalsConfirm.tsx`, `ConfirmAutoProposalsConfirm.tsx`, `DashboardLayout.tsx`, `server/schedule/runProposeJob.ts`, `api/schedule/propose.ts`, `DayVisitGrid.tsx`, `proposalActions.ts`, `PlatformAdminRoute.tsx`, §6.6, §6.8, §6.10, §6.29, §6.32, §6.33, §6.35, §6.36, §6.37, §6.47, §6.48, §10.20〜10.22
+- 関連: `CalendarPage.tsx`, `runCalendarAutoPropose.ts`, `ClearAutoProposalsConfirm.tsx`, `ConfirmAutoProposalsConfirm.tsx`, `DashboardLayout.tsx`, `ComposingOrb.tsx`, `AiComposingOverlay.tsx`, `server/schedule/runProposeJob.ts`, `api/schedule/propose.ts`, `DayVisitGrid.tsx`, `proposalActions.ts`, `PlatformAdminRoute.tsx`, §6.6, §6.8, §6.10, §6.29, §6.32, §6.33, §6.35, §6.36, §6.37, §6.47, §6.48, §10.20〜10.22
 
 ### 6.35 自動提案の仮枠UIとクリック確定（2026-08-11 決定 / 同日追記）
 
@@ -874,28 +879,30 @@ DB上の確定・集計テーブル
 - `/proposals` は §6.34 のとおり運営専用（§6.46）。
 - **`fillViewport`** で画面縦幅いっぱいにし、表は内部スクロール＋ sticky 見出し（操作ログ／設定と同型）。
 - **ページ枠（2026-08-14）**: 業務枠（サイドバー・クリニック名・ご意見FAB）は残す。主面は白 article 1枚。緑グラデの外枠・角丸影の浮いたカード・`max-w-4xl` は使わない。見出し帯直下からメイン列いっぱい（安全性の文書幅は変えない。§6.56）。
-- **切替（2026-08-14）**: 見出しは常に「自動提案」。右端（`DashboardLayout` の `actions`）にテキストタブ **条件設定 / 最近のジョブ / AI利用状況**。見出し右 Select「表示」「画面」には戻さない。タブを本文先頭に置かない。`actions` の幅は画面切替で変えない（クリニック Select をタブ列に足さない。§10.33）。
+- **切替（2026-08-14）**: 見出しは常に「自動提案」。右端（`DashboardLayout` の `actions`）に灰トラック＋選中白ピル（`SegmentedControl`）で **条件設定 / 最近のジョブ / AI利用状況**。見出し右 Select「表示」「画面」とテキストタブ表記には戻さない。タブを本文先頭に置かない。`actions` の幅は画面切替で変えない（クリニック Select をタブ列に足さない。§10.33）。条件フォームと本文の Select は触らない。
 - **提案内容一覧は置かない（2026-08-14）**: ナビ項目も採用／却下一覧もハブに置かない。採用の主導線は診療カレンダーの仮枠（§6.34 / §6.35）。生成成功後は最近のジョブへ戻す。ジョブ行の操作は再利用のみ。
 - **条件設定**: 生成に効くのは対象日・チームのみ。訪問条件・優先ルール等の未接続UIは「準備中」折りたたみ。4段ステッパーは置かない。
+- **生成中（2026-08-14）**: 「提案を生成」実行中は `ComposingOrb`（64px・日本語）。ログインやCSVの「処理中…」には使わない（§2.16）。
 - **最近のジョブ**: 全院から直近100件。クリニック Select は本文（件数の右）。デフォルト「すべてのクリニック」。全院時のみクリニック列。再利用は **ジョブ所属の `clinic_id`**（ヘッダーの active clinic で別院を汚さない）。
 - **重複見出し・導入文を置かない**: ページ見出し／タブと同名の本文見出し、ハブ先頭の「対象日とチームを指定して…運営向けです。」は置かない（§10.34）。
 - ユーザー向け文言に「Day0」のラベル・バッジを出さない。内部関数名・開発用語としての利用は可。
 - サイドバーの選択状態は背景・文字・アイコン色で表し、左端の緑縦バーは使わない。
-- 関連: `ProposalsPage.tsx`, `proposalsHub.ts`, `ProposalsArticle.tsx`, `ProposalsHubNav.tsx`, `GenerateProposalSection.tsx`, `RecentJobsSection.tsx`, `filterRecentJobs.ts`, §6.34, §6.35, §6.38, §6.46, §6.56, §10.33, §10.34
+- 関連: `ProposalsPage.tsx`, `proposalsHub.ts`, `ProposalsArticle.tsx`, `ProposalsHubNav.tsx`, `SegmentedControl.tsx`, `GenerateProposalSection.tsx`, `ComposingOrb.tsx`, `RecentJobsSection.tsx`, `filterRecentJobs.ts`, §6.34, §6.35, §6.38, §6.46, §6.56, §10.33, §10.34
 
 ### 6.46 運営AIハブ（自動提案 / AI利用状況の切替）（2026-08-11 決定 / 同日改定 / 2026-08-14 改定）
 
 - 運営向けの自動提案と AI利用状況は**1ページに統合**する（`ProposalsPage`）。
-- **切替（2026-08-14）**: 見出し右端のテキストタブ（条件設定 / 最近のジョブ / AI利用状況）。旧丸ピル `PlatformAiViewSelect` と見出し右 Select「画面」は使わない。
+- **切替（2026-08-14）**: 見出し右端の灰トラック＋選中白ピル（条件設定 / 最近のジョブ / AI利用状況）。旧丸ピル `PlatformAiViewSelect` と見出し右 Select「画面」は使わない。
 - URL: `/proposals`（自動提案）／`/proposals?view=usage`（AI利用状況）。旧 `/admin/ai-usage` はリダイレクト。
 - サイドバーは「自動提案」1項目のみ（`matchPrefixes` に `/admin/ai-usage` を含め、旧直リンクでも選択中表示）。
 - 関連: `ProposalsPage.tsx`, `proposalsHub.ts`, `ProposalsHubNav.tsx`, `navConfig.ts`, `AiUsagePage.tsx`, §6.33, §6.38, §6.45
 
-### 6.47 空き枠埋め（gap_fill・副導線）（2026-08-11 決定 / 同日改定）
+### 6.47 空き枠埋め（gap_fill・副導線）（2026-08-11 決定 / 同日改定 / 2026-08-14 追記）
 
 - **主導線は全日の自動提案のまま**（§6.5 / §6.34）。空き枠を1件ずつ探すUIを主ボタンにしない。
 - **副導線「空きを埋める」**: カレンダー右上で自動提案の隣。空セル選択／ドラッグ、自動提案空振りトーストからも同じパネルへ誘導してよい。
 - **UX**: 近傍ポップオーバー内の短い対話（例:「9:30〜10:30でいけそうな人いる？」）→ 候補一覧 →「仮予約にする」で1件採用。手動登録への逃げ道を残す。
+- **探索中（2026-08-14）**: 「候補を探す」実行中は `ComposingOrb`（64px・「候補を探しています」）。`Button loading` の「処理中…」だけにしない（§2.16）。
 - **API**: `POST /api/schedule/gap-fill` → `runGapFillJob`。**DB への仮予約一括書き込みはしない**。採用はクライアントの `createTentativeAutoProposal`（`source: auto_proposal` / `tentative`）。
 - **候補の並び（近接最優先）**: 空き枠前後の既存訪問をアンカーにし、`travelDistance.ts` の移動分（`gapProximityMinutes`）が小さい順を正とする。期限（`dueStatus`）は二次。生住所は渡さない（§6.12 / §6.16 / §6.39）。
 - **住所必須（認識違い防止）**: 候補0の主因として依頼文不足より **`patients.address` 未登録** を疑う。住所0件だと近接候補も出せない。空エラーは住所未登録を明示する。
@@ -903,7 +910,7 @@ DB上の確定・集計テーブル
 - **スナップショット**: 候補上限を広め（例: 60）、窓内最大候補数は少数（例: 5）。当日既存枠を `existingVisits` / `anchorPatientIds` で渡し、行列にアンカーを含める。
 - **条件外**: 期限が遠い・希望曜日不一致・移動がやや長い等でも近い候補は `warnings` 付きで返す。本当に無理な人だけ除外（当日既枠・住所なし・窓に所要が載らない等）。
 - **レート制限UI**: API の `retryAfterSec` を受け取り、メッセージの待機秒は固定表示せず**クライアントで毎秒減らす**。解除まで「候補を探す」を無効化する（§6.40 のキーと同型）。
-- 関連: `GapFillPanel.tsx`, `runCalendarGapFill.ts`, `calendarGapFillError.ts`, `api/schedule/gap-fill.ts`, `runGapFillJob.ts`, `rankGapFillByProximity.ts`, `buildGapFillSnapshot.ts`, `buildGapFillPrompt.ts`, `createTentativeAutoProposal`, §6.5, §6.11, §6.34, §6.39, §6.40
+- 関連: `GapFillPanel.tsx`, `runCalendarGapFill.ts`, `calendarGapFillError.ts`, `api/schedule/gap-fill.ts`, `runGapFillJob.ts`, `rankGapFillByProximity.ts`, `buildGapFillSnapshot.ts`, `buildGapFillPrompt.ts`, `createTentativeAutoProposal`, `ComposingOrb.tsx`, §6.5, §6.11, §6.34, §6.39, §6.40
 
 ### 6.48 割付ナレッジの正本（ゴールデン日・並行ルート）（2026-08-11 決定 / 同日・3〜8月検証で確定）
 
@@ -966,16 +973,16 @@ DB上の確定・集計テーブル
 
 ### 6.51 設定画面UI（セクション切替・表形式マスタ）（2026-08-11 決定 / 2026-08-14 改定）
 
-- **切替（2026-08-14）**: 見出しは常に「設定」。右端にテキストタブ **導入タイプ / チーム / 担当 / 稼働枠**。見出し右 Select「表示」には戻さない。`actions` の幅は4タブ固定（§10.33）。長い説明文「導入タイプ・チーム・担当・稼働枠」は置かない。
+- **切替（2026-08-14）**: 見出しは常に「設定」。右端に灰トラック＋選中白ピル（`SegmentedControl`）で **導入タイプ / チーム / 担当 / 稼働枠**。見出し右 Select「表示」とテキストタブ表記には戻さない。Proバッジとキラキラは借りない。`actions` の幅は4択固定（§10.33）。長い説明文「導入タイプ・チーム・担当・稼働枠」は置かない。
 - **ページ枠（2026-08-14）**: `fillViewport` + 白 article 1枚。浮いた `rounded-[28px]` カードは置かない。表は内部スクロール＋ sticky（`border-separate`。§10.24）。
 - **重複見出しを置かない**: タブと同名の本文見出し・「一覧を確認し…」は置かない。件数は静かな1行（§10.34）。
-- **導入タイプ**: 立ち上げ / 既存導入はタブと同型のボタン。選択中バッジと入れ子グレー面は置かない。詳細1面（件数・稼働帯）。保存先・プリセット SSoT（`proposalLanePresets`）は変えない（§6.42）。
+- **導入タイプ**: 立ち上げ / 既存導入も同じ灰トラック＋選中白ピル。選択中バッジと入れ子グレー面は置かない。詳細1面（件数・稼働帯）。保存先・プリセット SSoT（`proposalLanePresets`）は変えない（§6.42）。
 - **チーム・担当・稼働枠**: 白 article 内の表＋下固定の追加フォーム。稼働枠はチーム／曜日／時間列。
 - **追加フォームの Select は残す**: 担当の種別、稼働枠のチーム／曜日は入力なので Select のまま。画面切替だけボタン化する。
 - **FAB余白（2026-08-14）**: 追加ボタンはご意見 FAB（`h-14` + `right-5`）分の右余白を空ける。FABは動かさない（§10.42）。
 - 削除・編集UIは本節のスコープ外（未実装のまま）。
 - お知らせ・プロダクト更新は設定に混ぜない（§6.55）。
-- 関連: `SettingsPage.tsx`, `SettingsMasterPanel.tsx`, `IntroductionLaneSection.tsx`, `SettingsHubNav.tsx`, `settingsHub.ts`, §6.26, §6.42, §6.43, §6.45, §6.54, §6.55, §10.24, §10.34, §10.42
+- 関連: `SettingsPage.tsx`, `SettingsMasterPanel.tsx`, `IntroductionLaneSection.tsx`, `SettingsHubNav.tsx`, `settingsHub.ts`, `SegmentedControl.tsx`, §6.26, §6.42, §6.43, §6.45, §6.54, §6.55, §10.24, §10.34, §10.42
 
 ### 6.52 プラットフォーム保安（シード表削除・漏洩PW・DB SSL）（2026-08-12 決定）
 
@@ -1002,7 +1009,7 @@ DB上の確定・集計テーブル
 - 環境変数 `CURSOR_MODEL_ID` はフォールバック既定（`grok-4.5`）。runtime の正は運営切替。
 - 関連: `AiUsageModelSwitcher.tsx`, `AiUsageModelSwitcherMenu.tsx`, `GrokVersionSlider.tsx`, `modelSwitcherUx.ts`, `loadPlatformCursorModel.ts`, `aiModelPricing.ts`, §6.14, §6.26, §6.36, §6.38, §10.32, §10.36
 
-### 6.54 ご意見チャット → GitHub Issue（2026-08-13 決定 / 同日追記 / 同日 FAB UI 追記 / 2026-08-14 追記）
+### 6.54 ご意見チャット → GitHub Issue（2026-08-13 決定 / 同日追記 / 同日 FAB UI 追記 / 2026-08-14 追記 / 同日パネル操作追記）
 
 アプリ内の「ご意見・不具合」チャットを、開発用の GitHub Issue にする。
 
@@ -1020,7 +1027,10 @@ DB上の確定・集計テーブル
 - **院向け返答（2026-08-14）**: GitHub コメントは開発用。院に届く返答の正本は `/announcements` の提案（`入れる` は人間）。処理コマンドは `/issues`。院向け文面に Issue / GitHub と書かない。
 - **進捗行（2026-08-14）**: 新規送信成功後に `improvement_items` を1行作る。続きコメントでは増やさない。作成失敗しても Issue は残す（§6.57）。
 - **FAB位置（2026-08-14）**: 右下固定（`bottom-5 right-5`・`h-14`）は動かさない。重なりはページ送り・設定の追加ボタン側で余白を空ける（§10.42）。
-- 関連: `api/feedback/send.ts`, `server/feedback/`, `src/features/feedback/feedbackCopy.ts`, `src/components/features/feedback/`, `src/pages/Feedback/FeedbackPage.tsx`, `src/pages/Security/securityCopy.ts`, `AccountMenu.tsx`, `public/icon/chat.png`, `public/icon/paper-plane.png`, `.cursor/commands/issues.md`, §5, §6.20, §6.33, §6.55, §6.57, §7, §10.30, §10.42
+- **閉じる（2026-08-14）**: 右下パネルは × と ESC に加え、パネルと FAB の外側クリックでも閉じる。暗い背景は置かない。専用ページ `/feedback` は対象外。
+- **Enter送信（2026-08-14）**: 既定オフ。ON のときだけ Enter で送信、Shift+Enter で改行。IME 確定の Enter では送らない。好みは localStorage。紙飛行機送信は残す。
+- **Nani設定行（2026-08-14）**: 借りてよいのはご意見入力欄上のラベル＋補足＋スイッチだけ。設定・自動提案の見出しタブ、導入タイプ、AccountMenu、Proバッジ、その他の設定は借りない（§2.15）。
+- 関連: `api/feedback/send.ts`, `server/feedback/`, `src/features/feedback/feedbackCopy.ts`, `src/features/feedback/sendOnEnterPolicy.ts`, `src/components/features/feedback/`, `src/components/ui/Switch.tsx`, `src/components/ui/PreferenceRow.tsx`, `src/pages/Feedback/FeedbackPage.tsx`, `src/pages/Security/securityCopy.ts`, `AccountMenu.tsx`, `public/icon/chat.png`, `public/icon/paper-plane.png`, `.cursor/commands/issues.md`, §5, §6.20, §6.33, §6.55, §6.57, §7, §10.30, §10.42
 
 ### 6.55 お知らせ（プロダクト更新・2026-08-13 決定 / 2026-08-14 追記 / 同日ご意見返答追記）
 
@@ -1521,6 +1531,13 @@ AIが自分の実装に合わせて期待値を作ることは禁止。
 - 再発防止: 反映済み連動のお知らせは `detail_url` を付けない。見出し・本文に GitHub / Issue が含まれる場合は定型文にする。
 - 関連: `improvementAnnouncement.ts`, `set_improvement_item_status`, §6.54, §6.55, §6.57
 
+### 10.44 ComposingOrb 差分で AI処理なしと書いて完成にした（2026-08-14）
+
+- 事象: AI処理中表示を入れたのに、完成宣言で「なし（AI処理なし）」と書いて実行中を観察せず完成できた。
+- 原因: Observe Loop に AI処理観察が無く、スキップ欄だけで通った。
+- 再発防止: `ComposingOrb` / `AiComposingOverlay` / `thinking-orbs` / `GapFillPanel` / `GenerateProposalSection` を触った差分は実行中観察必須。「AI処理なし」は `observe-ai-processing` で stop。ログイン・CSVの処理中は対象外。
+- 関連: `scripts/lib/claim-grounding.mjs`, `loops/simulations/adversarial-scenarios.json`, `ComposingOrb.tsx`, §2.14, §2.16
+
 ---
 
 ## 11. 🔗 重要ドキュメント・参照先
@@ -1625,17 +1642,17 @@ AIは作業開始時に以下を確認する。
 □ 仮枠UI・クリック確定なら §6.35（点線仮枠・クリックで confirmed・楽観更新・moved 時のみ移動プレビュー・左緑バー／常時緑リサイズ禁止・電話確認 pending→ok）を守った
 □ 空き枠埋めなら §6.47（副導線のみ・近接分最優先・住所必須明示・レート秒カウントダウン・決定論フォールバック・採用はクライアント・warnings 可・生住所非渡与。主導線を空き枠探しにしない）を守った
 □ 操作ログなら §6.50 / §10.42（表形式日本語・fillViewport・白 article・浮いたカードなし・操作/対象/クリニックSelect・ページネーション・全院時のみクリニック列・右下はFABと重ねない）を守った
-□ 設定画面なら §6.51 / §10.24 / §10.42（見出し右テキストタブ4つ・白 article・同名見出しなし・導入タイプはボタン・追加フォームの Select は残す・sticky は border-separate・追加はFABと重ねない・お知らせは混ぜない）を守った
+□ 設定画面なら §6.51 / §10.24 / §10.42（見出し右は灰トラック＋白ピル4択・白 article・同名見出しなし・導入タイプも灰トラック＋白ピル・追加フォームの Select は残す・sticky は border-separate・追加はFABと重ねない・お知らせは混ぜない）を守った
 □ お知らせなら §6.55 / §6.57 / §10.43（入口はアカウントメニュー／`/announcements`・ログイン非掲載・デプロイ自動掲載禁止・提案→入れる／入れない・対象環境は platform 表示のみ・`/proposals` と混ぜない・エージェントは提案まで・ご意見返答はお知らせ提案必須・送信時自動掲載禁止・反映済みのときだけ入れる・1改善1件・院向けに GitHub/Issue を出さない・「いつ更新されるか」は空状態文言だけで閉じない）を守った
 □ 患者住所・ジオコードなら §6.20 / §6.49 / §10.23（住所の正はApotool・CSVに住所なし・座標化して距離根拠・外れ値はNULL・latitude NULL は再実行）を守った
 □ Cursor SDK 基盤なら §6.36 / §10.10（server/cursor・Private中 local・Cloud URL・鍵を VITE_ に出さない・health は CURSOR_HEALTH_SECRET Bearer 必須・公開DTO最小化）を守った
 □ 本番公開／Vercel デプロイなら §6.36 / §10.10（`CURSOR_HEALTH_SECRET` とサーバー専用 `CURSOR_*` を Environment Variables へ。`VITE_` 禁止。未設定なら手順を案内）を守った
 □ 割付精度ゲートなら §6.37（apply前の決定論hard/warn・travel_jump含む・棄却率停止・accuracy 保存）を守った
-□ 運営AI利用状況なら §6.38 / §6.46 / §10.12（入口は `/proposals?view=usage`・見出し右テキストタブ・単独ナビ禁止・見出し右に横1行フィルタ・coin.png ポップオーバーで料金合計のみ・円換算160・精度UIなし・参照料金表は出さない）を守った
-□ 運営AIハブなら §6.45 / §6.46 / §10.33 / §10.34（見出しは常に自動提案・右端テキストタブ3つ・提案内容一覧なし・導入文なし・ステッパーなし・緑グラデ外枠なし・クリニック Select は本文・生成後は最近のジョブ・fillViewport+sticky表・再利用はジョブの clinic_id・サイドバーは自動提案1項目・旧 `/admin/ai-usage` はリダイレクト）を守った
+□ 運営AI利用状況なら §6.38 / §6.46 / §10.12（入口は `/proposals?view=usage`・見出し右は灰トラック＋白ピル・単独ナビ禁止・見出し右に横1行フィルタ・coin.png ポップオーバーで料金合計のみ・円換算160・精度UIなし・参照料金表は出さない）を守った
+□ 運営AIハブなら §6.45 / §6.46 / §10.33 / §10.34（見出しは常に自動提案・右端は灰トラック＋白ピル3択・提案内容一覧なし・導入文なし・ステッパーなし・緑グラデ外枠なし・クリニック Select は本文・生成後は最近のジョブ・fillViewport+sticky表・再利用はジョブの clinic_id・サイドバーは自動提案1項目・旧 `/admin/ai-usage` はリダイレクト）を守った
 □ 自動提案スナップショットなら §6.39（住所必須・距離行列・頻度/期限緊急度・schema v2・生住所非渡与）を守った
 □ セキュリティ是正なら §6.40 / §10.11（clinic_members RLS 分割・運営除外・propose 60秒クールダウン・待機時間明示のレート制限文言・公開エラーは固定文言）を守った
-□ ご意見チャットなら §6.54 / §6.20 / §6.33 / §6.55 / §10.30（入口は FAB・アカウントメニュー・`/feedback`。業務ナビ禁止。FABは chat.png＋淡い緑。送信は入力内右下の円＋ paper-plane.png（h-7）。正の記録は GitHub Issue。院向け返答の正本はお知らせ提案（`/issues`）。院向け文言に Issue と書かない。受付番号・GitHubリンク非表示。トークンはサーバ専用。`VITE_` 禁止。患者PIIは載せない。公開エラーは固定文言。新規送信後に進捗行1件）を守った
+□ ご意見チャットなら §6.54 / §6.20 / §6.33 / §6.55 / §10.30（入口は FAB・アカウントメニュー・`/feedback`。業務ナビ禁止。FABは chat.png＋淡い緑。送信は入力内右下の円＋ paper-plane.png（h-7）。Enter送信はオプトイン。右下は外側クリックでも閉じる（暗い背景なし・`/feedback`対象外）。Nani設定行は入力欄上だけ。正の記録は GitHub Issue。院向け返答の正本はお知らせ提案（`/issues`）。院向け文言に Issue と書かない。受付番号・GitHubリンク非表示。トークンはサーバ専用。`VITE_` 禁止。患者PIIは載せない。公開エラーは固定文言。新規送信後に進捗行1件）を守った
 □ 改善の進捗なら §6.57 / §6.29 / §6.55（運営のみ。院に出さない。業務ナビ禁止。入口はアカウントメニュー。送信時はお知らせに載せない。反映済みのときだけ入れる。件数は見出し右端。一覧を狭めない）を守った
 □ 患者一覧・電話確認なら §6.44 / §10.41（fillViewport＋白 article・静かな件数行・未実装列は隠す・氏名リンクのみ・チェック列は一括操作まで置かない・短いラベルは nowrap）を守った
 □ 安全性ページ枠なら §6.56 / §10.31 / §10.38（入口はアカウントメニューのお知らせの次。サイドバー・ログイン非掲載。左レール w-56・本文スクロールでも固定・本文 max-w-4xl・アカウントメニューは上に開く。Nani の 298px・下開き・max-w-5xl・氷青・Inter・3D・OAuth/Stripe/翻訳非保存は使わない。事実はデンタクル。正本は securityCopy.ts。枠幅を変えたら本文幅も見る）を守った
@@ -1731,4 +1748,5 @@ AIは作業開始時に以下を確認する。
 - `2026-08-14`: 未反映23件を反映。改善の進捗（§6.57）・反映済みでお知らせ（§6.55）・患者/電話確認UI改定（§6.44）・操作ログ白1枚（§6.50）・Select sm（§6.26）・FABは動かさずページ送りで余白（§6.54/§10.42）・再発防止（§10.41〜10.43）・§3 / §5 / §7 / §11 / §12（`/project-memory-learn`）。`chat-20260814-patients-contacts-later` は後続実装済みのため破棄
 - `2026-08-14`: 設定UI改定を §6.51 / §6.54 / §10.42 / §12 に追記（`/project-memory-learn`）。見出し右テキストタブ・白 article・導入タイプはボタン・追加フォーム Select は残す・追加ボタンはFABと重ねない
 - `2026-08-14`: レセコン連携方針（案A）を §6.58 に追記。当面はCSV種まきのみ。監視SaaSは入れない。取込監査は `operation_traces` に件数・成否だけ。院向け説明は `/security#rececon`。§6.12 / §6.15 / §6.20 / §6.42 / §6.50 / §6.56 から参照。SSoT表、§7 必須、§11、§12 を更新（`/project-memory-learn`）
+- `2026-08-14`: ご意見パネルの外側クリック／Enter送信オプトイン／Nani設定行の適用範囲を §2.15 / §6.54 / §12 に追記。設定・自動提案の切替を灰トラック＋白ピルに §6.45 / §6.46 / §6.51 / §12 で更新（`/project-memory-learn`）
 

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/Button'
+import { ComposingOrb } from '@/components/ui/ComposingOrb'
 import { DatePicker } from '@/components/ui/DatePicker'
 import { Select } from '@/components/ui/Select'
 import { ProposalsSectionHeading } from '@/pages/Proposals/sections/ProposalsArticle'
@@ -77,11 +78,12 @@ export function GenerateProposalSection({
       ) : null}
 
       <div className="mt-8 flex flex-wrap items-center justify-end gap-3">
+        {busy ? <ComposingOrb size={64} /> : null}
         <Button variant="secondary" disabled={!canPropose || busy} onClick={onGenerate}>
           同条件で再生成
         </Button>
-        <Button loading={busy} disabled={!canPropose} onClick={onGenerate}>
-          提案を生成
+        <Button disabled={!canPropose || busy} aria-busy={busy} onClick={onGenerate}>
+          {busy ? '提案を作成しています' : '提案を生成'}
         </Button>
       </div>
     </section>

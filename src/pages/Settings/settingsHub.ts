@@ -5,7 +5,7 @@ export type SettingsHubItem = {
   label: string
 }
 
-/** 見出し「設定」の右端に置くテキストタブ。Select は使わない。 */
+/** 見出し「設定」の右端に置くセグメント切替。Select は使わない。 */
 export const SETTINGS_HUB_NAV: readonly SettingsHubItem[] = [
   { id: 'lane', label: '導入タイプ' },
   { id: 'teams', label: 'チーム' },

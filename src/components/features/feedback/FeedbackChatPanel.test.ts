@@ -18,4 +18,18 @@ describe('ご意見の送信ボタン', () => {
     const visibleLabel = source.match(/>\s*送信する\s*</)
     assert.equal(visibleLabel, null)
   })
+
+  it('入力欄の上に Enterで送信の設定行を置く', () => {
+    const source = readFileSync(join(here, 'FeedbackChatPanel.tsx'), 'utf8')
+    const rowAt = source.indexOf('PreferenceRow')
+    const areaAt = source.indexOf('<textarea')
+    assert.ok(rowAt > 0 && rowAt < areaAt)
+    assert.match(source, /SEND_ON_ENTER_LABEL/)
+    assert.match(source, /sendOnEnterDescription/)
+    assert.match(source, /resolveEnterKeyAction/)
+    assert.match(source, /onKeyDown=\{handleDraftKeyDown\}/)
+    assert.equal(source.includes('その他の設定'), false)
+    assert.equal(/\bPro\b/.test(source), false)
+    assert.equal(/lucide/i.test(source), false)
+  })
 })

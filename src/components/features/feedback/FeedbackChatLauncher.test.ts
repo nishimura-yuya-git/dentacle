@@ -19,4 +19,11 @@ describe('ご意見FAB', () => {
     assert.equal(source.includes('bg-[#008C01]'), false)
     assert.equal(source.includes('text-white'), false)
   })
+
+  it('開いているときは周りをクリックしても閉じる', () => {
+    const source = readFileSync(join(here, 'FeedbackChatLauncher.tsx'), 'utf8')
+    assert.match(source, /shouldCloseFeedbackOnOutsideClick/)
+    assert.match(source, /mousedown/)
+    assert.equal(source.includes('bg-slate-900/40'), false)
+  })
 })

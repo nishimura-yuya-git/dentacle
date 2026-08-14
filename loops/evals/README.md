@@ -26,6 +26,6 @@ pnpm run loop:evaluator -- --json
 
 - 1 template = 1 goal（または 1 完成ゲート）
 - criteria は「自己申告」ではなく、既存パーサが取れる信号に紐づける
-- UI Polish の必須 criteria には `observe-evidence` と `chrome-compare`（ページ枠照合）と `borrow-inventory`（参照の正体・対象枠・借りてよい/借りない）と `observe-edge`（端の開閉。無しなら「なし（端の開閉なし）」）と `observe-blockers-cleared`（観察で残した阻害: なし）を含める
+- UI Polish の必須 criteria には `observe-evidence` と `chrome-compare`（ページ枠照合）と `borrow-inventory`（参照の正体・対象枠・借りてよい/借りない）と `observe-edge`（端の開閉。無しなら「なし（端の開閉なし）」）と `observe-ai-processing`（実行中の Composing。無しなら「なし（AI処理なし）」）と `observe-blockers-cleared`（観察で残した阻害: なし）を含める
 - 新しい測り方を増やすときは、先にテスト期待値の根拠（goals / MEMORY）を書く
 - Future AGI クラウドや `ai-evaluation` SDK への依存は禁止

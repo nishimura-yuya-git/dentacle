@@ -114,7 +114,7 @@ function collectUiFindings(files) {
       title: 'UI変更の表示確認が必要',
       description: 'UI変更では、文言・余白・見切れ・見出し重複・FAB衝突・禁止アイコン・装飾英語を実画面で確認する必要があります。',
       evidence: uiFiles,
-      nextAction: 'ブラウザで Overlay / Chat 検査（見出し1箇所、注意の非重複、主ボタン、FAB衝突）を行い、観察証拠を残してください。',
+      nextAction: 'ブラウザで Overlay / Chat 検査と、AIがある画面では実行中の Composing 観察を行い、観察証拠を残してください。',
     }),
   ];
 }

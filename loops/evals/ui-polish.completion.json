@@ -49,6 +49,12 @@
       "signals": ["hasEdgeOverlayObserve"]
     },
     {
+      "id": "observe-ai-processing",
+      "label": "AI処理観察（実行中の Composing。無しならなし（AI処理なし））がある",
+      "required": true,
+      "signals": ["hasAiProcessingObserve"]
+    },
+    {
       "id": "observe-blockers-cleared",
       "label": "観察で残した阻害がなし（重複・FAB衝突などを残して完成にしない）",
       "required": true,

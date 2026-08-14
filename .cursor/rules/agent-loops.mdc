@@ -11,7 +11,7 @@ alwaysApply: true
 ## 大原則
 
 - ユーザーが「loopして」「UI Polish Loopで」などと明示しなくても、AIがタスク内容から適切なLoopを自動判定する。
-- UI Polish ではページ枠照合・借り契約・操作観察（端の開閉）・Overlay 検査が必須。内側パネルだけの観察は完成無効。対象枠を見本で入れ替えない。既存ナビ幅 `w-56` が正。正本: `loops/goals/ui-polish-gate.md`
+- UI Polish ではページ枠照合・借り契約・操作観察（端の開閉）・Overlay 検査・AI処理観察が必須。内側パネルだけの観察は完成無効。対象枠を見本で入れ替えない。既存ナビ幅 `w-56` が正。正本: `loops/goals/ui-polish-gate.md`
 - 作業は「一度コードを書いて終わり」ではなく、Goal / Context / Evaluation / Stop を満たすまで進める。
 - `PROJECT_MEMORY.md`、`.cursor/rules/`、関連コード、差分、検証結果をContextとして扱う。
 - 自動続行できない根拠が出た場合は、曖昧なまま実装せず停止して確認する。
@@ -24,6 +24,7 @@ alwaysApply: true
 | お客さんの問題文、表示不具合、動かない、壊れた、期待と違う | Bug Fix Loop + Regression Guard Loop | `loops/goals/bug-fix.md`, `loops/goals/regression-guard.md` |
 | UI改善、デザイン修正、見本画像、スクショ、余白、ボタン、見た目 | UI Polish Loop + Regression Guard Loop | `loops/goals/ui-polish-gate.md`, `loops/goals/ui-polish.md` |
 | 新規 FAB / オーバーレイ / アプリ内チャットを含む実装 | Main Doctor + UI Polish + Regression Guard | `loops/goals/ui-polish-gate.md`（Overlay 検査） |
+| 新規の AI 裏処理 UI（自動提案・候補探索・提案生成など） | Main Doctor + UI Polish + Regression Guard | `loops/goals/ui-polish-gate.md`（AI処理検査） |
 | `check:ssot` の警告、計算再実装、SSoT違反の解消 | SSoT Debt Hunter Loop + Regression Guard Loop | `loops/goals/ssot-debt-hunter.md` |
 | 修正完了後の安全確認、回帰確認、テスト確認 | Regression Guard Loop | `loops/goals/regression-guard.md` |
 
@@ -47,13 +48,14 @@ alwaysApply: true
 - 「高級感」「余白」「押したくなるボタン」「一発出し」「見た目」「UI」「デザイン」などの意図がある。
 - 既存UIを理想画像に近づける依頼。
 - 新規 FAB、固定オーバーレイ、アプリ内チャットなど、入口と本文が重なりうるUIを含む機能実装。
+- 裏で AI / エージェントを動かすボタンの処理中表示（自動提案、候補探索、提案生成など）。
 
 この場合、コードを書く前に必ず以下を出す。
 
 - **参照の正体**: 見本の名前（この案件の文書シェルは **Nani!?**）。Cursor Cloud と決めつけない。ウィジェット見本は部品だけ。
-- **対象枠ロック**: 対象画面の既存枠が正。見本が専用シェルでも、業務ハブの `DashboardLayout` は残す。
-- **借りてよい / 借りない**: 部品の形・余白は借りてよい。ページ枠、幅px、暗い面、段階数、「詳細設定」、見本文言、共有メニューの下開きは借りない。既存ナビ幅 `w-56` が正。Nani の 298px は丸コピーしない。
-- 画像から抽出したレイアウト、余白、色、重心、視線誘導、ボタン、画像位置。
+- **対象枠ロック**: 対象画面の既存枠が正。見本が専用シェルでも、業務ハブの `DashboardLayout` は残す。切替原子: 主操作 `Button`、排他2〜4択 `SegmentedControl`、オンオフ `Switch`、多択入力 `Select`。
+- **借りてよい / 借りない**: 部品の形・余白、2〜4択の灰トラック＋選中白ピルは借りてよい。ページ枠、幅px、暗い面、段階数、「詳細設定」、見本文言、共有メニューの下開き、Proバッジ、キラキラ、緑薄いタブは借りない。既存ナビ幅 `w-56` が正。Nani の 298px は丸コピーしない。
+- 画像から抽出したレイアウト、余白、色、重心、視線誘導、ボタン階層・切替、画像位置。
 - 今回使うトークン表（色・余白・角丸・影・文字サイズを5〜15行。既存ルールの値を正とする）。
 - ユーザーが何を「良い」と感じているか。
 - 業務UIか HP/LP か、**文書シェル（その画面だけ）**かの判定。`SecurityLayout` は `/security` だけ。
@@ -93,6 +95,7 @@ pnpm run test:changed
 - ユーザーがLoop名を言わなかったことを理由に、Loop判定を省略すること。
 - 画像やスクショがあるのに、画像からの抽出をせず実装へ進むこと。
 - FAB・オーバーレイ・アプリ内チャットを Main Doctor だけで完成扱いし、Overlay 検査を省略すること。
+- AI 裏処理 UI を Main Doctor だけで完成扱いし、実行中の Composing 観察（`AI処理観察`）を省略すること。
 - 観察で重複・重なりを書いたまま「見た目OK」と完成申告すること。
 - 期待値の根拠がないままテストやUIをAI都合で合わせること。
 - Warningを見ずに「通りました」と報告すること。

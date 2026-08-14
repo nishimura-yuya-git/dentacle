@@ -1,27 +1,53 @@
-import { useEffect, useId, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useLocation } from 'react-router-dom'
 import { FeedbackChatPanel } from '@/components/features/feedback/FeedbackChatPanel'
+import {
+  isFeedbackIgnoreOutsideTarget,
+  shouldCloseFeedbackOnOutsideClick,
+} from '@/components/features/feedback/shouldCloseFeedbackOnOutsideClick'
 
 /** 右下のチャット起動。専用ページでは出さない */
 export function FeedbackChatLauncher() {
   const { pathname } = useLocation()
   const [open, setOpen] = useState(false)
   const panelId = useId()
+  const rootRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (!open) return
+
+    function onPointerDown(event: MouseEvent) {
+      if (
+        !shouldCloseFeedbackOnOutsideClick({
+          containedByRoot: Boolean(rootRef.current?.contains(event.target as Node)),
+          containedByIgnoreOutside: isFeedbackIgnoreOutsideTarget(event.target),
+        })
+      ) {
+        return
+      }
+      setOpen(false)
+    }
+
     function onKey(event: KeyboardEvent) {
       if (event.key === 'Escape') setOpen(false)
     }
+
+    document.addEventListener('mousedown', onPointerDown)
     window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', onPointerDown)
+      window.removeEventListener('keydown', onKey)
+    }
   }, [open])
 
   if (pathname === '/feedback') return null
 
   return createPortal(
-    <div className="pointer-events-none fixed bottom-5 right-5 z-40 flex flex-col items-end gap-3">
+    <div
+      ref={rootRef}
+      className="pointer-events-none fixed bottom-5 right-5 z-40 flex flex-col items-end gap-3"
+    >
       {open ? (
         <div id={panelId} className="pointer-events-auto">
           <FeedbackChatPanel variant="float" onClose={() => setOpen(false)} />

@@ -1,3 +1,4 @@
+import { SegmentedControl } from '@/components/ui/SegmentedControl'
 import {
   PROPOSAL_LANE_PRESETS,
   type IntroductionLane,
@@ -15,16 +16,9 @@ const LANE_OPTIONS: Array<{ value: IntroductionLane; label: string }> = [
   { value: 'existing', label: '既存導入' },
 ]
 
-const laneButtonClass = (active: boolean) =>
-  [
-    'rounded-xl px-3 py-1.5 text-sm font-bold transition-colors',
-    active ? 'bg-[#008C01]/10 text-[#008C01]' : 'text-slate-700 hover:bg-slate-50',
-    'disabled:cursor-not-allowed disabled:opacity-50',
-  ].join(' ')
-
 /**
  * クリニックの導入タイプ（立ち上げ / 既存）。
- * 見出し右タブと同型のボタン切替＋選択中の説明1面。
+ * 見出し右と同じセグメント切替＋選択中の説明1面。
  */
 export function IntroductionLaneSection({
   lane,
@@ -48,25 +42,13 @@ export function IntroductionLaneSection({
           {saving ? (
             <p className="text-xs font-bold text-[#008C01]">保存中…</p>
           ) : null}
-          <div className="flex flex-nowrap gap-1" role="group" aria-label="導入タイプ">
-            {LANE_OPTIONS.map((option) => {
-              const active = option.value === lane
-              return (
-                <button
-                  key={option.value}
-                  type="button"
-                  className={laneButtonClass(active)}
-                  aria-pressed={active}
-                  disabled={!canEdit || saving}
-                  onClick={() => {
-                    if (option.value !== lane) onChange(option.value)
-                  }}
-                >
-                  {option.label}
-                </button>
-              )
-            })}
-          </div>
+          <SegmentedControl
+            ariaLabel="導入タイプ"
+            value={lane}
+            options={LANE_OPTIONS}
+            onChange={onChange}
+            disabled={!canEdit || saving}
+          />
         </div>
       </div>
 

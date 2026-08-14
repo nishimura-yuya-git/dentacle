@@ -37,6 +37,8 @@ import {
   updateVisitDetail,
 } from '@/pages/Calendar/hooks/useCalendarVisitActions'
 import { isAutoProposalTentative } from '@/pages/Calendar/utils/visitBlockAppearance'
+import { ComposingOrb } from '@/components/ui/ComposingOrb'
+import { AiComposingOverlay } from '@/pages/Calendar/components/AiComposingOverlay'
 import { useProposeProgress } from '@/pages/Calendar/hooks/useProposeProgress'
 import { runCalendarAutoPropose } from '@/features/calendar/runCalendarAutoPropose'
 import { todayISO } from '@/utils/dates'
@@ -374,13 +376,17 @@ export function CalendarPage() {
                 />
               ) : null}
               <span className="relative inline-flex items-center gap-1">
-                <img
-                  src="/icon/ai.png"
-                  alt=""
-                  width={14}
-                  height={14}
-                  className="h-3.5 w-3.5 shrink-0 brightness-0 opacity-45"
-                />
+                {proposeProgress.active ? (
+                  <ComposingOrb size={20} label="提案を作成しています" />
+                ) : (
+                  <img
+                    src="/icon/ai.png"
+                    alt=""
+                    width={14}
+                    height={14}
+                    className="h-3.5 w-3.5 shrink-0 brightness-0 opacity-45"
+                  />
+                )}
                 <span className="tabular-nums">
                   {aiProposeBusy || proposeProgress.active
                     ? `提案中… ${proposeProgress.percent}%`
@@ -393,7 +399,7 @@ export function CalendarPage() {
       }
     >
       <div className="flex h-full min-h-0 flex-col gap-1.5">
-        <section className="flex min-h-0 flex-1 flex-col overflow-hidden">
+        <section className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
           <DayVisitGrid
             viewDate={date}
             teams={teams}
@@ -424,6 +430,7 @@ export function CalendarPage() {
                 : undefined
             }
           />
+          {aiProposeBusy ? <AiComposingOverlay /> : null}
         </section>
       </div>
 

@@ -178,7 +178,7 @@ UI Polish Loop は、一発出しのUI品質を上げるためのLoopである�
 
 - 参照の正体（Nani!? / 添付ウィジェット / 指示のみ。Cursor Cloud と決めつけない）
 - 対象枠ロック（業務ハブは DashboardLayout。SecurityLayout は /security だけ）
-- 借りてよい / 借りない（ページ枠・幅px・暗い面・段階数・詳細設定・見本文言・共有メニューの下開きは既定で借りない。既存ナビ幅 `w-56` が正）
+- 借りてよい / 借りない（ページ枠・幅px・暗い面・段階数・詳細設定・見本文言・共有メニューの下開き・Proバッジ・キラキラ・緑薄いタブへの戻しは既定で借りない。2〜4択切替の灰トラック＋選中白ピルは借りてよい。既存ナビ幅 `w-56` が正）
 - 端の開閉（下端▼等。静止スクショだけでは見切れを捕まえない）
 - レイアウト構造
 - 余白
@@ -186,7 +186,7 @@ UI Polish Loop は、一発出しのUI品質を上げるためのLoopである�
 - 重心
 - 視線誘導
 - タイポグラフィ
-- ボタン階層
+- ボタン階層と切替原子（主操作 `Button`、排他2〜4択 `SegmentedControl`、オンオフ `Switch`、多択入力 `Select`）
 - 画像やキャラクターの見切れ
 - PC / モバイル差
 - 禁止事項との衝突
@@ -198,8 +198,9 @@ UI Polish Loop は、一発出しのUI品質を上げるためのLoopである�
 
 ```text
 対象枠がロックされている（見本の文書シェルを業務ハブに移植していない）
-借りない物（暗い面・段階数・詳細設定・幅px）が入っていない
+借りない物（暗い面・段階数・詳細設定・幅px・Pro・キラキラ・緑薄いタブ）が入っていない
 主要操作が1秒で分かる
+排他2〜4択が灰トラック＋選中白ピルで、緑薄いタブに戻っていない
 見本から借りてよい余白・重心だけが一致している
 トークン表どおりの面階層・文字階層になっている
 モバイルで見切れない
@@ -432,7 +433,7 @@ node scripts/loop-discover.mjs --write-state
 | SSoT | `scripts/lib/claim-grounding.mjs` |
 | 入力 | `state/completion-declaration.md`（`LOOP_DECLARATION_FILE` で変更可） |
 | skip | 宣言ファイルなし |
-| stop | Evaluation コマンドまたは結果の欠落、空宣言、**UI Polish の観察証拠欠落**、**ページ枠照合欠落（observe-chrome）**、**借り契約欠落（borrow-inventory）**、**操作観察欠落（observe-edge）**、**観察阻害未解消（observe-blockers-cleared）** |
+| stop | Evaluation コマンドまたは結果の欠落、空宣言、**UI Polish の観察証拠欠落**、**ページ枠照合欠落（observe-chrome）**、**借り契約欠落（borrow-inventory）**、**操作観察欠落（observe-edge）**、**AI処理観察欠落（observe-ai-processing）**、**観察阻害未解消（observe-blockers-cleared）** |
 | warn | 根拠リンク不足（パス / MEMORY 節 / 根拠ノート） |
 | 検証 | `pnpm run test:claim-grounding` |
 
@@ -448,11 +449,12 @@ node scripts/loop-discover.mjs --write-state
 - 完成宣言の `ページ枠照合`（見本 / 実装ページ全体 / 差分 / Read済み）が無い UI Polish は `stop`（欠落コード `observe-chrome`）
 - 完成宣言の借り契約（参照の正体 / 対象枠 / 借りてよい / 借りない）が無い UI Polish は `stop`（欠落コード `borrow-inventory`）
 - 完成宣言の `操作観察`（対象 / 種別 / パス / Read済み、または「なし（端の開閉なし）」）が無い UI Polish は `stop`（欠落コード `observe-edge`）
+- 完成宣言の `AI処理観察`（実行中、または「なし（AI処理なし）」）が無い UI Polish は `stop`（欠落コード `observe-ai-processing`）。`ComposingOrb` 等を触った差分で「AI処理なし」は不可
 - 完成宣言の `観察で残した阻害: なし` が無い、または Read差分に未解消の重複・重なりが残っている UI Polish は `stop`（欠落コード `observe-blockers-cleared`）
 - 内側パネルだけのスクショは観察として数えない。見本キャプチャと実装キャプチャ（ページ全体）のペアが必要。端の▼は開いてから撮る
 - 既存ナビ幅（業務ナビ `w-56`）と共有メニューの開く方向は案件SSoT。Nani の 298px や下開きを丸コピーしない。枠幅を変えたら本文幅も見る
-- Eval template `ui-polish.completion` の `observe-evidence` と `chrome-compare` と `borrow-inventory` と `observe-edge` と `observe-blockers-cleared` も必須
-- 敵対シナリオ: `ui-complete-without-observe` / `ui-complete-inner-panel-only` / `ui-complete-without-borrow-inventory` / `ui-complete-without-edge-observe` / `ui-complete-with-unresolved-observe`
+- Eval template `ui-polish.completion` の `observe-evidence` と `chrome-compare` と `borrow-inventory` と `observe-edge` と `observe-ai-processing` と `observe-blockers-cleared` も必須
+- 敵対シナリオ: `ui-complete-without-observe` / `ui-complete-inner-panel-only` / `ui-complete-without-borrow-inventory` / `ui-complete-without-edge-observe` / `ui-complete-with-unresolved-observe` / `ui-complete-without-ai-processing-observe` / `ui-complete-ai-processing-skip-when-orb-changed`
 - 知覚優先: 構造 snapshot → 見た目 screenshot（ページ全体） → vision は最終手段
 - 出典の原則名: Verify, don't assume / Observe loop
 - Hard Gate 文書: `loops/goals/ui-polish-gate.md`（Context Budget で must。長い goal 文書の後半は窓から落ちる）

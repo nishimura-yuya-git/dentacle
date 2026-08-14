@@ -11,6 +11,7 @@
  * 加えてページ枠照合（見本キャプチャと実装キャプチャのペア）が無いと stop。
  * 借り契約（参照の正体 / 対象枠 / 借りてよい / 借りない）が無いと stop。
  * 操作観察（端の開閉。無しなら「なし（端の開閉なし）」）が無いと stop。
+ * AI処理観察（実行中。無しなら「なし（AI処理なし）」）が無いと stop。
  * 観察で残した阻害が未解消、または「観察で残した阻害: なし」が無いと stop。
  */
 
@@ -32,6 +33,9 @@ const PLACEHOLDER_RE = /^(…|\.\.\.|なし|n\/a|-)?$/i;
 const UNCONFIRMED_NOTE_RE = /^(未確認|未観察|空欄)$/i;
 const NONE_LIKE_RE = /^(なし|n\/a|指示のみ)(（指示のみ）)?$/i;
 const EDGE_SKIP_RE = /端の開閉なし/;
+const AI_SKIP_RE = /AI処理なし/;
+const AI_PROCESSING_FILE_RE =
+  /ComposingOrb|AiComposingOverlay|thinking-orbs|GapFillPanel|GenerateProposalSection/;
 const OBSERVE_BLOCKER_LINE_RE = /観察で残した阻害\s*[:：]\s*(.+)/i;
 const CLEAR_BLOCKER_RE = /^(なし|none|n\/a|-|無し)([。．.]*)?$/i;
 const UNRESOLVED_PROBLEM_RE = /重複|重なり|重なる|隠蔽|見切れ|二重|衝突/;
@@ -90,6 +94,26 @@ function isEdgeSkip(value) {
 }
 
 /**
+ * AI処理が無い画面は「なし（AI処理なし）」で AI処理観察を充足する。
+ * @param {string} value
+ */
+export function isAiProcessingSkip(value) {
+  const text = String(value ?? '')
+    .trim()
+    .replace(/^`|`$/g, '');
+  return AI_SKIP_RE.test(text);
+}
+
+/**
+ * 差分が AI 裏処理 UI に触れているか。
+ * 触れているのに「AI処理なし」は不足（実行中観察が必要）。
+ * @param {string[]} changedFiles
+ */
+export function touchesAiProcessingUi(changedFiles = []) {
+  return (changedFiles ?? []).some((file) => AI_PROCESSING_FILE_RE.test(String(file)));
+}
+
+/**
  * 差分ノートとして使えるか（未確認は不可）。
  * @param {string} value
  */
@@ -126,11 +150,17 @@ export function parseCompletionDeclaration(text) {
   let inObserveSection = false;
   let inChromeSection = false;
   let inEdgeSection = false;
+  let inAiSection = false;
   let edgeTarget = null;
   let edgeKind = null;
   const edgePaths = [];
   let edgeReadConfirmed = false;
   let edgeReadNote = '';
+  let aiTarget = null;
+  let aiKind = null;
+  const aiPaths = [];
+  let aiReadConfirmed = false;
+  let aiReadNote = '';
   let chromeReference = null;
   const chromeImplementationPaths = [];
   let chromeDiff = '';
@@ -142,22 +172,31 @@ export function parseCompletionDeclaration(text) {
   let observeBlockersRaw = null;
 
   for (const line of lines) {
-    if (/操作観察|edge\s*overlay|edge\s*observe/i.test(line)) {
+    if (/AI処理観察|ai\s*processing\s*observe/i.test(line)) {
+      inAiSection = true;
+      inEdgeSection = false;
+      inChromeSection = false;
+      inObserveSection = false;
+    } else if (/操作観察|edge\s*overlay|edge\s*observe/i.test(line)) {
       inEdgeSection = true;
+      inAiSection = false;
       inChromeSection = false;
       inObserveSection = false;
     } else if (/ページ枠照合|chrome\s*compare/i.test(line)) {
       inChromeSection = true;
       inObserveSection = false;
       inEdgeSection = false;
+      inAiSection = false;
     } else if (/観察証拠|Observe\s*evidence/i.test(line)) {
       inObserveSection = true;
       inChromeSection = false;
       inEdgeSection = false;
+      inAiSection = false;
     } else if (/^\s*#{1,6}\s+/.test(line)) {
       inObserveSection = false;
       inChromeSection = false;
       inEdgeSection = false;
+      inAiSection = false;
     }
 
     const commandMatch = line.match(COMMAND_RE);
@@ -190,6 +229,9 @@ export function parseCompletionDeclaration(text) {
       }
       if (inEdgeSection) {
         edgePaths.push(pathMatch[1]);
+      }
+      if (inAiSection) {
+        aiPaths.push(pathMatch[1]);
       }
     }
 
@@ -303,6 +345,38 @@ export function parseCompletionDeclaration(text) {
         }
       }
     }
+
+    if (inAiSection) {
+      const aiTargetMatch = line.match(/(?:対象)\s*[:：]\s*(.+)/i);
+      if (aiTargetMatch) {
+        aiTarget = stripPathTicks(aiTargetMatch[1]);
+      }
+
+      const kindMatch = line.match(OBSERVE_KIND_RE);
+      if (kindMatch) {
+        aiKind = kindMatch[1].toLowerCase();
+      }
+
+      const pathLineMatch = line.match(OBSERVE_PATH_LINE_RE);
+      if (pathLineMatch) {
+        const raw = pathLineMatch[1].trim().replace(/^`|`$/g, '');
+        if (isMeaningful(raw)) {
+          aiPaths.push(raw);
+        }
+      }
+
+      const readMatch = line.match(OBSERVE_READ_RE);
+      if (readMatch) {
+        aiReadConfirmed = true;
+        const note = String(readMatch[2] ?? '')
+          .replace(/^[（(]\s*/, '')
+          .replace(/[）)]\s*$/, '')
+          .trim();
+        if (isMeaningful(note)) {
+          aiReadNote = note;
+        }
+      }
+    }
   }
 
   // Evaluation コマンド行の pnpm は「実行した」記録にはなるが、根拠リンク充足には使わない
@@ -342,12 +416,22 @@ export function parseCompletionDeclaration(text) {
         edgeReadConfirmed &&
         isMeaningful(edgeReadNote)),
   );
+  const uniqueAiPaths = [...new Set(aiPaths.filter((path) => isMeaningful(path)))];
+  const aiProcessingSkip = isAiProcessingSkip(aiTarget);
+  const hasAiProcessingObserve = Boolean(
+    aiProcessingSkip ||
+      (isMeaningful(aiTarget) &&
+        aiKind &&
+        uniqueAiPaths.length > 0 &&
+        aiReadConfirmed &&
+        isMeaningful(aiReadNote)),
+  );
   const blockersText = String(observeBlockersRaw ?? '').trim();
   const hasObserveBlockersField = Boolean(
     observeBlockersRaw != null && blockersText && blockersText !== '…' && blockersText !== '...',
   );
   const observeHasUnresolvedProblems = hasUnresolvedObserveProblems(
-    [observeReadNote, chromeDiff, edgeReadNote].filter(Boolean).join(' '),
+    [observeReadNote, chromeDiff, edgeReadNote, aiReadNote].filter(Boolean).join(' '),
   );
   const hasObserveBlockersCleared = Boolean(
     hasObserveBlockersField &&
@@ -381,6 +465,13 @@ export function parseCompletionDeclaration(text) {
     edgeReadConfirmed,
     edgeReadNote,
     hasEdgeOverlayObserve,
+    aiTarget,
+    aiKind,
+    aiPaths: uniqueAiPaths,
+    aiReadConfirmed,
+    aiReadNote,
+    isAiProcessingSkip: aiProcessingSkip,
+    hasAiProcessingObserve,
     observeBlockersRaw,
     hasObserveBlockersField,
     observeHasUnresolvedProblems,
@@ -448,6 +539,15 @@ export function requiresBorrowContract(input = {}) {
  * @param {{ goal?: string | null, declarationText?: string }} input
  */
 export function requiresEdgeOverlayObserve(input = {}) {
+  return requiresObserveEvidence(input);
+}
+
+/**
+ * UI Polish 完成ゲートが AI処理観察を要求するか。
+ * 観察証拠と同じ条件（ui-polish goal または宣言見出し）。
+ * @param {{ goal?: string | null, declarationText?: string }} input
+ */
+export function requiresAiProcessingObserve(input = {}) {
   return requiresObserveEvidence(input);
 }
 
@@ -524,6 +624,7 @@ export function evaluateClaimGrounding({
   const needsChrome = requiresChromeCompare({ goal, declarationText: text });
   const needsBorrow = requiresBorrowContract({ goal, declarationText: text });
   const needsEdge = requiresEdgeOverlayObserve({ goal, declarationText: text });
+  const needsAi = requiresAiProcessingObserve({ goal, declarationText: text });
   if (needsObserve && !parsed.hasObserveEvidence) {
     missing.push('observe-evidence');
   }
@@ -535,6 +636,11 @@ export function evaluateClaimGrounding({
   }
   if (needsEdge && !parsed.hasEdgeOverlayObserve) {
     missing.push('observe-edge');
+  }
+  if (needsAi && !parsed.hasAiProcessingObserve) {
+    missing.push('observe-ai-processing');
+  } else if (needsAi && parsed.isAiProcessingSkip && touchesAiProcessingUi(changedFiles)) {
+    missing.push('observe-ai-processing');
   }
   if (needsObserve && parsed.hasObserveEvidence && !parsed.hasObserveBlockersCleared) {
     missing.push('observe-blockers-cleared');
@@ -612,6 +718,19 @@ export function evaluateClaimGrounding({
     };
   }
 
+  if (missing.includes('observe-ai-processing')) {
+    return {
+      status: 'stop',
+      reason:
+        'UI Polish 完成宣言に AI処理観察がありません（裏でAIを動かすボタンは実行中の Composing を観察するまで完成にしない）。',
+      nextAction:
+        'AI処理観察に 対象（実行中、または なし（AI処理なし））・種別・パス・Read済み: はい を記入してください。ComposingOrb 等を触った差分で「AI処理なし」は不可です。ログインやCSVの処理中は対象外です。',
+      parsed,
+      missing,
+      evidenceResolution,
+    };
+  }
+
   if (missing.includes('observe-blockers-cleared')) {
     return {
       status: 'stop',
@@ -640,7 +759,7 @@ export function evaluateClaimGrounding({
   return {
     status: 'pass',
     reason: needsObserve
-      ? '完成宣言の主張は観察証拠・ページ枠照合・操作観察・根拠リンク・Evaluation 結果にグラウンディングされています。'
+      ? '完成宣言の主張は観察証拠・ページ枠照合・操作観察・AI処理観察・根拠リンク・Evaluation 結果にグラウンディングされています。'
       : '完成宣言の主張は根拠リンクと Evaluation 結果にグラウンディングされています。',
     nextAction: null,
     parsed,

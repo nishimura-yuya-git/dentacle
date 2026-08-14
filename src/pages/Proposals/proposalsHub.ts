@@ -11,7 +11,7 @@ export type ProposalsHubItem = {
   section: ProposalSection | null
 }
 
-/** 見出し「自動提案」の右端（actions）に置くテキストタブ。Select は使わない。 */
+/** 見出し「自動提案」の右端（actions）に置くセグメント切替。Select は使わない。 */
 export const PROPOSALS_HUB_NAV: readonly ProposalsHubItem[] = [
   { id: 'conditions', label: '条件設定', view: 'proposals', section: 'conditions' },
   { id: 'jobs', label: '最近のジョブ', view: 'proposals', section: 'jobs' },

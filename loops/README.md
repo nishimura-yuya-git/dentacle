@@ -42,7 +42,7 @@
 - Harness が “done” と言っても未検証。Completion check が通るまで完成にしない。
 - 正式適用:
   - Bug Fix: `loops/goals/bug-fix.md` / `loops/graphs/bug-fix.mmd`（`maxIterations: 3`）
-  - UI Polish: `loops/goals/ui-polish-gate.md` / `loops/goals/ui-polish.md` / `loops/graphs/ui-polish.mmd`（`maxIterations: 3`）。判定ノードで `/better-interface`（`.cursor/skills/better-interface`）を回す。ページ枠照合なしの完成は無効
+  - UI Polish: `loops/goals/ui-polish-gate.md` / `loops/goals/ui-polish.md` / `loops/graphs/ui-polish.mmd`（`maxIterations: 3`）。判定ノードで `/better-interface`（`.cursor/skills/better-interface`）を回す。ページ枠照合なしの完成は無効。切替原子はゲート先頭（`Button` / `SegmentedControl` / `Switch` / `Select`）
   - Regression Guard: `loops/goals/regression-guard.md` / `loops/graphs/regression-guard.mmd`（`maxIterations: 2`）
 - 各 Graph は差し戻し条件と完成/通過宣言フォーマットを持つ。
 

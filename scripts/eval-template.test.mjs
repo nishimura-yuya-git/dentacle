@@ -114,6 +114,8 @@ function assertTrue(value, message) {
   - Read済み: はい
 - 操作観察:
   - 対象: なし（端の開閉なし）
+- AI処理観察:
+  - 対象: なし（AI処理なし）
 - 観察で残した阻害: なし
 - 根拠: \`src/pages/X.tsx\`
 `;
@@ -209,6 +211,41 @@ function assertTrue(value, message) {
   );
   assertEqual(scoredEdge.status, 'stop', '操作観察なしは stop');
   assertTrue(scoredEdge.missingRequired.includes('observe-edge'), 'observe-edge 必須欠落');
+
+  const withoutAi = `
+## 完成宣言（UI Polish Loop）
+- Evaluation:
+  - コマンド: pnpm run loop:ui
+  - 結果: pass
+- 観察証拠:
+  - 種別: screenshot
+  - パス: \`/tmp/ui.png\`
+  - Read済み: はい（余白は一致）
+- 参照の正体: Thinking orbs の Composing 部品
+- 対象枠: ロック（DashboardLayout）
+- 借りてよい: 点オーブ
+- 借りない: 暗い面
+- ページ枠照合:
+  - 見本: なし（指示のみ）
+  - 実装: \`/tmp/ui-full.png\`
+  - 差分: 対象枠は業務ハブのまま
+  - Read済み: はい
+- 操作観察:
+  - 対象: なし（端の開閉なし）
+- 観察で残した阻害: なし
+- 根拠: \`src/pages/X.tsx\`
+`;
+  const scoredAi = scoreEvalTemplate(
+    template,
+    buildScoreContext({
+      declarationText: withoutAi,
+      parsed: parseCompletionDeclaration(withoutAi),
+      evaluationResult: 'pass',
+      verdictStatus: 'pass',
+    }),
+  );
+  assertEqual(scoredAi.status, 'stop', 'AI処理観察なしは stop');
+  assertTrue(scoredAi.missingRequired.includes('observe-ai-processing'), 'observe-ai-processing 必須欠落');
 }
 
 {

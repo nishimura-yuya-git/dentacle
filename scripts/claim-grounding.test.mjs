@@ -136,6 +136,8 @@ function assertTrue(value, message) {
   - Read済み: はい
 - 操作観察:
   - 対象: なし（端の開閉なし）
+- AI処理観察:
+  - 対象: なし（AI処理なし）
 - 観察で残した阻害: なし
 - Stop非該当の根拠: PROJECT_MEMORY.md §2.9 と差分 \`src/pages/Home.tsx\`
 `,
@@ -331,6 +333,8 @@ function assertTrue(value, message) {
   - 種別: screenshot
   - パス: \`/tmp/account-menu-open.png\`
   - Read済み: はい（上開き、ログアウト可視、レールは動かない）
+- AI処理観察:
+  - 対象: なし（AI処理なし）
 - 観察で残した阻害: なし
 - Stop非該当の根拠: PROJECT_MEMORY.md §6.56 と差分 \`src/components/layout/AccountMenu.tsx\`
 `,
@@ -468,12 +472,142 @@ function assertTrue(value, message) {
   - Read済み: はい
 - 操作観察:
   - 対象: なし（端の開閉なし）
+- AI処理観察:
+  - 対象: なし（AI処理なし）
 - 観察で残した阻害: なし
 - Stop非該当の根拠: \`src/pages/Feedback.tsx\`
 `,
     goal: 'ui-polish',
   });
   assertEqual(result.status, 'pass', '解消済みの観察阻害は pass');
+}
+
+{
+  // 期待値根拠: ユーザー指示 — AI処理中は Thinking orbs の Composing を観察するまで完成にしない
+  const result = evaluateClaimGrounding({
+    declarationText: `
+## 完成宣言（UI Polish Loop）
+- Evaluation:
+  - コマンド: pnpm run loop:ui
+  - 結果: pass
+- Regression Guard: pass
+- 観察証拠:
+  - 種別: screenshot
+  - パス: \`/tmp/full.png\`
+  - Read済み: はい（ページ全体を確認）
+- 参照の正体: Thinking orbs の Composing 部品
+- 対象枠: ロック（DashboardLayout）
+- 借りてよい: 点オーブ
+- 借りない: 暗い面、英語ラベル
+- ページ枠照合:
+  - 見本: なし（指示のみ）
+  - 実装: \`/tmp/full.png\`
+  - 差分: 対象は業務ハブのためサイドバーを残した
+  - Read済み: はい
+- 操作観察:
+  - 対象: なし（端の開閉なし）
+- 観察で残した阻害: なし
+- Stop非該当の根拠: \`src/pages/Calendar/CalendarPage.tsx\`
+`,
+    goal: 'ui-polish',
+  });
+  assertEqual(result.status, 'stop', 'AI処理観察なしの UI Polish は stop');
+  assertTrue(result.missing.includes('observe-ai-processing'), 'observe-ai-processing 欠落');
+}
+
+{
+  const parsedSkip = parseCompletionDeclaration(`
+## 完成宣言（UI Polish Loop）
+- AI処理観察:
+  - 対象: なし（AI処理なし）
+`);
+  assertEqual(parsedSkip.hasAiProcessingObserve, true, 'AI処理なしは AI処理観察を充足');
+}
+
+{
+  const parsedRun = parseCompletionDeclaration(`
+## 完成宣言（UI Polish Loop）
+- AI処理観察:
+  - 対象: 実行中（カレンダー自動提案）
+  - 種別: screenshot
+  - パス: \`/tmp/auto-propose-composing.png\`
+  - Read済み: はい（64px オーブと日本語。暗い面なし）
+`);
+  assertEqual(parsedRun.hasAiProcessingObserve, true, '実行中の AI処理観察を検出');
+  assertEqual(parsedRun.aiTarget, '実行中（カレンダー自動提案）', 'AI処理観察の対象');
+  assertTrue(parsedRun.aiPaths.includes('/tmp/auto-propose-composing.png'), 'AI処理観察パス');
+}
+
+{
+  const result = evaluateClaimGrounding({
+    declarationText: `
+## 完成宣言（UI Polish Loop）
+- Evaluation:
+  - コマンド: pnpm run loop:ui
+  - 結果: pass
+- Regression Guard: pass
+- 観察証拠:
+  - 種別: screenshot
+  - パス: \`/tmp/full.png\`
+  - Read済み: はい（ページ全体を確認）
+- 参照の正体: Thinking orbs の Composing 部品
+- 対象枠: ロック（DashboardLayout）
+- 借りてよい: 点オーブ
+- 借りない: 暗い面、英語ラベル
+- ページ枠照合:
+  - 見本: なし（指示のみ）
+  - 実装: \`/tmp/full.png\`
+  - 差分: 対象は業務ハブのためサイドバーを残した
+  - Read済み: はい
+- 操作観察:
+  - 対象: なし（端の開閉なし）
+- AI処理観察:
+  - 対象: なし（AI処理なし）
+- 観察で残した阻害: なし
+- Stop非該当の根拠: \`src/components/ui/ComposingOrb.tsx\`
+`,
+    goal: 'ui-polish',
+    changedFiles: ['src/components/ui/ComposingOrb.tsx'],
+  });
+  assertEqual(result.status, 'stop', 'ComposingOrb 差分で AI処理なしは stop');
+  assertTrue(result.missing.includes('observe-ai-processing'), '実行中観察が必要');
+}
+
+{
+  const result = evaluateClaimGrounding({
+    declarationText: `
+## 完成宣言（UI Polish Loop）
+- Evaluation:
+  - コマンド: pnpm run loop:ui
+  - 結果: pass
+- Regression Guard: pass
+- 観察証拠:
+  - 種別: screenshot
+  - パス: \`/tmp/full.png\`
+  - Read済み: はい（ページ全体を確認）
+- 参照の正体: Thinking orbs の Composing 部品
+- 対象枠: ロック（DashboardLayout）
+- 借りてよい: 点オーブ
+- 借りない: 暗い面、英語ラベル
+- ページ枠照合:
+  - 見本: なし（指示のみ）
+  - 実装: \`/tmp/full.png\`
+  - 差分: 対象は業務ハブのためサイドバーを残した
+  - Read済み: はい
+- 操作観察:
+  - 対象: なし（端の開閉なし）
+- AI処理観察:
+  - 対象: 実行中（カレンダー自動提案）
+  - 種別: screenshot
+  - パス: \`/tmp/auto-propose-composing.png\`
+  - Read済み: はい（64px オーブと日本語。暗い面なし）
+- 観察で残した阻害: なし
+- Stop非該当の根拠: \`src/components/ui/ComposingOrb.tsx\`
+`,
+    goal: 'ui-polish',
+    changedFiles: ['src/components/ui/ComposingOrb.tsx'],
+  });
+  assertEqual(result.status, 'pass', '実行中の AI処理観察ありは pass');
 }
 
 if (failed > 0) {

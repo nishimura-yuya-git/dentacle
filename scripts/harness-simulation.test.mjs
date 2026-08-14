@@ -86,6 +86,7 @@ function runClaimGroundingScenario(scenario) {
   const grounding = evaluateClaimGrounding({
     declarationText: scenario.action.declarationText ?? '',
     goal: scenario.action.goal ?? null,
+    changedFiles: scenario.action.changedFiles ?? [],
   });
   const permission = grounding.status === 'stop' ? 'deny' : 'allow';
   const reason = [permission, grounding.status, grounding.reason, ...(grounding.missing ?? [])]

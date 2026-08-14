@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useId, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Button } from '@/components/ui/Button'
+import { ComposingOrb } from '@/components/ui/ComposingOrb'
 import { Select } from '@/components/ui/Select'
 import { TimePicker } from '@/components/ui/TimePicker'
 import {
@@ -258,14 +259,27 @@ export function GapFillPanel({
                     className="w-full resize-none rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-[#008C01] focus:ring-4 focus:ring-[#008C01]/20"
                   />
                 </label>
+                {busy ? (
+                  <div
+                    className="flex flex-col items-center gap-2 py-4"
+                    role="status"
+                    aria-live="polite"
+                    aria-label="候補を探しています"
+                  >
+                    <ComposingOrb size={64} label="候補を探しています" />
+                    <p className="text-xs font-bold text-slate-600">
+                      候補を探しています
+                    </p>
+                  </div>
+                ) : null}
                 <Button
                   variant="primary"
                   className="!w-full !px-3 !py-2 !text-xs"
-                  loading={busy}
-                  disabled={!teamId || rateLimited}
+                  disabled={!teamId || rateLimited || busy}
+                  aria-busy={busy}
                   onClick={() => void search()}
                 >
-                  {rateLimited ? '待機中…' : '候補を探す'}
+                  {rateLimited ? '待機中…' : busy ? '探しています…' : '候補を探す'}
                 </Button>
               </div>
 

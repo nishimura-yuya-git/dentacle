@@ -1,7 +1,14 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, type KeyboardEvent } from 'react'
 import { Button } from '@/components/ui/Button'
+import { PreferenceRow } from '@/components/ui/PreferenceRow'
 import { FEEDBACK_PII_NOTICE } from '@/features/feedback/feedbackCopy'
+import {
+  resolveEnterKeyAction,
+  SEND_ON_ENTER_LABEL,
+  sendOnEnterDescription,
+} from '@/features/feedback/sendOnEnterPolicy'
 import { useFeedbackChat } from '@/features/feedback/useFeedbackChat'
+import { useSendOnEnterPreference } from '@/features/feedback/useSendOnEnterPreference'
 import type { FeedbackChatMessage } from '@/features/feedback/sendFeedback'
 
 type Props = {
@@ -13,7 +20,26 @@ type Props = {
 /** ご意見チャット本体（日本語・個人情報注意） */
 export function FeedbackChatPanel({ variant, onClose }: Props) {
   const chat = useFeedbackChat()
+  const { sendOnEnter, setSendOnEnter } = useSendOnEnterPreference()
   const listRef = useRef<HTMLDivElement>(null)
+
+  function handleDraftKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
+    const action = resolveEnterKeyAction({
+      sendOnEnter,
+      key: event.key,
+      shiftKey: event.shiftKey,
+      isComposing: event.nativeEvent.isComposing,
+      keyCode: event.nativeEvent.keyCode,
+      hasDraft: Boolean(chat.draft.trim()),
+      busy: chat.busy,
+    })
+    if (action === 'send') {
+      event.preventDefault()
+      void chat.send()
+      return
+    }
+    if (action === 'ignore' && event.key === 'Enter') event.preventDefault()
+  }
 
   useEffect(() => {
     const root = listRef.current
@@ -71,17 +97,25 @@ export function FeedbackChatPanel({ variant, onClose }: Props) {
       ) : null}
 
       <form
-        className="mt-4"
+        className="mt-4 space-y-3 border-t border-slate-100 pt-3"
         onSubmit={(event) => {
           event.preventDefault()
           void chat.send()
         }}
       >
+        <PreferenceRow
+          label={SEND_ON_ENTER_LABEL}
+          description={sendOnEnterDescription(sendOnEnter)}
+          checked={sendOnEnter}
+          onChange={setSendOnEnter}
+          disabled={chat.busy}
+        />
         <label className="relative block">
           <span className="sr-only">ご意見の本文</span>
           <textarea
             value={chat.draft}
             onChange={(event) => chat.setDraft(event.target.value)}
+            onKeyDown={handleDraftKeyDown}
             rows={3}
             placeholder="気づいたこと、再現手順、期待する動きを書いてください"
             className="w-full resize-none rounded-xl border border-slate-200 bg-white px-4 py-3 pr-16 text-sm text-slate-900 outline-none transition focus:border-[#008C01] focus:ring-4 focus:ring-[#008C01]/20"

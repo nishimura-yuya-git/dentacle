@@ -1,3 +1,8 @@
+import {
+  RECECON_IMPORT_ACTION,
+  RECECON_IMPORT_ENTITY,
+} from '../../features/patientImport/receconImportPolicy.ts'
+
 /** 操作ログ表示用の日本語整形・絞り込み（SSoT） */
 
 export type OperationTraceViewInput = {
@@ -30,6 +35,7 @@ const ACTION_LABEL: Record<string, string> = {
   'calendar_block.create': '空きブロックを作成',
   'phone.ok_confirm_visit': '電話確認OK→本予約',
   'phone.ng_repropose': '電話確認NG→再提案',
+  [RECECON_IMPORT_ACTION]: 'レセコンCSVを取り込んだ',
 }
 
 const ENTITY_LABEL: Record<string, string> = {
@@ -37,6 +43,7 @@ const ENTITY_LABEL: Record<string, string> = {
   calendar_block: '空きブロック',
   phone_confirmation: '電話確認',
   patient: '患者',
+  [RECECON_IMPORT_ENTITY]: '患者取込',
 }
 
 /** Select 用: 操作（先頭はすべて） */
@@ -59,6 +66,29 @@ export function formatOperationActionLabel(action: string): string {
 /** 対象種別の日本語 */
 export function formatOperationEntityLabel(entityType: string): string {
   return ENTITY_LABEL[entityType] ?? 'その他'
+}
+
+function asNonNegInt(value: unknown): number | null {
+  if (typeof value === 'number' && Number.isFinite(value) && value >= 0) {
+    return Math.floor(value)
+  }
+  if (typeof value === 'string' && /^\d+$/.test(value)) {
+    return Number(value)
+  }
+  return null
+}
+
+function formatRececonImportDetail(payload: Record<string, unknown>): string {
+  const outcome =
+    payload.outcome === 'failed'
+      ? '失敗'
+      : payload.outcome === 'partial'
+        ? '一部エラー'
+        : '完了'
+  const inserted = asNonNegInt(payload.patientsInserted) ?? 0
+  const updated = asNonNegInt(payload.patientsUpdated) ?? 0
+  const errors = asNonNegInt(payload.errorCount) ?? 0
+  return `${outcome}・新規 ${inserted}・更新 ${updated}・エラー ${errors}`
 }
 
 function asPositiveInt(value: unknown): number | null {
@@ -87,6 +117,9 @@ export function formatOperationDetail(input: {
   payload: Record<string, unknown> | null
 }): string {
   const payload = input.payload ?? {}
+  if (input.action === RECECON_IMPORT_ACTION) {
+    return formatRececonImportDetail(payload)
+  }
   const parts: string[] = []
   const dateLabel = asDateLabel(payload.date)
   if (dateLabel) parts.push(`対象日 ${dateLabel}`)

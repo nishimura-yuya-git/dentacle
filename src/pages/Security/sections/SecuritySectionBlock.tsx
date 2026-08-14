@@ -53,7 +53,7 @@ function SecurityLinkGroup({
 
 export function SecuritySectionBlock({ section }: { section: SecuritySection }) {
   return (
-    <section>
+    <section id={section.id}>
       <h2 className="mb-1 mt-10 border-b border-slate-200 pb-1.5 text-lg font-bold text-slate-900">
         {section.title}
       </h2>

@@ -81,6 +81,26 @@ describe('安全性ページの文言', () => {
     assert.equal(/issue/i.test(allCopy()), false)
   })
 
+  it('レセコン連携はCSV種まきと件数監査だけを書き、監視SaaS名を出さない', () => {
+    const rececon = SECURITY_SECTIONS.find((section) => section.id === 'rececon')
+    assert.ok(rececon)
+    const text = rececon.paragraphs.join('\n')
+    assert.match(text, /個人別全集計/)
+    assert.match(text, /常時接続/)
+    assert.match(text, /会計/)
+    assert.match(text, /操作ログ/)
+    assert.match(text, /氏名/)
+    assert.match(text, /カルテ番号/)
+    assert.match(text, /種まき/)
+    assert.equal(/Datadog/i.test(allCopy()), false)
+    assert.equal(/Sentry/i.test(allCopy()), false)
+  })
+
+  it('安全性の各節にアンカー id を付ける', () => {
+    const source = readSecuritySource('sections/SecuritySectionBlock.tsx')
+    assert.match(source, /id=\{section\.id\}/)
+  })
+
   it('Nani の翻訳コピーや装飾英語をレールに置かない', () => {
     const copy = allCopy()
     assert.equal(/あたらしく翻訳/.test(copy), false)

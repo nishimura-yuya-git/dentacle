@@ -1,8 +1,8 @@
 import { useEffect, useRef } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 import { APP_SHELL_SIDEBAR_CLASS } from '@/components/layout/appShell'
+import { BrandLogo } from '@/components/layout/BrandLogo'
 import { SidebarNav } from '@/components/layout/SidebarNav'
-import { env } from '@/config/env'
 
 type Props = {
   /** モバイル用ドロワーの開閉 */
@@ -65,7 +65,7 @@ export function AppSidebar({ open, onClose, desktopVisible, onToggleDesktop }: P
             className="absolute inset-y-0 left-0 flex w-64 flex-col border-r border-[#DCDEDE] bg-white shadow-lg"
           >
             <div className="flex h-[52px] shrink-0 items-center justify-between border-b border-[#DCDEDE] px-4">
-              <span className="text-sm font-bold text-[#008C01]">{env.appName}</span>
+              <BrandLogo />
               <button
                 type="button"
                 className="rounded-lg p-1.5 text-slate-500 transition hover:bg-slate-100"
@@ -101,12 +101,8 @@ function CloseIcon() {
 function Brand({ onToggle }: { onToggle: () => void }) {
   return (
     <div className="flex h-[52px] shrink-0 items-center justify-between gap-3 border-b border-[#DCDEDE] px-3">
-      <NavLink
-        to="/calendar"
-        className="min-w-0 truncate text-sm font-bold text-[#008C01]"
-        aria-label={`${env.appName}（ロゴ差し替え予定）`}
-      >
-        {env.appName}
+      <NavLink to="/calendar" className="flex min-w-0 items-center">
+        <BrandLogo />
       </NavLink>
       <button
         type="button"

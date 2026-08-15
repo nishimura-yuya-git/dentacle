@@ -1,5 +1,5 @@
 import { useState, type FormEvent, type ReactNode } from 'react'
-import { Navigate, useNavigate } from 'react-router-dom'
+import { Navigate, useNavigate, useSearchParams } from 'react-router-dom'
 import { Button } from '@/components/ui/Button'
 import { useAuth } from '@/features/auth/useAuth'
 import {
@@ -8,6 +8,8 @@ import {
 } from '@/features/auth/recordAuthAudit'
 import { MfaChallengePanel } from '@/pages/Login/MfaChallengePanel'
 import { MfaEnrollPanel } from '@/pages/Login/MfaEnrollPanel'
+import { EyeIcon, EyeOffIcon } from '@/pages/Login/LoginIcons'
+import { needsPasswordSetup } from '@/pages/Login/needsPasswordSetup'
 
 /**
  * 真っ白背景 / 白カード / 全幅主ボタン。
@@ -18,6 +20,8 @@ import { MfaEnrollPanel } from '@/pages/Login/MfaEnrollPanel'
 export function LoginPage() {
   const { user, loading, signIn, signOut, mfaGate, mfaGateLoading, refreshMfaGate } = useAuth()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const registered = searchParams.get('registered') === '1'
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -34,6 +38,10 @@ export function LoginPage() {
     await refreshMfaGate()
     await recordAuthAuditEvent('login_success')
     navigate('/calendar', { replace: true })
+  }
+
+  if (!loading && needsPasswordSetup(user)) {
+    return <Navigate to="/set-password" replace />
   }
 
   // セッション確定かつ MFA 不要 → カレンダーへ。ゲート再評価中はパスワード画面を出さない
@@ -144,6 +152,12 @@ export function LoginPage() {
             </div>
           </div>
 
+          {registered && !errorMessage ? (
+            <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm font-medium text-emerald-800">
+              パスワードを設定しました。メールとパスワードでログインしてください。
+            </div>
+          ) : null}
+
           {errorMessage ? (
             <div
               role="alert"
@@ -180,37 +194,3 @@ export function LoginPage() {
   )
 }
 
-function EyeIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path
-        d="M2.5 12s3.5-6.5 9.5-6.5S21.5 12 21.5 12s-3.5 6.5-9.5 6.5S2.5 12 2.5 12Z"
-        stroke="currentColor"
-        strokeWidth="1.8"
-        strokeLinejoin="round"
-      />
-      <circle cx="12" cy="12" r="3.2" stroke="currentColor" strokeWidth="1.8" />
-    </svg>
-  )
-}
-
-function EyeOffIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path d="M3 3l18 18" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-      <path
-        d="M9.9 5.2A10.4 10.4 0 0 1 12 5c6 0 9.5 7 9.5 7a16.6 16.6 0 0 1-3.3 4.1M6.1 6.5C4 8.2 2.5 12 2.5 12s3.5 6.5 9.5 6.5c1.4 0 2.7-.3 3.8-.8"
-        stroke="currentColor"
-        strokeWidth="1.8"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M10.2 10.3a2.8 2.8 0 0 0 3.5 3.5"
-        stroke="currentColor"
-        strokeWidth="1.8"
-        strokeLinecap="round"
-      />
-    </svg>
-  )
-}

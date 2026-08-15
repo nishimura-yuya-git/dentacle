@@ -1900,6 +1900,7 @@ export type Database = {
         Args: { p_code?: string; p_name: string }
         Returns: string
       }
+      grant_platform_admin: { Args: { p_email: string }; Returns: string }
       create_improvement_item_for_thread: {
         Args: { p_thread_id: string }
         Returns: string
@@ -1930,6 +1931,16 @@ export type Database = {
           user_id: string
         }[]
       }
+      list_platform_admins: {
+        Args: never
+        Returns: {
+          created_at: string
+          display_name: string | null
+          email: string | null
+          note: string | null
+          user_id: string
+        }[]
+      }
       log_auth_audit_event: {
         Args: { p_clinic_id?: string; p_event: string }
         Returns: string
@@ -1947,6 +1958,11 @@ export type Database = {
       }
       publish_product_update: { Args: { p_id: string }; Returns: number }
       reject_product_update: { Args: { p_id: string }; Returns: boolean }
+      revoke_platform_admin: { Args: { p_user_id: string }; Returns: undefined }
+      update_platform_admin: {
+        Args: { p_display_name: string; p_note: string; p_user_id: string }
+        Returns: undefined
+      }
       set_product_update_in_progress_badge: {
         Args: { p_id: string; p_show: boolean }
         Returns: boolean

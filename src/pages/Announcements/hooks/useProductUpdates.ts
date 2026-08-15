@@ -8,6 +8,7 @@ import {
   type ProductUpdateSurface,
 } from '@/pages/Announcements/productUpdatePolicy'
 import type { ProductUpdateMark } from '@/pages/Announcements/productUpdateMark'
+import { sortPublishedProductUpdates } from '@/pages/Announcements/sortProductUpdates'
 import type { ProductUpdateView } from '@/pages/Announcements/productUpdateTypes'
 
 export function useProductUpdates() {
@@ -52,10 +53,7 @@ export function useProductUpdates() {
   }, [refresh])
 
   const published = useMemo(
-    () =>
-      items
-        .filter((item) => item.status === 'published')
-        .sort((a, b) => (b.publishedAt ?? '').localeCompare(a.publishedAt ?? '')),
+    () => sortPublishedProductUpdates(items.filter((item) => item.status === 'published')),
     [items],
   )
 

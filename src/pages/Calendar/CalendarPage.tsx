@@ -40,8 +40,13 @@ import { isAutoProposalTentative } from '@/pages/Calendar/utils/visitBlockAppear
 import { shouldOpenDetailOnVisitClick } from '@/pages/Calendar/utils/visitClickAction'
 import { ComposingOrb } from '@/components/ui/ComposingOrb'
 import { AiComposingOverlay } from '@/pages/Calendar/components/AiComposingOverlay'
-import { useProposeProgress } from '@/pages/Calendar/hooks/useProposeProgress'
-import { runCalendarAutoPropose } from '@/features/calendar/runCalendarAutoPropose'
+import {
+  AUTO_PROPOSE_NOTE,
+  isAutoProposeRunning,
+  shouldReloadCalendarAfterPropose,
+  shouldShowCalendarProposeOverlay,
+} from '@/features/calendar/autoProposeJob'
+import { useAutoProposeJob } from '@/features/calendar/useAutoProposeJob'
 import { todayISO } from '@/utils/dates'
 
 export function CalendarPage() {
@@ -49,6 +54,7 @@ export function CalendarPage() {
   const { clinic, membership, isPlatformAdmin, canWriteOperations, clinicReady } =
     useClinic()
   const toast = useToast()
+  const autoPropose = useAutoProposeJob()
   const [date, setDate] = useState(todayISO())
   const data = useCalendarDayData(clinic?.id, date)
 
@@ -65,8 +71,6 @@ export function CalendarPage() {
   const [patientFilter, setPatientFilter] = useState('')
   const [busy, setBusy] = useState(false)
   const [memoSaving, setMemoSaving] = useState(false)
-  const [aiProposeBusy, setAiProposeBusy] = useState(false)
-  const proposeProgress = useProposeProgress()
   const [gapFillOpen, setGapFillOpen] = useState(false)
   const [gapFillSeed, setGapFillSeed] = useState<GapFillSeed | null>(null)
 
@@ -74,11 +78,36 @@ export function CalendarPage() {
     isPlatformAdmin ||
     (!!membership && ['owner', 'admin', 'coordinator'].includes(membership.role))
 
+  const proposeBusy = isAutoProposeRunning(autoPropose.phase)
+  const showProposeOverlay = shouldShowCalendarProposeOverlay({
+    phase: autoPropose.phase,
+    jobClinicId: autoPropose.clinicId,
+    viewingClinicId: clinic?.id,
+    jobTargetDate: autoPropose.targetDate,
+    viewingDate: date,
+  })
+
   useEffect(() => {
     if (!data.error) return
     toast.error(data.error)
     data.setError(null)
   }, [data.error, data.setError, toast])
+
+  useEffect(() => {
+    const result = autoPropose.lastResult
+    if (!result?.ok) return
+    if (
+      !shouldReloadCalendarAfterPropose({
+        resultClinicId: result.clinicId,
+        resultTargetDate: result.targetDate,
+        viewingClinicId: clinic?.id,
+        viewingDate: date,
+      })
+    ) {
+      return
+    }
+    void data.load({ silent: true })
+  }, [autoPropose.lastResult, clinic?.id, data.load, date])
 
   const teams = useMemo(
     () => data.allTeams.slice(0, data.visibleColumns),
@@ -91,33 +120,11 @@ export function CalendarPage() {
       toast.error('提案の実行はオーナー / 管理者 / コーディネーターのみ可能です')
       return
     }
-    if (aiProposeBusy) return
-    void (async () => {
-      setAiProposeBusy(true)
-      proposeProgress.start()
-      try {
-        const result = await runCalendarAutoPropose({
-          clinicId: clinic.id,
-          targetDate: date,
-          vehicleTeamIds: teams.map((team) => team.id),
-        })
-        toast.success(
-          `仮予約を${result.adoptedCount}件登録しました（提案${result.generatedCount}件）`,
-        )
-        await data.load()
-      } catch (err) {
-        const message =
-          err instanceof Error ? err.message : '自動提案に失敗しました'
-        const hint =
-          message.includes('割付対象') || message.includes('0件')
-            ? ' 「空きを埋める」から個別枠を探せます。'
-            : ''
-        toast.error(`${message}${hint}`)
-      } finally {
-        proposeProgress.finish()
-        setAiProposeBusy(false)
-      }
-    })()
+    autoPropose.start({
+      clinicId: clinic.id,
+      targetDate: date,
+      vehicleTeamIds: teams.map((team) => team.id),
+    })
   }
   const teamOptions = useMemo(
     () => teams.map((team) => ({ value: team.id, label: team.name })),
@@ -310,13 +317,13 @@ export function CalendarPage() {
             <ClearAutoProposalsConfirm
               count={autoProposalCount}
               busy={busy}
-              disabled={aiProposeBusy || !canWriteOperations}
+              disabled={proposeBusy || !canWriteOperations}
               onConfirm={runClearAutoProposals}
             />
             <ConfirmAutoProposalsConfirm
               count={autoProposalCount}
               busy={busy}
-              disabled={aiProposeBusy || !canWriteOperations}
+              disabled={proposeBusy || !canWriteOperations}
               onConfirm={runConfirmAutoProposals}
             />
             {canPropose && clinic ? (
@@ -332,7 +339,7 @@ export function CalendarPage() {
                 vehicleTeamIds={teams.map((team) => team.id)}
                 teamOptions={teamOptions}
                 patients={data.patients}
-                disabled={aiProposeBusy || busy || !canWriteOperations}
+                disabled={proposeBusy || busy || !canWriteOperations}
                 onAdopt={async (input) => {
                   if (!actionCtx) return false
                   return createTentativeAutoProposal(actionCtx, input)
@@ -344,8 +351,8 @@ export function CalendarPage() {
             ) : null}
             <button
               type="button"
-              disabled={aiProposeBusy}
-              aria-busy={aiProposeBusy}
+              disabled={proposeBusy}
+              aria-busy={proposeBusy}
               aria-label="自動提案"
               className={[
                 'relative inline-flex shrink-0 items-center justify-center gap-1 overflow-hidden rounded-full font-bold transition',
@@ -355,15 +362,15 @@ export function CalendarPage() {
               ].join(' ')}
               onClick={runAiPropose}
             >
-              {proposeProgress.active ? (
+              {autoPropose.progressActive ? (
                 <span
                   aria-hidden="true"
                   className="absolute inset-y-0 left-0 bg-[#008C01]/15 transition-[width] duration-200 ease-linear"
-                  style={{ width: `${proposeProgress.percent}%` }}
+                  style={{ width: `${autoPropose.percent}%` }}
                 />
               ) : null}
               <span className="relative inline-flex items-center gap-1">
-                {proposeProgress.active ? (
+                {autoPropose.progressActive ? (
                   <ComposingOrb size={20} label="提案を作成しています" />
                 ) : (
                   <img
@@ -375,8 +382,8 @@ export function CalendarPage() {
                   />
                 )}
                 <span className="tabular-nums">
-                  {aiProposeBusy || proposeProgress.active
-                    ? `提案中… ${proposeProgress.percent}%`
+                  {proposeBusy || autoPropose.progressActive
+                    ? `提案中… ${autoPropose.percent}%`
                     : '自動提案'}
                 </span>
               </span>
@@ -386,13 +393,16 @@ export function CalendarPage() {
       }
     >
       <div className="flex h-full min-h-0 flex-col gap-1.5">
+        <p className="shrink-0 text-right text-[11px] font-medium text-slate-400">
+          {AUTO_PROPOSE_NOTE}
+        </p>
         <section className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
           <DayVisitGrid
             viewDate={date}
             teams={teams}
             visits={filteredVisits}
             blocks={data.blocks}
-            loading={data.loading || aiProposeBusy}
+            loading={data.loading || showProposeOverlay}
             onSelectVisit={handleSelectVisit}
             onSelectBlock={(block) => {
               if (actionCtx) void softDeleteBlock(actionCtx, block)
@@ -417,7 +427,7 @@ export function CalendarPage() {
                 : undefined
             }
           />
-          {aiProposeBusy ? <AiComposingOverlay /> : null}
+          {showProposeOverlay ? <AiComposingOverlay /> : null}
         </section>
       </div>
 

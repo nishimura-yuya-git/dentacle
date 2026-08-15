@@ -1,4 +1,6 @@
-/** ヘルプFAQの文言 SSoT。項目を足すときはこの配列に追加する。事実はデンタクル。 */
+import { APP_DISPLAY_NAME } from '../../config/appName.ts'
+
+/** ヘルプFAQの文言 SSoT。項目を足すときはこの配列に追加する。事実は Dentacle。 */
 
 export const HELP_HEADING = 'ヘルプ'
 
@@ -29,9 +31,9 @@ export const HELP_SECTIONS: HelpSection[] = [
     items: [
       {
         id: 'what',
-        question: 'デンタクルって何？',
+        question: `${APP_DISPLAY_NAME}って何？`,
         paragraphs: [
-          'デンタクルは、訪問歯科のルート最適化をAIと掛け合わせ、ボタン操作で1日の訪問スケジュール案を生成するシステムです。',
+          `${APP_DISPLAY_NAME}は、訪問歯科のルート最適化をAIと掛け合わせ、ボタン操作で1日の訪問スケジュール案を生成するシステムです。`,
         ],
       },
       {
@@ -54,7 +56,7 @@ export const HELP_SECTIONS: HelpSection[] = [
         question: '他院のデータは見えますか？',
         paragraphs: [
           '画面から見える範囲は、所属クリニック単位の行レベルセキュリティで制限します。他院の患者や予約は、一般スタッフには見えません。',
-          'デンタクル運営は障害対応や導入支援のため、全クリニックを横断して閲覧できます。運営と院の管理者は別の権限です。',
+          `${APP_DISPLAY_NAME}運営は障害対応や導入支援のため、全クリニックを横断して閲覧できます。運営と院の管理者は別の権限です。`,
         ],
       },
       {

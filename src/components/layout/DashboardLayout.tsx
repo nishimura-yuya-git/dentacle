@@ -2,15 +2,16 @@ import { useCallback, useState, type ReactNode } from 'react'
 import { NavLink } from 'react-router-dom'
 import { AccountMenu } from '@/components/layout/AccountMenu'
 import { AppSidebar } from '@/components/layout/AppSidebar'
+import { AutoProposeJobStatus } from '@/components/layout/AutoProposeJobStatus'
 import {
   APP_SHELL_ATTR,
   APP_SHELL_COLUMN_CLASS,
   APP_SHELL_ROOT_CLASS,
   appShellMainClass,
 } from '@/components/layout/appShell'
+import { BrandLogo } from '@/components/layout/BrandLogo'
 import { ClinicSwitcher } from '@/components/layout/ClinicSwitcher'
 import { FeedbackChatLauncher } from '@/components/features/feedback/FeedbackChatLauncher'
-import { env } from '@/config/env'
 import { useAuth } from '@/features/auth/useAuth'
 import { useClinic } from '@/features/clinic/useClinic'
 
@@ -92,12 +93,12 @@ export function DashboardLayout({
                 'flex shrink-0 items-center',
                 sidebarVisible ? 'md:hidden' : '',
               ].join(' ')}
-              aria-label={`${env.appName}（ロゴ差し替え予定）`}
             >
-              <span className="text-sm font-bold text-[#008C01]">{env.appName}</span>
+              <BrandLogo />
             </NavLink>
 
-            <div className="relative z-30 ml-auto flex shrink-0 items-center">
+            <div className="relative z-30 ml-auto flex min-w-0 items-center gap-2">
+              <AutoProposeJobStatus />
               {(clinic || clinics.length > 0) ? (
                 <div className="inline-flex items-stretch rounded-full border border-slate-700 bg-white">
                   <ClinicSwitcher

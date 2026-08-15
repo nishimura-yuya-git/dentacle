@@ -1,10 +1,12 @@
-/** 安全性ページの文言 SSoT。Nani の骨格に合わせ、事実はデンタクルの実装に合わせる。 */
+import { APP_DISPLAY_NAME } from '../../config/appName.ts'
 
-export const SECURITY_HEADING = 'デンタクルの安全性'
+/** 安全性ページの文言 SSoT。Nani の骨格に合わせ、事実は Dentacle の実装に合わせる。 */
+
+export const SECURITY_HEADING = `${APP_DISPLAY_NAME}の安全性`
 export const SECURITY_NETWORK_TITLE = 'ネットワーク許可設定'
 
 export const SECURITY_INTRO =
-  'デンタクルは訪問歯科のスケジュール業務を扱うシステムです。患者情報と予約情報を守ることを最優先に、設計・開発から運用までの対策を継続的に見直しています。'
+  `${APP_DISPLAY_NAME}は訪問歯科のスケジュール業務を扱うシステムです。患者情報と予約情報を守ることを最優先に、設計・開発から運用までの対策を継続的に見直しています。`
 
 export type SecurityLink = {
   href: string
@@ -36,7 +38,7 @@ export const SECURITY_SECTIONS: SecuritySection[] = [
     paragraphs: [
       '患者・予約・所属などの業務データは、クリニックごとに分けてデータベースへ保存します。入力内容を残さない翻訳ツールとは異なり、業務に必要な記録はサーバー上に残ります。',
       '画面から見える範囲は、所属クリニック単位の行レベルセキュリティで制限します。他院の患者や予約は、一般スタッフには見えません。',
-      'デンタクル運営は障害対応や導入支援のため、全クリニックを横断して閲覧できます。運営と院の管理者は別の権限です。',
+      `${APP_DISPLAY_NAME}運営は障害対応や導入支援のため、全クリニックを横断して閲覧できます。運営と院の管理者は別の権限です。`,
       '自動提案では、氏名・電話番号・生住所を AI へ送りません。患者 ID と、割付に必要な制約・距離情報を送ります。',
       'ご意見・不具合の内容は開発チームが確認します。患者氏名やカルテ番号は載せないでください。',
     ],
@@ -66,7 +68,7 @@ export const SECURITY_SECTIONS: SecuritySection[] = [
     ],
     callout: {
       title: SECURITY_NETWORK_CALLOUT_TITLE,
-      body: 'VPN、プロキシ、EDR、URL フィルタリング環境でデンタクルを利用する場合は、IT 担当者向けのネットワーク許可設定をご確認ください。',
+      body: `VPN、プロキシ、EDR、URL フィルタリング環境で${APP_DISPLAY_NAME}を利用する場合は、IT 担当者向けのネットワーク許可設定をご確認ください。`,
       link: { href: '/security/network', label: 'ネットワーク許可設定を見る' },
     },
   },
@@ -130,11 +132,11 @@ export type NetworkAllowRow = {
 }
 
 export const SECURITY_NETWORK_INTRO =
-  'デンタクルはブラウザから HTTPS（必要な場合は WebSocket）で通信します。企業ネットワークで遮断される場合は、セキュリティ機能を無効化せず、次の接続先だけを許可してください。接続先の IP アドレスは固定ではないため、IP ではなくドメイン単位で許可してください。'
+  `${APP_DISPLAY_NAME}はブラウザから HTTPS（必要な場合は WebSocket）で通信します。企業ネットワークで遮断される場合は、セキュリティ機能を無効化せず、次の接続先だけを許可してください。接続先の IP アドレスは固定ではないため、IP ではなくドメイン単位で許可してください。`
 
 export const SECURITY_NETWORK_ROWS: NetworkAllowRow[] = [
   {
-    endpoint: 'このデンタクルの画面（表示中のドメイン）',
+    endpoint: `この${APP_DISPLAY_NAME}の画面（表示中のドメイン）`,
     purpose: 'Webアプリ、ログイン後の操作、自動提案・ご意見の API',
     when: '通常利用',
   },
@@ -180,7 +182,7 @@ export type SecurityFooterColumn = {
 
 export const SECURITY_FOOTER_COLUMNS: SecurityFooterColumn[] = [
   {
-    title: 'デンタクル',
+    title: APP_DISPLAY_NAME,
     links: [
       { href: '/calendar', label: 'カレンダー' },
       { href: '/mypage', label: 'マイページ' },

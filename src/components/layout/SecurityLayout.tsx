@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { AccountMenu } from '@/components/layout/AccountMenu'
+import { BrandLogo } from '@/components/layout/BrandLogo'
 import {
   APP_SHELL_ATTR,
   APP_SHELL_COLUMN_CLASS,
@@ -8,7 +9,6 @@ import {
   APP_SHELL_SIDEBAR_CLASS,
   appShellMainClass,
 } from '@/components/layout/appShell'
-import { env } from '@/config/env'
 import { useAuth } from '@/features/auth/useAuth'
 import { SecurityRail } from '@/pages/Security/sections/SecurityRail'
 import { SecuritySiteFooter } from '@/pages/Security/sections/SecuritySiteFooter'
@@ -80,8 +80,8 @@ export function SecurityLayout({ children, surface = 'article' }: Props) {
           >
             <img src="/icon/grid.png" alt="" width={20} height={20} className="h-5 w-5" />
           </button>
-          <Link to="/calendar" className="truncate text-sm font-bold text-[#008C01]">
-            {env.appName}
+          <Link to="/calendar" className="flex items-center">
+            <BrandLogo />
           </Link>
           <div className="ml-auto">
             <AccountMenu alone onSignOut={() => void signOut()} />

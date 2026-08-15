@@ -1,5 +1,6 @@
 import { Navigate, Outlet } from 'react-router-dom'
 import { useAuth } from '@/features/auth/useAuth'
+import { needsPasswordSetup } from '@/pages/Login/needsPasswordSetup'
 
 export function ProtectedRoute() {
   const { user, loading } = useAuth()
@@ -14,6 +15,10 @@ export function ProtectedRoute() {
 
   if (!user) {
     return <Navigate to="/login" replace />
+  }
+
+  if (needsPasswordSetup(user)) {
+    return <Navigate to="/set-password" replace />
   }
 
   return <Outlet />

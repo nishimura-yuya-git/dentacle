@@ -1,3 +1,5 @@
+import { APP_DISPLAY_NAME } from '../../src/config/appName.ts'
+
 /** Issue タイトルの上限（GitHub は 256。画面向けに短くする） */
 export const FEEDBACK_TITLE_MAX = 70
 /** 本文の上限（チャット1通） */
@@ -8,7 +10,7 @@ export const FEEDBACK_PII_NOTICE =
 
 const ISSUE_FOOTER = [
   '---',
-  'この Issue はデンタクルのご意見チャットから自動作成されました。',
+  `この Issue は ${APP_DISPLAY_NAME} のご意見チャットから自動作成されました。`,
   `※ ${FEEDBACK_PII_NOTICE}`,
 ].join('\n')
 

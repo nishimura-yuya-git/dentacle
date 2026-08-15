@@ -10,6 +10,10 @@ import {
 } from '@/pages/Calendar/utils/ensureVehicleTeams'
 import { INITIAL_VISIBLE_VEHICLE_COLUMNS } from '@/pages/Calendar/utils/vehicleTeams'
 import {
+  isLatestCalendarDayLoad,
+  shouldClearCalendarDayLoading,
+} from '@/pages/Calendar/hooks/calendarDayLoadState'
+import {
   readStoredVisibleColumns,
   resolveVisibleColumns,
   writeStoredVisibleColumns,
@@ -65,9 +69,11 @@ export function useCalendarDayData(clinicId: string | undefined, date: string) {
     }
 
     const ensured = await ensureVehicleTeams(clinicId)
-    if (seq !== loadSeqRef.current) return
+    if (!isLatestCalendarDayLoad(seq, loadSeqRef.current)) return
     if (ensured.error) {
-      if (!silent) setLoading(false)
+      if (shouldClearCalendarDayLoading({ isLatest: true, silent })) {
+        setLoading(false)
+      }
       setError(ensured.error)
       return
     }
@@ -142,8 +148,10 @@ export function useCalendarDayData(clinicId: string | undefined, date: string) {
         .maybeSingle(),
     ])
 
-    if (seq !== loadSeqRef.current) return
-    if (!silent) setLoading(false)
+    if (!isLatestCalendarDayLoad(seq, loadSeqRef.current)) return
+    if (shouldClearCalendarDayLoading({ isLatest: true, silent })) {
+      setLoading(false)
+    }
 
     if (staffRes.error || patientsRes.error || visitsRes.error) {
       setError(

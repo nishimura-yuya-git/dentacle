@@ -67,6 +67,13 @@ describe('アプリシェルの最上部固定', () => {
     assert.match(css, /overflow:\s*hidden/)
   })
 
+  it('スクロールバーは非表示で、スクロール自体は残す', () => {
+    const css = readFileSync(join(here, '../../index.css'), 'utf8')
+    assert.match(css, /scrollbar-width:\s*none/)
+    assert.match(css, /\*::-webkit-scrollbar/)
+    assert.match(css, /display:\s*none/)
+  })
+
   it('右カラムは縮み、サイドバーはビューポートを超えて伸びない', () => {
     assert.match(APP_SHELL_COLUMN_CLASS, /\bmin-h-0\b/)
     assert.match(APP_SHELL_COLUMN_CLASS, /\boverflow-hidden\b/)

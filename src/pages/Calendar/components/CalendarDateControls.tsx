@@ -39,11 +39,9 @@ export function CalendarDateControls({
       aria-label="日付と患者絞り込み"
     >
       <DatePicker
-        label="日付"
         value={date}
         onChange={onDateChange}
         size="sm"
-        labelTone="muted"
         inline
       />
       <p className="shrink-0 text-sm font-bold text-slate-900">

@@ -12,7 +12,7 @@
 | 項目 | 内容 |
 |---|---|
 | プロジェクト名 | 訪問歯科スケジュール自動化（`Detacle`） |
-| サービス名 | **デンタクル**（対外・画面向けブランド名。内部識別子は `Detacle`。§6.17） |
+| サービス名 | **Dentacle**（対外・画面向け。`APP_DISPLAY_NAME`。内部識別子は `Detacle`。カタカナ主表記には戻さない。§6.17） |
 | 目的 | 訪問歯科のルート最適化をAIと掛け合わせ、ボタン操作で1日の訪問スケジュール案を生成する |
 | 主な利用者 | 管理者 / 訪問コーディネーター / 受付・コール担当 / 医師 / 歯科衛生士 |
 | 技術スタック | Vite + React 18 + TypeScript / Tailwind CSS / **Supabase（セキュリティ最優先・RLS必須）** / Vercel |
@@ -237,6 +237,7 @@
   5. 専用ページでは入口FABを出さない
 - 新規 FAB / オーバーレイ / アプリ内チャットを含む機能実装は、見た目依頼がなくても Main Doctor + UI Polish + Regression Guard（`.cursor/rules/agent-loops.mdc`）。
 - **AI処理検査（2026-08-14）**: 裏でAI/エージェントを動かすボタン時は必須。実行中は `ComposingOrb`（theme light・日本語）。`thinking-orbs` 直 import 禁止。ログイン・CSV・通常 Button の「処理中…」には強制しない。`thinking-orbs` は §6.4 の3日ルール（2026-08-14 時点の採用は 0.2.0。0.3.1 は公開3日未満のため見送り）。新規の AI 裏処理 UI は見た目依頼がなくても Main Doctor + UI Polish + Regression Guard。完成宣言に `AI処理観察`。欠落は `observe-ai-processing` で `stop`（§2.14 / §10.44）。
+- **自動提案の処理中面（2026-08-16）**: グリッド上オーバーレイは対象日のカレンダーだけ。他画面へは出さない。他画面は右上ピル（§6.34）。
 - 完成宣言に `観察で残した阻害: なし`。欠落や未解消の重複・重なりは `observe-blockers-cleared` で `stop`（§2.14 / §10.40）。
 - 関連: `loops/goals/ui-polish-gate.md`, `loops/goals/ui-polish.md`, `docs/agent-loop-harness.md` §12.2.2, `.cursor/rules/ui-design.mdc`, `.cursor/skills/better-interface/SKILL.md`, `ComposingOrb.tsx`, §2.14, §2.15, §6.34, §6.45, §6.47, §6.54, §10.40, §10.44
 
@@ -265,6 +266,7 @@
 | レセコンCSV取込監査 | `src/features/patientImport/receconImportPolicy.ts` | 件数・成否だけ残す。PII・ファイル名・例外文は禁止。監視SaaSは置かない（§6.58） | `/import`、`/operations`、`/security#rececon` |
 | AI処理中表示 | `ComposingOrb.tsx` | thinking-orbs composing の唯一の入口。直 import 禁止。theme light・日本語（§2.16） | カレンダー自動提案、空き枠埋め、運営ハブ生成 |
 | ヘルプ文言 | `src/pages/Help/helpCopy.ts` | FAQ・セクション見出しの正。Nani の本文は借りない（§6.59） | `/help` |
+| 対外ブランド名 | `src/config/appName.ts`（`APP_DISPLAY_NAME`） | 画面の正は Dentacle。内部識別子 Detacle と混ぜない（§6.17） | タブ・安全性・ヘルプ・契約・ロゴ alt |
 
 ### 禁止
 
@@ -556,14 +558,16 @@ DB上の確定・集計テーブル
 - §6.8 のエリアまとめ・同一施設連続配置と併用する。
 - 関連: `travelDistance.ts`, `buildProposeSnapshot.ts`, §6.8, §6.10, §6.12, §6.39, 割付ジョブ
 
-### 6.17 サービス名「デンタクル」（2026-08-08 決定 / 2026-08-11 改定）
+### 6.17 サービス名 Dentacle（2026-08-08 決定 / 2026-08-11 改定 / 2026-08-16 改定）
 
-- 本システムの対外・画面向けサービス名は **デンタクル**（カタカナ）とする。
-- プロジェクト／内部識別子の正は **`Detacle`**（旧称 `home_dental_care` は使わない）。ブランド表記（デンタクル）と内部識別子（Detacle）を混同しない。
-- 表記の正はカタカナ「デンタクル」。英語併記が必要な場合のみ副表記（`Detacle`）とし、主表記はカタカナのまま。装飾英語の見出しを増やさない（`ui-language.mdc`）。
-- SEO・提案書の検索語はサービス名に詰め込まず、説明文・サブタイトルで取る。例: `デンタクル｜訪問歯科のスケジュール自動化`。
-- UI文言・提案資料・ドメイン検討などでサービス名を出すときはデンタクルに統一する。
-- 関連: §1, UIコピー, 提案資料, SEO
+- **2026-08-16 改定**: 対外・画面向けの正は **Dentacle**（`APP_DISPLAY_NAME`）。公式ロゴと同じ綴り。2026-08-08 のカタカナ主表記（デンタクル）には戻さない。
+- プロジェクト／内部識別子の正は **`Detacle`**（旧称 `home_dental_care` は使わない）。画面名 Dentacle と内部識別子 Detacle を混同しない。
+- ロゴ画像内の Dentacle は公式ブランド表記。横にカタカナや緑テキストを併記しない。読み上げは `BrandLogo` の `alt`（デンタクル）だけ。
+- ブランド画像の正は `/icon/logo.png`。緑の「デンタクル」テキスト仮表示・`aria-label`「ロゴ差し替え予定」には戻さない（§6.24 / §10.52）。
+- ファビコンの正は `/icon/favicon.ico`。`/vite.svg` には戻さない。タブ枠は小さいので、余白を削ってマークを大きくする。
+- 装飾英語の見出しを増やさない（`ui-language.mdc`）。Dentacle は公式ブランド名であり装飾英語ではない。
+- SEO・提案書の検索語はサービス名に詰め込まず、説明文・サブタイトルで取る。例: `Dentacle｜訪問歯科のスケジュール自動化`。
+- 関連: `src/config/appName.ts`, `BrandLogo.tsx`, `index.html`, `public/icon/logo.png`, `public/icon/favicon.ico`, §1, §6.24, §10.52, §10.53
 
 ### 6.18 機能ベースと導入レーン（2026-08-08 決定）
 
@@ -636,19 +640,20 @@ DB上の確定・集計テーブル
 - Google Fonts で読み込み。見出し階層用に 400/700/900 も可。
 - 関連: `index.html`, `src/index.css`, `tailwind.config.js`
 
-### 6.24 アプリヘッダー（アカウントメニュー・ロゴ枠）（2026-08-09 決定 / 2026-08-10 改定 / 2026-08-13 追記）
+### 6.24 アプリヘッダー（アカウントメニュー・ロゴ枠）（2026-08-09 決定 / 2026-08-10 改定 / 2026-08-13 追記 / 2026-08-16 追記）
 
 - ヘッダー右はクリニック名ピル＋右端の▼アカウントメニューとする。
-- メニュー項目: マイページ／お知らせ／改善の進捗（運営のみ）／安全性／ヘルプ／ユーザー管理（追加・編集・削除）／CSV取込／ご意見・不具合／契約者情報／お支払い履歴／契約情報／ログアウト。
+- メニュー項目: マイページ／お知らせ／改善の進捗（運営のみ）／運営（運営のみ）／安全性／ヘルプ／ユーザー管理（追加・編集・削除）／CSV取込／ご意見・不具合／契約者情報／お支払い履歴／契約情報／ログアウト。
 - ヘッダーに単独のログアウトボタンを置かない。
-- ルート: `/mypage`・`/announcements`・`/progress`（運営のみ）・`/security`・`/help`・`/users`・`/import`・`/feedback` は実装画面。契約者情報・お支払い履歴・契約情報は当面 stub「準備中」で導線のみ先に用意する。お知らせの公開ルールは §6.55。改善の進捗は §6.57。ご意見は §6.54。安全性は §6.56。ヘルプは §6.59。
-- **安全性の入口（2026-08-13）**: ログイン後のアカウントメニュー（お知らせの次）。サイドバーとログイン画面には置かない。
-- **改善の進捗の入口（2026-08-14）**: アカウントメニュー（お知らせの次、安全性の前）。運営だけ出す。サイドバーには置かない（§6.57）。
+- ルート: `/mypage`・`/announcements`・`/progress`（運営のみ）・`/admins`（運営のみ）・`/security`・`/help`・`/users`・`/import`・`/feedback` は実装画面。契約者情報・お支払い履歴・契約情報は当面 stub「準備中」で導線のみ先に用意する。お知らせの公開ルールは §6.55。改善の進捗は §6.57。運営一覧は §6.63。ご意見は §6.54。安全性は §6.56。ヘルプは §6.59。
+- **安全性の入口（2026-08-13 / 2026-08-16 追記）**: アカウントメニュー。運営項目があるときはその次。院ユーザーはお知らせの次。サイドバーとログイン画面には置かない。
+- **改善の進捗の入口（2026-08-14）**: アカウントメニュー（お知らせの次、運営の前）。運営だけ出す。サイドバーには置かない（§6.57）。
+- **運営の入口（2026-08-16）**: アカウントメニュー（改善の進捗の次）。院のユーザー管理・安全性・サイドバーには置かない（§6.63）。
 - **ヘルプの入口（2026-08-14）**: アカウントメニュー（安全性の次）。左レールとフッターにも置く。サイドバーとログイン画面には置かない（§6.59）。
 - **業務ナビはヘッダー横並びではなく左サイドバー**（§6.33）。ヘッダーはクリニック名ピル＋ページ見出し帯（`titleAside` / `actions`）を主とする。
-- ブランド「デンタクル」はテキストのみ（緑背景の角丸プレースホルダは置かない）。枠内に「デ」等の仮文字も置かない。将来ロゴ差し替え時は画像/SVG、`alt` は「デンタクル」。
+- **ブランド（2026-08-16 改定）**: 正は `BrandLogo`（`/icon/logo.png`）。緑背景の角丸プレースホルダ・枠内の「デ」・横のカタカナ併記は置かない。`alt` はデンタクル。テキストのみ仮表示には戻さない（§6.17 / §10.52）。
 - ブランド配置: サイドバー表示中はサイドバー上部。サイドバー非表示時・md未満はヘッダー左に出す（モバイルでブランドが消えないようにする）。
-- 関連: `src/components/layout/DashboardLayout.tsx`, `AppSidebar.tsx`, `AccountMenu.tsx`, `ClinicSwitcher.tsx`, `App.tsx`, `src/pages/Account/*`, §6.33, §6.56, §6.59, §10.6
+- 関連: `src/components/layout/DashboardLayout.tsx`, `AppSidebar.tsx`, `AccountMenu.tsx`, `accountMenuLinks.ts`, `BrandLogo.tsx`, `ClinicSwitcher.tsx`, `App.tsx`, `src/pages/Account/*`, §6.17, §6.33, §6.56, §6.59, §6.63, §10.6
 
 ### 6.25 ユーザー管理画面（2026-08-09 決定 / 同日改定 / 2026-08-11 追記）
 
@@ -699,8 +704,9 @@ DB上の確定・集計テーブル
 - **運営 TOTP MFA（S-03）**: 運営はログイン後に Authenticator 登録／確認が必須（AAL2）。一般スタッフはパスワードのみ。詰まったときの本人復旧は当面 Supabase Dashboard。運営が複数になったら「他運営の MFA 解除」API/UI を後付けする。確認コードUIは §6.21（6マス＋コピペ一括）。
 - **ログイン監査ナビ**: `/auth-audit` は運営のみ表示・閲覧（§6.15）。操作ログ（§6.50）と統合しない。
 - **改善の進捗（2026-08-14）**: `/progress` も運営のみ（§6.57）。院の owner/admin に出さない。スーパー権限と院管理者を混同しない。
+- **運営一覧（2026-08-16）**: 付与・解除・編集は `/admins`（§6.63）。院のユーザー管理と混ぜない。
 - **RLS 強制（2026-08-11）**: bootstrap owner INSERT に `not is_platform_admin()`。直接 INSERT/UPDATE でも `is_platform_admin_user(user_id)` で運営ユーザーの所属化を拒否する（§6.40）。
-- 関連: `ClinicProvider.tsx`, `ClinicSwitcher.tsx`, `MembersPage.tsx`, `MfaGateRoute.tsx`, `LoginPage.tsx`, `20260809123000_platform_admin_clinic_access.sql`, `20260811160000_clinic_members_rls_hardening.sql`, `20260812150000_clinic_create_platform_admin_only.sql`, §6.15, §6.22, §6.25, §6.28, §6.40, §6.57
+- 関連: `ClinicProvider.tsx`, `ClinicSwitcher.tsx`, `MembersPage.tsx`, `MfaGateRoute.tsx`, `LoginPage.tsx`, `20260809123000_platform_admin_clinic_access.sql`, `20260811160000_clinic_members_rls_hardening.sql`, `20260812150000_clinic_create_platform_admin_only.sql`, §6.15, §6.22, §6.25, §6.28, §6.40, §6.57, §6.63
 
 ### 6.30 カレンダー日付ナビ（タイトル右隣・横並び）（2026-08-09 決定）
 
@@ -708,6 +714,7 @@ DB上の確定・集計テーブル
 - `DashboardLayout` の `titleAside` に横並びで置く（ユーザー管理の検索と同じパターン）。
 - 「カレンダーの右隣」はグリッド本体の右ではなく、タイトル「カレンダー」の右隣を指す（§10.7）。
 - コンポーネント: `src/pages/Calendar/components/CalendarDateControls.tsx`。
+- **見える「日付」ラベル（2026-08-16）**: DatePicker 横に「日付」は出さない。ピルの年月日と和暦曜日行だけで足りる。前へ／本日／次へは残す。
 - 関連: `CalendarPage.tsx`, `DashboardLayout`（`titleAside`）, §6.25, §10.7
 
 ### 6.31 患者管理（ナビ▼・一覧／電話確認・灰ピル）（2026-08-09 決定 / 2026-08-10 改定）
@@ -724,7 +731,7 @@ DB上の確定・集計テーブル
 訪問カレンダーは Apotool 風の日別×号車グリッドを土台に、次を v0 で守る。
 
 - **ドラッグ移動・リサイズ**: 訪問ブロックをドラッグで号車・時刻を変更し、下端ハンドルで終了時刻を変更する（`DayVisitGrid` / `visitTimeMath`）。詳細モーダルの「更新」なしでも即反映する。
-- **楽観更新 + silent reload（2026-08-11）**: 移動・リサイズ後はローカルパッチし、`load({ silent: true })` で再取得する。`setVisits([])` で枠を空にしない（§10.16）。
+- **楽観更新 + silent reload（2026-08-11 / 2026-08-16 追記）**: 移動・リサイズ後はローカルパッチし、`load({ silent: true })` で再取得する。`setVisits([])` で枠を空にしない。最新リクエストなら silent でも `loading` を下ろす（§10.16 / §10.54）。
 - **手動仮予約 → 電話確認**: 手動登録でも `ensurePhoneConfirmationForVisit` により電話確認キューへ載せる（§6.6）。
 - **電話確認NG → 取消＋同日再提案**: NG時は訪問を取消し、同患者のみの Day0 再提案を自動採用する最小ループ（§6.6）。
 - **運用補助**: 日別メモ（`clinic_day_memos`）、空きブロック（`calendar_blocks`: 休憩・移動・会議等）、電話未確認／当日取消の見える化、簡易週ストリップ、患者絞り込み、標準所要時間の手動登録時適用、操作ログ簡易UI（`/operations`・§6.50）、稼働枠サマリー表示。
@@ -749,7 +756,7 @@ DB上の確定・集計テーブル
 - `NavDropdown.tsx` は上部ナビ廃止により未参照。`safety.mdc` に従い承認なしでは削除しない（削除はユーザー明示時のみ）。
 - 関連: `DashboardLayout.tsx`, `AppSidebar.tsx`, `SidebarNav.tsx`, `navConfig.ts`, `CalendarPage.tsx`, `public/icon/layouting.png`, `public/icon/grid.png`, `public/icon/ai.png`, `public/icon/calendar.png`, `public/icon/gears.png`, `public/icon/patient.png`, `public/icon/windows.png`, `public/icon/audit.png`, §6.15, §6.24, §6.29, §6.31, §6.34, §6.35, §6.62, §10.9
 
-### 6.34 カレンダー自動提案は遷移せずその日を一括実行（2026-08-10 決定 / 同日改定 / 2026-08-11 改定 / 2026-08-14 追記）
+### 6.34 カレンダー自動提案は遷移せずその日を一括実行（2026-08-10 決定 / 同日改定 / 2026-08-11 改定 / 2026-08-14 追記 / 2026-08-16 追記）
 
 - カレンダー右上の **「自動提案」** は `/proposals` や設定画面へ遷移しない。**確認モーダルは出さず、押下ですぐ実行**する。
 - **カレンダー主導線の実行経路（2026-08-11 / 同日改定）**: `runCalendarAutoPropose` → `POST /api/schedule/propose` → スナップショット作成 → **Cursor SDK（既定）** → `packProposeSlots`（号車内密正規化）→ 精度ゲート（§6.37）→ 仮予約書き戻し。フロントで割付本体を再実装しない（§6.11）。
@@ -767,7 +774,12 @@ DB上の確定・集計テーブル
 - **空振り時**: 候補0のトーストに「空きを埋める」への案内を付けてよい（§6.47）。主導線を空き枠探しばかりにしない（§6.5）。
 - **`/proposals` は運営（`platform_admins`）専用**（ナビ非表示＋`PlatformAdminRoute` で直URL拒否）。履歴・個別の採用／却下の監査用。クリニック一般ユーザーの主導線は診療カレンダー。
 - `AiProposeConfirmModal.tsx` は未使用。承認なしでは削除しない（`safety.mdc`）。
-- 関連: `CalendarPage.tsx`, `runCalendarAutoPropose.ts`, `ClearAutoProposalsConfirm.tsx`, `ConfirmAutoProposalsConfirm.tsx`, `DashboardLayout.tsx`, `ComposingOrb.tsx`, `AiComposingOverlay.tsx`, `server/schedule/runProposeJob.ts`, `api/schedule/propose.ts`, `DayVisitGrid.tsx`, `proposalActions.ts`, `PlatformAdminRoute.tsx`, §6.6, §6.8, §6.10, §6.29, §6.32, §6.33, §6.35, §6.36, §6.37, §6.47, §6.48, §10.20〜10.22
+- **実行寿命（2026-08-16）**: ジョブ状態は `AutoProposeJobProvider`（ルータより上）。ページを離れても fetch を abort しない。カレンダーに戻ったとき、同じ院・同じ日だけオーバーレイと再読込。
+- **右上ステータス（2026-08-16）**: 業務ヘッダー右上（クリニックピルの左）に「ルート最適化提案中」。完了は「ルート最適化提案が完了しました」（約10秒）。失敗も同じ位置。クリックでカレンダーへ。安全性・ヘルプの文書シェルには出さない。
+- **※注釈（2026-08-16）**: カレンダー本文に「※ 他の画面に移っても、自動提案の処理はそのまま進みます。」を1箇所。オーバーレイと二重にしない。
+- **他ページの面（2026-08-16）**: グリッド上 Composing オーバーレイは対象日のカレンダーだけ。他画面は右上ピルと完了トースト。固定オーバーレイや FAB は足さない（§2.16）。
+- **完了後の再読込（2026-08-16）**: 同じ院・同じ日は `load({ silent: true })`。枠は消さない。最新なら silent でも `loading` を下ろす。非silent と競合してスケルトンが固まるのを防ぐ（§10.54）。クリア／一括確定の件数は `visits`、グリッドのスケルトンは `loading`。件数が付いて枠だけ空なら loading 固着を疑う（§10.55）。
+- 関連: `CalendarPage.tsx`, `AutoProposeJobProvider.tsx`, `autoProposeJob.ts`, `AutoProposeJobStatus.tsx`, `runCalendarAutoPropose.ts`, `ClearAutoProposalsConfirm.tsx`, `ConfirmAutoProposalsConfirm.tsx`, `DashboardLayout.tsx`, `ComposingOrb.tsx`, `AiComposingOverlay.tsx`, `server/schedule/runProposeJob.ts`, `api/schedule/propose.ts`, `DayVisitGrid.tsx`, `useCalendarDayData.ts`, `calendarDayLoadState.ts`, `proposalActions.ts`, `PlatformAdminRoute.tsx`, §6.6, §6.8, §6.10, §6.29, §6.32, §6.33, §6.35, §6.36, §6.37, §6.47, §6.48, §10.20〜10.22, §10.54, §10.55
 
 ### 6.35 自動提案の仮枠UIとクリック確定（2026-08-11 決定 / 同日追記 / 2026-08-14 改定）
 
@@ -1058,6 +1070,7 @@ DB上の確定・集計テーブル
 - **予定の編集（2026-08-14）**: 連絡者リスト型の近傍パネル（暗い背景なし。外クリック / ESC / 閉じる。戻るは出さない）。項目・開発中・保存／削除。保存／削除は横並び。
 - **更新情報（2026-08-14）**: 公開面は縦タイムライン＋白カード。見出しは「更新情報」。見出し左は `/icon/solution.png`。空は「更新情報はまだありません。」公開登録の成功文は「更新情報に登録しました。」
 - **通し番号（2026-08-14）**: `update #N`（`formatProductUpdateNumber`）。日本語の「更新 N」に戻さない。見出し・本文は日本語。
+- **並び（2026-08-16）**: 更新情報タイムラインは通し番号の降順（`#3` → `#1`）。日付は二次。公開日降順だけにしない（`sortProductUpdates.ts`）。
 - **運営の編集入口（2026-08-14）**: カード右上 `/icon/edit.png`（薄い灰の円台座）。院には出さない。日付行の「詳細」テキストや書類アイコンは使わない。
 - **左アイコン（2026-08-14）**: 正は `timeline_mark`。表示は `public/icon/news` の月・リンク・ピン・フォルダ・火。DBキー（sparkle 等）は変えない。設定キーは選択UIに出さない。パスは実在ファイルと揃える。
 - **画面コピー（2026-08-14）**: 「デプロイだけでは出ない」案内は画面に置かない。掲載ルール自体は本節のまま。
@@ -1096,8 +1109,9 @@ DB上の確定・集計テーブル
 - **お知らせ連動**: 送信時は載せない。反映済みにしたときだけ提案→入れる（§6.55）。見送りでは入れない。1改善1件。
 - **リリース予定との境界（2026-08-14）**: お知らせのリリース予定は `product_updates.proposed`。進捗の「対応中」とは別。同一視しない。
 - **件数UI**: 受付／確認中／対応中／反映済みは見出し帯右端（`actions`）。本文に大きな件数カードを置かない。一覧は本文幅いっぱい（`max-w-3xl` で狭めない）。
+- **一覧（2026-08-16）**: カード縦積みにしない。操作ログ／患者一覧と同じ fillViewport＋白 article＋表。本文に一覧見出しは置かない。
 - **運営画面の GitHub リンクは可**。院向けお知らせには出さない（§6.55 / §10.43）。
-- 関連: `ProgressPage.tsx`, `improvementAnnouncement.ts`, `improvement_items`, `AccountMenu.tsx`, `accountMenuLinks.ts`, §6.29, §6.54, §6.55
+- 関連: `ProgressPage.tsx`, `ProgressList.tsx`, `improvementAnnouncement.ts`, `improvement_items`, `AccountMenu.tsx`, `accountMenuLinks.ts`, §6.29, §6.54, §6.55
 
 ### 6.58 レセコン連携方針（案A・2026-08-14 決定）
 
@@ -1149,7 +1163,20 @@ DB上の確定・集計テーブル
 
 - ログイン後の業務枠は最上部を固定し、文書全体をスクロールさせない。
 - 業務枠ルートに `min-h-screen` を使わない。`fillViewport` 以外で使うとヘッダーとサイドバーが本文と一緒に流れ、最上部でゴムバンドする（§10.47）。
+- **スクロールバー（2026-08-16）**: 右や下のバーは全体で非表示（`src/index.css`）。overflow は残す。画面ごとに `overflow-hidden` で止めない。
 - 関連: `appShell.ts`, `DashboardLayout.tsx`, `SecurityLayout.tsx`, `src/index.css`, §6.24, §6.33, §10.9, §10.47
+
+### 6.63 運営一覧（`/admins`・2026-08-16 決定）
+
+スーパー権限の一覧・追加・編集・削除。院のユーザー管理（§6.25）とは別レイヤー。
+
+- **閲覧・操作は運営のみ**。院ユーザー・院 admin/owner には出さない（メニューも URL 直打ちも不可。`PlatformAdminRoute`）。
+- **入口**: アカウントメニュー（改善の進捗の次）。見出しは「運営」。院のユーザー管理・安全性・サイドバーには置かない（§6.24 / §6.29）。
+- **追加**: 確認メールや OTP は送らない。すでにログインできる人のメールを `profiles` で照合する。クリニック所属者には付けない。
+- **編集**: `profiles.display_name` と `platform_admins.note` だけ。メール変更はこの画面ではしない。
+- **削除**: 画面文言は「削除」。実体は権限削除（revoke）。自分と最後の1人は削除できない。1人のときは削除ボタンを出さない。
+- **書込**: `grant_platform_admin` / `revoke_platform_admin` / `update_platform_admin`。`platform_admins` への authenticated 直書きはしない。
+- 関連: `AdminsPage.tsx`, `platformAdminPolicy.ts`, `formatPlatformAdmin.ts`, `accountMenuLinks.ts`, `20260816001000_platform_admin_manage_rpcs.sql`, `20260816002000_platform_admin_update_rpc.sql`, §6.24, §6.25, §6.29
 
 ---
 
@@ -1168,6 +1195,7 @@ DB上の確定・集計テーブル
 | `POST /api/feedback/send` | — | ログイン済み | — | — | JWT必須。トークンはサーバ専用。15秒クールダウン。公開エラーは固定文言（§6.54） |
 | お知らせ（`product_updates`） | published は認証済み。提案中・入れないは運営のみ | `propose_product_update` のみ | `publish_product_update` / `reject_product_update` / `update_product_update_copy` / `set_product_update_in_progress_badge` / `set_product_update_timeline_mark` | `delete_product_update`（進捗未連動のみ） | いきなり published 禁止。進捗連動件は削除しない。進捗の反映済みからも propose→publish（§6.55 / §6.57） |
 | `improvement_items` | 運営のみ | `create_improvement_item_for_thread` | `set_improvement_item_status` | grant なし | 院には出さない。反映済みでお知らせ1件。§6.57 |
+| 運営（`platform_admins`） | 運営のみ | `grant_platform_admin` | `update_platform_admin` | `revoke_platform_admin` | 直書き禁止。自分と最後の1人は削除不可。クリニック所属者には付けない（§6.63） |
 | `[table_a]` | `[role]` | `[role]` | `[role]` | `[role]` | `[制約]` |
 | `[table_b]` | `[role]` | `[role]` | `[role]` | `[role]` | `[制約]` |
 
@@ -1285,6 +1313,7 @@ AIが自分の実装に合わせて期待値を作ることは禁止。
 | 2026-08-14 | news アイコンが表示欠けした | 差し替え後に古いパスが残った | 表示パスは実在ファイルと揃える（§6.55 / §10.49） |
 | 2026-08-14 | 予約キャンセルがブラウザ confirm | 画面内確認を使わなかった | `VisitCancelConfirm` を使う（§6.61 / §10.50） |
 | 2026-08-14 | 訪問詳細を広げても時刻が1列 | 幅だけ変えて中のグリッドを触らなかった | 開始/終了は2列、メニューと色は全幅（§6.61 / §10.51） |
+| 2026-08-16 | 提案後に件数だけ出てスケルトンが固まる | silent 再読込が非silent に勝ち、loading を下ろさなかった | 最新なら silent でも loading を下ろす（§6.34 / §10.54 / §10.55） |
 
 ### 記録ルール
 
@@ -1402,7 +1431,7 @@ AIが自分の実装に合わせて期待値を作ることは禁止。
 
 - 事象: ドラッグ移動直後、枠が一瞬元位置に戻って見えた。
 - 原因: `load()` が先に `setVisits([])` しており、再取得完了まで空になる。
-- 再発防止: 移動・リサイズ・クリック確定では楽観パッチし、再取得は `load({ silent: true })`。クリック確定後は全件 reload を必須にしない（§6.32 / §6.35）。
+- 再発防止: 移動・リサイズ・クリック確定では楽観パッチし、再取得は `load({ silent: true })`。クリック確定後は全件 reload を必須にしない（§6.32 / §6.35）。最新リクエストなら silent でも `loading` を下ろす（§10.54）。
 - 関連: `useCalendarDayData.ts`, `persistMoveVisit`, `confirmTentativeVisit`
 
 ### 10.17 訪問ブロック下端の緑を左アクセントと誤認する（2026-08-11）
@@ -1654,6 +1683,20 @@ AIが自分の実装に合わせて期待値を作ることは禁止。
 - 再発防止: 開始／終了は横並び。メニューと色は `col-span-2`。
 - 関連: `VisitDetailModal.tsx`, `VisitCreateModal.tsx`, §6.61
 
+### 10.54 提案完了後の silent 再読込でスケルトンが固まる（2026-08-16）
+
+- 事象: 自動提案のあと、クリア／一括確定は件数が出るのにグリッドだけスケルトンのまま固まった。
+- 原因: カレンダー mount の非 silent `load()` と完了後の `load({ silent: true })` が競合した。勝った silent 側が `setLoading(false)` せず、捨てられた非silent 側も下ろさなかった。
+- 再発防止: 最新リクエストなら silent でも必ず `loading` を下ろす。開始時だけ visits を空にしない（`calendarDayLoadState.ts` / §6.34）。
+- 関連: `useCalendarDayData.ts`, `calendarDayLoadState.ts`, `CalendarPage.tsx`, §6.32, §6.34, §10.16
+
+### 10.55 件数とグリッドで loading 判定が違う（2026-08-16）
+
+- 事象: 「提案をクリア (N)」は出るのにマスが見えない。
+- 原因: 件数は `data.visits` を数える。`DayVisitGrid` は `loading` 中に visits を空扱いしてスケルトンを出す。
+- 再発防止: 「件数はあるのにスケルトン」は visits 欠落ではなく `loading` 固着を疑う。
+- 関連: `DayVisitGrid.tsx`, `CalendarPage.tsx`, §6.34, §10.54
+
 ---
 
 ## 11. 🔗 重要ドキュメント・参照先
@@ -1751,11 +1794,11 @@ AIは作業開始時に以下を確認する。
 □ お支払い履歴なら §6.27（銀行振替前提・縦タイムラインUI。カード決済前提にしない）を守った
 □ 契約者情報・契約情報なら §6.28（8項目表示・login_email独立・運営のみ書込・締結PDF）を守った
 □ 運営スーパー権限なら §6.29 / §6.40（clinic_members非掲載・bootstrap に not is_platform_admin・is_platform_admin_user で所属拒否・全院アクセス・切替UI運営のみ・ユーザー管理除外・/proposals 運営専用は§6.34・/progress 運営専用は§6.57）を守った
-□ カレンダー日付ナビなら §6.30 / §10.7（titleAside 横並び。グリッド上・右サイドに独立セクションを置かない）を守った
+□ カレンダー日付ナビなら §6.30 / §10.7（titleAside 横並び。グリッド上・右サイドに独立セクションを置かない。見える「日付」ラベルは出さない）を守った
 □ 患者管理なら §6.31（サイドバー内アコーディオンで一覧/電話確認・開閉は sessionStorage 保持・灰ピルの新規登録とデータ出力・データ統合しない）を守った
 □ カレンダー運用なら §6.32 / §6.6（ドラッグ移動・リサイズ、楽観更新＋silent reload、手動→電話確認、NG取消＋同日再提案、日別メモ・空きブロック・斜線は calendar_blocks・残件・簡易週表示・日別CSVは見出しから外す・操作ログは§6.50、枠クリックは詳細§6.35、空き枠埋めは§6.47、メニューは§6.60、詳細は§6.61）を守った
-□ 左サイドバーなら §6.33 / §10.9 / §6.62（縦ナビ・layouting.png 開閉・Security モバイルは grid.png・calendar/gears/patient/windows/ai・ログイン監査は運営のみ・自動提案ナビは運営のみ・お知らせは置かない・fillViewport 右カラム min-h-0/min-w-0・業務枠に min-h-screen 禁止）を守った
-□ カレンダー自動提案なら §6.34 / §10.20〜10.22（右上は遷移せず即実行・操作は titleAside 1行・nowrap・アイコンと文言密着・クリア／一括確定は近傍ポップオーバー・SDK Adapter・仮予約・グリッドのみスケルトン。/proposals は運営専用）を守った
+□ 左サイドバーなら §6.33 / §10.9 / §6.62（縦ナビ・layouting.png 開閉・Security モバイルは grid.png・calendar/gears/patient/windows/ai・ログイン監査は運営のみ・自動提案ナビは運営のみ・お知らせは置かない・fillViewport 右カラム min-h-0/min-w-0・業務枠に min-h-screen 禁止・スクロールバーは見せず overflow は残す）を守った
+□ カレンダー自動提案なら §6.34 / §10.20〜10.22 / §10.54 / §10.55（右上は遷移せず即実行・操作は titleAside 1行・nowrap・アイコンと文言密着・クリア／一括確定は近傍ポップオーバー・SDK Adapter・仮予約・グリッドのみスケルトン。完了後 silent 再読込は最新なら loading を下ろす。/proposals は運営専用）を守った
 □ 仮枠UI・枠クリックなら §6.35（点線仮枠・クリックは詳細・確定は詳細または一括・楽観更新・moved 時のみ移動プレビュー・左緑バー／常時緑リサイズ禁止・電話確認 pending→ok）を守った
 □ 訪問メニューなら §6.60（4枠・時間はメニュー1・院OFFは選択肢から外す・スナップショットは消さない）を守った
 □ 訪問詳細なら §6.61 / §6.43 / §10.50 / §10.51（lg・先頭は今日の訪問・会計なし・予約一覧先・時刻2列・キャンセルは画面内・staffId 未指定で担当を消さない）を守った
@@ -1871,4 +1914,5 @@ AIは作業開始時に以下を確認する。
 - `2026-08-14`: ご意見パネルの外側クリック／Enter送信オプトイン／Nani設定行の適用範囲を §2.15 / §6.54 / §12 に追記。設定・自動提案の切替を灰トラック＋白ピルに §6.45 / §6.46 / §6.51 / §12 で更新（`/project-memory-learn`）
 - `2026-08-14`: ヘルプセンターを §6.59 / §2.15 / §3 / §6.24 / §6.56 / §10.45 / §12 に追記（`/project-memory-learn`）。文書シェルは SecurityLayout。FAQ見出しは井戸の内側。左右ふちは細い。正本は helpCopy.ts
 - `2026-08-14`: 未反映53件を整理して反映。お知らせ画面改定（§6.55）・枠クリックは詳細（§6.6/§6.35）・訪問メニュー（§6.60）・訪問詳細（§6.61）・シェル固定（§6.62）・サイドバー layouting.png（§6.33）・斜線ブロック（§6.32/§6.47）・設定5択（§6.51）・再発防止（§10.46〜10.51）・§3 / §7 / §11 / §12（`/project-memory-learn`）。上書きされた旧案5件は破棄
+- `2026-08-16`: 提案後スケルトン固着（§6.32 / §6.34 / §10.16 / §10.54 / §10.55）・日付ナビの「日付」ラベル非表示（§6.30）・スクロールバー非表示（§6.62）を追記（`/project-memory-learn`）
 

@@ -3,6 +3,8 @@
  * サーバー専用の特権キーはここへ追加しない。
  */
 
+import { APP_DISPLAY_NAME } from '@/config/appName'
+
 function requiredViteEnv(name: 'VITE_SUPABASE_URL' | 'VITE_SUPABASE_ANON_KEY'): string {
   const value = import.meta.env[name]
   if (typeof value !== 'string' || value.trim() === '') {
@@ -14,7 +16,7 @@ function requiredViteEnv(name: 'VITE_SUPABASE_URL' | 'VITE_SUPABASE_ANON_KEY'): 
 }
 
 export const env = {
-  appName: (import.meta.env.VITE_APP_NAME as string | undefined)?.trim() || 'デンタクル',
+  appName: (import.meta.env.VITE_APP_NAME as string | undefined)?.trim() || APP_DISPLAY_NAME,
   get supabaseUrl() {
     return requiredViteEnv('VITE_SUPABASE_URL')
   },

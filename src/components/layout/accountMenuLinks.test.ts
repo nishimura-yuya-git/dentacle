@@ -23,6 +23,16 @@ describe('visibleAccountMenuLinks', () => {
     assert.equal(progress, announcement + 1)
   })
 
+  it('運営だけ「運営」を出し、改善の進捗の次に置く', () => {
+    const admin = visibleAccountMenuLinks(true)
+    const clinic = visibleAccountMenuLinks(false)
+    const progress = admin.findIndex((item) => item.to === '/progress')
+    const admins = admin.findIndex((item) => item.to === '/admins')
+    assert.equal(admin[admins]?.label, '運営')
+    assert.equal(admins, progress + 1)
+    assert.equal(clinic.some((item) => item.to === '/admins'), false)
+  })
+
   it('院ユーザーにもお知らせとご意見は残す', () => {
     const clinic = visibleAccountMenuLinks(false)
     assert.equal(clinic.some((item) => item.to === '/announcements'), true)

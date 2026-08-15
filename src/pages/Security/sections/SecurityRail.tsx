@@ -1,6 +1,6 @@
 import { Link, NavLink } from 'react-router-dom'
 import { AccountMenu } from '@/components/layout/AccountMenu'
-import { env } from '@/config/env'
+import { BrandLogo } from '@/components/layout/BrandLogo'
 import {
   SECURITY_RAIL_BLURBS,
   SECURITY_RAIL_CTA,
@@ -22,13 +22,8 @@ const navClass = ({ isActive }: { isActive: boolean }) =>
 export function SecurityRail({ onSignOut, onNavigate }: Props) {
   return (
     <div className="flex h-full min-h-0 flex-col px-[17px] pb-6 pt-4">
-      <Link
-        to="/calendar"
-        className="truncate text-sm font-bold text-[#008C01]"
-        aria-label={`${env.appName}（ロゴ差し替え予定）`}
-        onClick={onNavigate}
-      >
-        {env.appName}
+      <Link to="/calendar" className="flex items-center" onClick={onNavigate}>
+        <BrandLogo />
       </Link>
 
       <Link

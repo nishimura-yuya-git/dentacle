@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react'
+import { APP_DISPLAY_NAME } from '@/config/appName'
 import { Button } from '@/components/ui/Button'
 import { supabase } from '@/lib/supabase'
 import { OtpCodeInput } from '@/pages/Login/OtpCodeInput'
@@ -32,7 +33,7 @@ export function MfaEnrollPanel({ onVerified, onCancel }: Props) {
       }
       const { data, error } = await supabase.auth.mfa.enroll({
         factorType: 'totp',
-        friendlyName: 'デンタクル運営',
+        friendlyName: `${APP_DISPLAY_NAME}運営`,
       })
       if (cancelled) return
       if (error || !data) {

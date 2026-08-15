@@ -3,6 +3,7 @@ const PAGE_LABELS: Record<string, string> = {
   '/patients': '患者管理',
   '/contacts': '電話確認',
   '/users': 'ユーザー管理',
+  '/admins': '運営',
   '/settings': '設定',
   '/import': 'CSV取込',
   '/feedback': 'ご意見・不具合',
@@ -22,3 +23,10 @@ export function formatImprovementPageLabel(pagePath: string | null | undefined):
   const path = pagePath.split('?')[0]?.split('#')[0] ?? ''
   return PAGE_LABELS[path] ?? null
 }
+
+/** 空のときの次の行動。装飾英語は置かない。 */
+export function formatImprovementEmptyCopy(): string {
+  return '共有中の改善はまだありません。右下のご意見から送ると、ここに行ができます。'
+}
+
+export const PROGRESS_TABLE_COLUMNS = ['日付', '状態', '内容', '画面', 'クリニック', '操作'] as const

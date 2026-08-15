@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { BrandLogo } from '@/components/layout/BrandLogo'
 import { SECURITY_FOOTER_COLUMNS, SECURITY_TAGLINE } from '@/pages/Security/securityCopy'
 import type { SecurityLink } from '@/pages/Security/securityCopy'
 
@@ -24,7 +25,7 @@ export function SecuritySiteFooter() {
     <footer className="mt-16 pb-6 md:mt-20">
       <div className="flex flex-col justify-between gap-10 md:flex-row">
         <div className="min-w-36">
-          <p className="text-sm font-bold text-[#008C01]">デンタクル</p>
+          <BrandLogo size="footer" />
           <p className="mt-4 text-[13px] leading-relaxed text-slate-400">{SECURITY_TAGLINE}</p>
         </div>
         <div className="flex flex-wrap items-start gap-9">

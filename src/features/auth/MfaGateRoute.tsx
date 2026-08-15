@@ -1,5 +1,6 @@
 import { Navigate, Outlet } from 'react-router-dom'
 import { useAuth } from '@/features/auth/useAuth'
+import { needsPasswordSetup } from '@/pages/Login/needsPasswordSetup'
 
 /** 運営で MFA 未完了ならログイン画面へ戻す */
 export function MfaGateRoute() {
@@ -15,6 +16,10 @@ export function MfaGateRoute() {
 
   if (!user) {
     return <Navigate to="/login" replace />
+  }
+
+  if (needsPasswordSetup(user)) {
+    return <Navigate to="/set-password" replace />
   }
 
   if (mfaGate.status !== 'ok') {

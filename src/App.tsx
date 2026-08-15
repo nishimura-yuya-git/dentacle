@@ -1,11 +1,13 @@
 import { BrowserRouter, Navigate, Outlet, Route, Routes } from 'react-router-dom'
 import { ToastProvider } from '@/components/ui/Toast'
 import { AuthProvider } from '@/features/auth/AuthProvider'
+import { AutoProposeJobProvider } from '@/features/calendar/AutoProposeJobProvider'
 import { ClinicProvider } from '@/features/clinic/ClinicProvider'
 import { PlatformAdminRoute } from '@/components/common/PlatformAdminRoute'
 import { ProtectedRoute } from '@/components/common/ProtectedRoute'
 import { MfaGateRoute } from '@/features/auth/MfaGateRoute'
 import { LoginPage } from '@/pages/Login/LoginPage'
+import { SetPasswordPage } from '@/pages/Login/SetPasswordPage'
 import { MembersPage } from '@/pages/Members/MembersPage'
 import { SettingsPage } from '@/pages/Settings/SettingsPage'
 import { PatientsPage } from '@/pages/Patients/PatientsPage'
@@ -18,6 +20,7 @@ import { AuthAuditPage } from '@/pages/AuthAudit/AuthAuditPage'
 import { PatientImportPage } from '@/pages/Import/PatientImportPage'
 import { AiUsagePage } from '@/pages/Admin/AiUsagePage'
 import { FeedbackPage } from '@/pages/Feedback/FeedbackPage'
+import { AdminsPage } from '@/pages/Admins/AdminsPage'
 import { ProgressPage } from '@/pages/Progress/ProgressPage'
 import {
   ContractInfoPage,
@@ -42,50 +45,54 @@ function App() {
   return (
     <AuthProvider>
       <ToastProvider>
-        <BrowserRouter>
-          <Routes>
-            <Route path="/login" element={<LoginPage />} />
-            {import.meta.env.DEV ? (
-              <>
-                <Route path="/__preview__/security" element={<SecurityPage />} />
-                <Route path="/__preview__/security/network" element={<SecurityNetworkPage />} />
-                <Route path="/__preview__/help" element={<HelpPage />} />
-              </>
-            ) : null}
-            <Route element={<ProtectedRoute />}>
-              <Route element={<MfaGateRoute />}>
-                <Route element={<ClinicShell />}>
-                  <Route path="/" element={<Navigate to="/calendar" replace />} />
-                  <Route path="/members" element={<Navigate to="/users" replace />} />
-                  <Route path="/users" element={<MembersPage />} />
-                  <Route path="/mypage" element={<MyPage />} />
-                  <Route path="/announcements" element={<AnnouncementsPage />} />
-                  <Route path="/security" element={<SecurityPage />} />
-                  <Route path="/security/network" element={<SecurityNetworkPage />} />
-                  <Route path="/help" element={<HelpPage />} />
-                  <Route path="/account/contractor" element={<ContractorInfoPage />} />
-                  <Route path="/account/payments" element={<PaymentHistoryPage />} />
-                  <Route path="/account/contract" element={<ContractInfoPage />} />
-                  <Route path="/settings" element={<SettingsPage />} />
-                  <Route path="/patients" element={<PatientsPage />} />
-                  <Route path="/patients/:id" element={<PatientDetailPage />} />
-                  <Route path="/import" element={<PatientImportPage />} />
-                  <Route path="/calendar" element={<CalendarPage />} />
-                  <Route element={<PlatformAdminRoute />}>
-                    <Route path="/proposals" element={<ProposalsPage />} />
-                    <Route path="/admin/ai-usage" element={<AiUsagePage />} />
-                    <Route path="/auth-audit" element={<AuthAuditPage />} />
-                    <Route path="/progress" element={<ProgressPage />} />
+        <AutoProposeJobProvider>
+          <BrowserRouter>
+            <Routes>
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/set-password" element={<SetPasswordPage />} />
+              {import.meta.env.DEV ? (
+                <>
+                  <Route path="/__preview__/security" element={<SecurityPage />} />
+                  <Route path="/__preview__/security/network" element={<SecurityNetworkPage />} />
+                  <Route path="/__preview__/help" element={<HelpPage />} />
+                </>
+              ) : null}
+              <Route element={<ProtectedRoute />}>
+                <Route element={<MfaGateRoute />}>
+                  <Route element={<ClinicShell />}>
+                    <Route path="/" element={<Navigate to="/calendar" replace />} />
+                    <Route path="/members" element={<Navigate to="/users" replace />} />
+                    <Route path="/users" element={<MembersPage />} />
+                    <Route path="/mypage" element={<MyPage />} />
+                    <Route path="/announcements" element={<AnnouncementsPage />} />
+                    <Route path="/security" element={<SecurityPage />} />
+                    <Route path="/security/network" element={<SecurityNetworkPage />} />
+                    <Route path="/help" element={<HelpPage />} />
+                    <Route path="/account/contractor" element={<ContractorInfoPage />} />
+                    <Route path="/account/payments" element={<PaymentHistoryPage />} />
+                    <Route path="/account/contract" element={<ContractInfoPage />} />
+                    <Route path="/settings" element={<SettingsPage />} />
+                    <Route path="/patients" element={<PatientsPage />} />
+                    <Route path="/patients/:id" element={<PatientDetailPage />} />
+                    <Route path="/import" element={<PatientImportPage />} />
+                    <Route path="/calendar" element={<CalendarPage />} />
+                    <Route element={<PlatformAdminRoute />}>
+                      <Route path="/proposals" element={<ProposalsPage />} />
+                      <Route path="/admin/ai-usage" element={<AiUsagePage />} />
+                      <Route path="/auth-audit" element={<AuthAuditPage />} />
+                      <Route path="/progress" element={<ProgressPage />} />
+                      <Route path="/admins" element={<AdminsPage />} />
+                    </Route>
+                    <Route path="/contacts" element={<ContactsPage />} />
+                    <Route path="/operations" element={<OperationsTracesPage />} />
+                    <Route path="/feedback" element={<FeedbackPage />} />
                   </Route>
-                  <Route path="/contacts" element={<ContactsPage />} />
-                  <Route path="/operations" element={<OperationsTracesPage />} />
-                  <Route path="/feedback" element={<FeedbackPage />} />
                 </Route>
               </Route>
-            </Route>
-            <Route path="*" element={<Navigate to="/calendar" replace />} />
-          </Routes>
-        </BrowserRouter>
+              <Route path="*" element={<Navigate to="/calendar" replace />} />
+            </Routes>
+          </BrowserRouter>
+        </AutoProposeJobProvider>
       </ToastProvider>
     </AuthProvider>
   )

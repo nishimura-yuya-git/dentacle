@@ -1,5 +1,6 @@
 import { useRef, type ChangeEvent } from 'react'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
+import { APP_DISPLAY_NAME } from '@/config/appName'
 import { Button } from '@/components/ui/Button'
 import { useToast } from '@/components/ui/Toast'
 import { ClinicAccessPlaceholder } from '@/features/clinic/ClinicAccessPlaceholder'
@@ -81,7 +82,7 @@ export function ContractInfoPage() {
                 締結書類はまだ登録されていません
               </p>
               <p className="mt-2 text-xs font-medium text-slate-400">
-                デンタクル運営が締結PDFを登録すると、こちらに表示されます。
+                {APP_DISPLAY_NAME}運営が締結PDFを登録すると、こちらに表示されます。
               </p>
             </div>
           )}

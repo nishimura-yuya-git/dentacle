@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
+import { APP_DISPLAY_NAME } from '@/config/appName'
 import { Button } from '@/components/ui/Button'
 import { useToast } from '@/components/ui/Toast'
 import { ClinicAccessPlaceholder } from '@/features/clinic/ClinicAccessPlaceholder'
@@ -96,7 +97,7 @@ export function ContractorInfoPage() {
               </p>
             ) : (
               <p className="mt-8 text-xs font-medium leading-relaxed text-slate-400">
-                契約者情報の登録・変更はデンタクル運営が行います。内容に誤りがある場合は運営へご連絡ください。
+                契約者情報の登録・変更は{APP_DISPLAY_NAME}運営が行います。内容に誤りがある場合は運営へご連絡ください。
               </p>
             )}
           </>

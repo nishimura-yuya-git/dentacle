@@ -55,7 +55,8 @@ export function scheduleProposeMiddleware() {
         const isPropose = url === '/api/schedule/propose'
         const isGapFill = url === '/api/schedule/gap-fill'
         const isFeedback = url === '/api/feedback/send'
-        if (!isPropose && !isGapFill && !isFeedback) {
+        const isAdminInvite = url === '/api/admins/invite'
+        if (!isPropose && !isGapFill && !isFeedback && !isAdminInvite) {
           next()
           return
         }
@@ -83,7 +84,21 @@ export function scheduleProposeMiddleware() {
 
           const body = await readJsonBody(req)
           let outcome
-          if (isFeedback) {
+          if (isAdminInvite) {
+            const originHeader = req.headers.origin
+            const origin =
+              typeof originHeader === 'string' && originHeader.trim()
+                ? originHeader
+                : undefined
+            const mod = await server.ssrLoadModule(
+              '/server/admins/invitePlatformAdmin.ts',
+            )
+            outcome = await mod.invitePlatformAdmin({
+              accessToken,
+              email: typeof body.email === 'string' ? body.email : '',
+              origin,
+            })
+          } else if (isFeedback) {
             const mod = await server.ssrLoadModule(
               '/server/feedback/submitFeedbackWithEnv.ts',
             )
@@ -154,11 +169,13 @@ export function scheduleProposeMiddleware() {
           res.end(
             JSON.stringify({
               ok: false,
-              error: isFeedback
-                ? 'ご意見の受付に失敗しました'
-                : isGapFill
-                  ? '空き枠埋めの処理に失敗しました'
-                  : '自動提案の処理に失敗しました',
+              error: isAdminInvite
+                ? '運営の招待に失敗しました'
+                : isFeedback
+                  ? 'ご意見の受付に失敗しました'
+                  : isGapFill
+                    ? '空き枠埋めの処理に失敗しました'
+                    : '自動提案の処理に失敗しました',
             }),
           )
         }

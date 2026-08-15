@@ -9,6 +9,7 @@ export const ACCOUNT_MENU_LINKS: AccountMenuLink[] = [
   { to: '/mypage', label: 'マイページ' },
   { to: '/announcements', label: 'お知らせ' },
   { to: '/progress', label: '改善の進捗', requiresPlatformAdmin: true },
+  { to: '/admins', label: '運営', requiresPlatformAdmin: true },
   { to: '/security', label: '安全性' },
   { to: '/help', label: 'ヘルプ' },
   { to: '/users', label: 'ユーザー管理（追加・編集・削除）' },

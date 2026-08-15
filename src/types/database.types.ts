@@ -595,6 +595,7 @@ export type Database = {
       improvement_items: {
         Row: {
           clinic_id: string | null
+          clinic_reply_message_id: string | null
           created_at: string
           feedback_thread_id: string
           github_issue_number: number | null
@@ -611,6 +612,7 @@ export type Database = {
         }
         Insert: {
           clinic_id?: string | null
+          clinic_reply_message_id?: string | null
           created_at?: string
           feedback_thread_id: string
           github_issue_number?: number | null
@@ -627,6 +629,7 @@ export type Database = {
         }
         Update: {
           clinic_id?: string | null
+          clinic_reply_message_id?: string | null
           created_at?: string
           feedback_thread_id?: string
           github_issue_number?: number | null
@@ -657,6 +660,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "improvement_items_clinic_reply_message_id_fkey"
+            columns: ["clinic_reply_message_id"]
+            isOneToOne: true
+            referencedRelation: "feedback_messages"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "improvement_items_product_update_id_fkey"
             columns: ["product_update_id"]
             isOneToOne: true
@@ -671,6 +681,7 @@ export type Database = {
           created_at: string
           github_issue_number: number | null
           github_issue_url: string | null
+          has_unread_reply: boolean
           id: string
           page_path: string | null
           title: string
@@ -682,6 +693,7 @@ export type Database = {
           created_at?: string
           github_issue_number?: number | null
           github_issue_url?: string | null
+          has_unread_reply?: boolean
           id?: string
           page_path?: string | null
           title: string
@@ -693,6 +705,7 @@ export type Database = {
           created_at?: string
           github_issue_number?: number | null
           github_issue_url?: string | null
+          has_unread_reply?: boolean
           id?: string
           page_path?: string | null
           title?: string
@@ -1981,6 +1994,10 @@ export type Database = {
       }
       set_improvement_item_status: {
         Args: { p_id: string; p_status: string }
+        Returns: boolean
+      }
+      mark_feedback_thread_read: {
+        Args: { p_thread_id: string }
         Returns: boolean
       }
       request_client_ip: { Args: never; Returns: string }

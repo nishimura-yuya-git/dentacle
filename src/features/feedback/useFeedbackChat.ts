@@ -6,6 +6,7 @@ import {
   FEEDBACK_PII_NOTICE,
 } from '@/features/feedback/feedbackCopy'
 import { loadLatestFeedbackThread } from '@/features/feedback/loadFeedbackHistory'
+import { markFeedbackThreadRead } from '@/features/feedback/markFeedbackThreadRead'
 import {
   sendFeedback,
   type FeedbackChatMessage,
@@ -44,6 +45,13 @@ export function useFeedbackChat() {
           setIssueNumber(latest.issueNumber)
           setIssueUrl(latest.issueUrl)
           setMessages(latest.messages)
+          if (latest.hasUnreadReply) {
+            try {
+              await markFeedbackThreadRead(latest.id)
+            } catch {
+              // 既読に失敗しても履歴は見せる
+            }
+          }
         }
       } catch {
         // 履歴がまだ無い（マイグレーション前）でもチャット自体は使える

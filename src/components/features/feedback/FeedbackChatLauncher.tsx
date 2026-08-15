@@ -2,10 +2,16 @@ import { useEffect, useId, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useLocation } from 'react-router-dom'
 import { FeedbackChatPanel } from '@/components/features/feedback/FeedbackChatPanel'
+import { FeedbackUnreadDot } from '@/components/features/feedback/FeedbackUnreadDot'
 import {
   isFeedbackIgnoreOutsideTarget,
   shouldCloseFeedbackOnOutsideClick,
 } from '@/components/features/feedback/shouldCloseFeedbackOnOutsideClick'
+import {
+  FEEDBACK_UNREAD_ARIA_LABEL,
+  shouldShowFeedbackUnreadDot,
+} from '@/features/feedback/unreadReplyPolicy'
+import { useFeedbackUnread } from '@/features/feedback/useFeedbackUnread'
 
 /** 右下のチャット起動。専用ページでは出さない */
 export function FeedbackChatLauncher() {
@@ -13,6 +19,8 @@ export function FeedbackChatLauncher() {
   const [open, setOpen] = useState(false)
   const panelId = useId()
   const rootRef = useRef<HTMLDivElement>(null)
+  const { hasUnreadReply, refresh } = useFeedbackUnread()
+  const showUnreadDot = shouldShowFeedbackUnreadDot({ open, hasUnreadReply })
 
   useEffect(() => {
     if (!open) return
@@ -41,7 +49,14 @@ export function FeedbackChatLauncher() {
     }
   }, [open])
 
+  useEffect(() => {
+    if (open) return
+    void refresh()
+  }, [open, refresh])
+
   if (pathname === '/feedback') return null
+
+  const closedLabel = showUnreadDot ? FEEDBACK_UNREAD_ARIA_LABEL : 'ご意見・不具合を送る'
 
   return createPortal(
     <div
@@ -55,13 +70,14 @@ export function FeedbackChatLauncher() {
       ) : null}
       <button
         type="button"
-        className="pointer-events-auto inline-flex h-14 w-14 items-center justify-center rounded-full border border-[#C5E5C5] bg-[#E7F4E7] text-[#008C01] shadow-sm transition-colors hover:bg-[#D5EDD5] hover:scale-[1.02] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#008C01]/35"
-        aria-label={open ? 'ご意見チャットを閉じる' : 'ご意見・不具合を送る'}
+        className="pointer-events-auto relative inline-flex h-14 w-14 items-center justify-center rounded-full border border-[#C5E5C5] bg-[#E7F4E7] text-[#008C01] shadow-sm transition-colors hover:bg-[#D5EDD5] hover:scale-[1.02] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#008C01]/35"
+        aria-label={open ? 'ご意見チャットを閉じる' : closedLabel}
         aria-expanded={open}
         aria-controls={open ? panelId : undefined}
         onClick={() => setOpen((current) => !current)}
       >
         {open ? <CloseGlyph /> : <ChatIcon />}
+        {showUnreadDot ? <FeedbackUnreadDot /> : null}
       </button>
     </div>,
     document.body,

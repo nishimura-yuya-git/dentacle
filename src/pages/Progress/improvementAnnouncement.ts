@@ -84,9 +84,26 @@ export function buildImprovementAnnouncementCopy(input: {
   }
 }
 
+/** 運営が反映済みにしたときだけ、打った人のチャットに返す。見送りでは返さない。 */
+export function shouldNotifyClinicReplyOnStatus(status: ImprovementStatus): boolean {
+  return shouldPublishAnnouncementOnStatus(status)
+}
+
+/**
+ * 本人チャット用の返信本文。お知らせと同じ見出し＋定型文。
+ * 院向けに GitHub / Issue は出さない。
+ */
+export function buildClinicReplyBody(title: string): string {
+  const copy = buildImprovementAnnouncementCopy({
+    title,
+    summary: IMPROVEMENT_ANNOUNCEMENT_FALLBACK_BODY,
+  })
+  return `${copy.title}\n\n${IMPROVEMENT_ANNOUNCEMENT_FALLBACK_BODY}`
+}
+
 export function formatImprovementStatusSavedMessage(status: ImprovementStatus): string {
   if (shouldPublishAnnouncementOnStatus(status)) {
-    return '反映済みにしました。お知らせにも載ります。'
+    return '反映済みにしました。お知らせにも載ります。ご意見チャットにも返します。'
   }
   return '状態を更新しました。'
 }

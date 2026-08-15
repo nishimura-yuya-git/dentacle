@@ -3,8 +3,10 @@ import { describe, it } from 'node:test'
 import {
   IMPROVEMENT_ANNOUNCEMENT_FALLBACK_BODY,
   IMPROVEMENT_ANNOUNCEMENT_FALLBACK_TITLE,
+  buildClinicReplyBody,
   buildImprovementAnnouncementCopy,
   formatImprovementStatusSavedMessage,
+  shouldNotifyClinicReplyOnStatus,
   shouldPublishAnnouncementOnStatus,
   surfaceFromImprovementPagePath,
   surfacesFromImprovementPagePath,
@@ -75,12 +77,36 @@ describe('buildImprovementAnnouncementCopy', () => {
   })
 })
 
+describe('shouldNotifyClinicReplyOnStatus', () => {
+  it('反映済みのときだけ本人チャットに返す', () => {
+    assert.equal(shouldNotifyClinicReplyOnStatus('done'), true)
+    assert.equal(shouldNotifyClinicReplyOnStatus('wont_fix'), false)
+    assert.equal(shouldNotifyClinicReplyOnStatus('in_progress'), false)
+  })
+})
+
+describe('buildClinicReplyBody', () => {
+  it('お知らせと同じ見出しと定型文にする', () => {
+    assert.equal(
+      buildClinicReplyBody('カレンダーの表示が遅い'),
+      `カレンダーの表示が遅い\n\n${IMPROVEMENT_ANNOUNCEMENT_FALLBACK_BODY}`,
+    )
+  })
+
+  it('GitHub や Issue を含む見出しは院向けに出さない', () => {
+    const body = buildClinicReplyBody('GitHub Issue #12 を直した')
+    assert.equal(body, `${IMPROVEMENT_ANNOUNCEMENT_FALLBACK_TITLE}\n\n${IMPROVEMENT_ANNOUNCEMENT_FALLBACK_BODY}`)
+    assert.equal(/github|issue/i.test(body), false)
+  })
+})
+
 describe('formatImprovementStatusSavedMessage', () => {
-  it('反映済みではお知らせに載ることを伝える', () => {
+  it('反映済みではお知らせとご意見チャットに載ることを伝える', () => {
     assert.equal(
       formatImprovementStatusSavedMessage('done'),
-      '反映済みにしました。お知らせにも載ります。',
+      '反映済みにしました。お知らせにも載ります。ご意見チャットにも返します。',
     )
     assert.equal(formatImprovementStatusSavedMessage('in_progress'), '状態を更新しました。')
+    assert.equal(formatImprovementStatusSavedMessage('wont_fix'), '状態を更新しました。')
   })
 })

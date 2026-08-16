@@ -1,4 +1,9 @@
 import { APP_DISPLAY_NAME } from '../../config/appName.ts'
+import {
+  COMPLIANCE_DATA_REGION,
+  COMPLIANCE_SUBPROCESSORS,
+  formatSubprocessorLine,
+} from '../../contracts/complianceAssets.contract.ts'
 
 /** 安全性ページの文言 SSoT。Nani の骨格に合わせ、事実は Dentacle の実装に合わせる。 */
 
@@ -56,7 +61,7 @@ export const SECURITY_SECTIONS: SecuritySection[] = [
       'レセコン接続用のID・パスワード・APIキーは、画面や自動提案のAIには渡しません。サーバー側で暗号化して扱い、医院管理者または運営が管理します。',
       '通信中は暗号化します。サーバーに残す患者種まきは、データベースの保存時暗号化の対象です。アップロードしたCSVそのものは取込後に残しません。',
       '取り込んだ患者種まきは業務データとして残ります。保持期間の短縮や削除は運営へ連絡してください。',
-      '医院内のレセコン本体・院内PC・CSV書き出しは医院（およびレセコン事業者）の範囲です。取込後の保存・画面・権限・訪問スケジュールはデンタクルの範囲です。VPN／閉域では、医院側終端は医院、クラウド側終端はデンタクルです。',
+      `医院内のレセコン本体・院内PC・CSV書き出しは医院（およびレセコン事業者）の範囲です。取込後の保存・画面・権限・訪問スケジュールは${APP_DISPLAY_NAME}の範囲です。VPN／閉域では、医院側終端は医院、クラウド側終端は${APP_DISPLAY_NAME}です。`,
       '取込の記録は操作ログに、実行者・時刻・件数・成否だけ残します。氏名やカルテ番号はログに出しません。ログイン監査とは別の記録です。接続開始前に、ログの保存年数を契約で決めます。',
       '設計は厚生労働省『医療情報システムの安全管理に関するガイドライン』と、経済産業省・総務省の事業者向け安全管理ガイドラインを参照し、該当する管理策を取り入れます。監査が終わる前に準拠済みとは書きません。',
       '外部の監視サービスへ患者データを送りません。利用目的は訪問スケジュールの種まきです。取込完了は導入完了ではありません。',
@@ -72,7 +77,7 @@ export const SECURITY_SECTIONS: SecuritySection[] = [
     title: '通信とインフラのセキュリティ',
     paragraphs: [
       '画面とサーバーの通信は HTTPS で暗号化します。レセコン接続は TLS 1.3 以上を条件にします。',
-      'データベースは Supabase を使い、保存時の暗号化と外部接続の SSL 強制を有効にしています。レセコン本体のデータベースポートは開きません。',
+      `データベースは ${COMPLIANCE_DATA_REGION.provider} を使い、保存時の暗号化と外部接続の SSL 強制を有効にしています。リージョンは ${COMPLIANCE_DATA_REGION.region}（${COMPLIANCE_DATA_REGION.regionLabelJa}）です。レセコン本体のデータベースポートは開きません。`,
     ],
     callout: {
       title: SECURITY_NETWORK_CALLOUT_TITLE,
@@ -128,8 +133,38 @@ export const SECURITY_SECTIONS: SecuritySection[] = [
     title: 'アカウントとデータの削除',
     paragraphs: [
       '画面からのアカウント自己削除は、現時点では用意していません。削除が必要な場合は運営へ連絡してください。',
+      '医院管理者または運営が対象範囲を確認し、患者種まき・予約・所属を消します。取込CSVそのものは取込後に残していません。',
+      '操作ログとログイン監査の保存年数は未決です。決まるまで自動では消しません。',
       'オーナー権限の所属は、画面からもデータベースの権限でも安易に外せないようにしています。',
     ],
+    callout: {
+      title: '個人情報の取り扱い',
+      body: '利用目的、保存場所、委託先、事故時の手順は、個人情報の取り扱いにまとめています。',
+      link: { href: '/security/privacy', label: '個人情報の取り扱いを見る' },
+    },
+  },
+  {
+    id: 'processors',
+    title: '委託先と保存場所',
+    paragraphs: [
+      `業務データの正は ${COMPLIANCE_DATA_REGION.provider}（${COMPLIANCE_DATA_REGION.regionLabelJa}）です。国外保存の事実を隠しません。医院の書面同意は未了です。`,
+      ...COMPLIANCE_SUBPROCESSORS.map((item) => formatSubprocessorLine(item)),
+      '外部の監視サービスへ患者データを送りません。',
+    ],
+    links: [{ href: '/security/privacy', label: '個人情報の取り扱いを見る' }],
+  },
+  {
+    id: 'incident',
+    title: '事故が起きたとき',
+    paragraphs: [
+      '漏えい、紛失、不正アクセスを覚知した運営は、影響範囲を切り分け、対象医院の管理者へ連絡します。',
+      '公開の電話窓口は置いていません。院からはご意見画面、または契約している運営窓口へ連絡してください。報告期限は未決です。',
+    ],
+    callout: {
+      title: '連絡',
+      body: '患者氏名やカルテ番号を連絡文に載せないでください。',
+      link: { href: '/feedback', label: 'ご意見・不具合を開く' },
+    },
   },
 ]
 
@@ -177,6 +212,7 @@ export const SECURITY_RAIL_BLURBS = [
 
 export const SECURITY_RAIL_NAV: SecurityLink[] = [
   { href: '/security', label: '安全性' },
+  { href: '/security/privacy', label: '個人情報の取り扱い' },
   { href: '/help', label: 'ヘルプ' },
   { href: '/security/network', label: 'ネットワーク許可設定' },
 ]
@@ -207,6 +243,9 @@ export const SECURITY_FOOTER_COLUMNS: SecurityFooterColumn[] = [
   },
   {
     title: '関連',
-    links: [{ href: '/security/network', label: 'ネットワーク許可設定' }],
+    links: [
+      { href: '/security/privacy', label: '個人情報の取り扱い' },
+      { href: '/security/network', label: 'ネットワーク許可設定' },
+    ],
   },
 ]

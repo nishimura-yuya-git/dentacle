@@ -115,9 +115,28 @@ describe('安全性ページの文言', () => {
     assert.equal(SECURITY_RAIL_CTA.label, 'カレンダーへ戻る')
   })
 
+  it('委託先と保存場所を書き、準拠済みとは書かない', () => {
+    const processors = SECURITY_SECTIONS.find((section) => section.id === 'processors')
+    const incident = SECURITY_SECTIONS.find((section) => section.id === 'incident')
+    assert.ok(processors)
+    assert.ok(incident)
+    const text = [...(processors.paragraphs ?? []), ...(incident.paragraphs ?? [])].join('\n')
+    assert.match(text, /シンガポール/)
+    assert.match(text, /Supabase/)
+    assert.match(text, /Vercel/)
+    assert.match(text, /書面同意は未了/)
+    assert.equal(/準拠しています/.test(allCopy()), false)
+  })
+
   it('レールとフッターにヘルプを置く', () => {
     assert.equal(
       SECURITY_RAIL_NAV.some((item) => item.href === '/help' && item.label === 'ヘルプ'),
+      true,
+    )
+    assert.equal(
+      SECURITY_RAIL_NAV.some(
+        (item) => item.href === '/security/privacy' && item.label === '個人情報の取り扱い',
+      ),
       true,
     )
     const support = SECURITY_FOOTER_COLUMNS.find((column) => column.title === 'サポート')
@@ -130,7 +149,7 @@ describe('安全性ページの文言', () => {
 
 describe('安全性ページの面', () => {
   it('業務ダッシュボード枠を使わない', () => {
-    for (const file of ['SecurityPage.tsx', 'SecurityNetworkPage.tsx']) {
+    for (const file of ['SecurityPage.tsx', 'SecurityNetworkPage.tsx', 'PrivacyPage.tsx']) {
       const source = readSecuritySource(file)
       assert.equal(source.includes('DashboardLayout'), false, file)
     }

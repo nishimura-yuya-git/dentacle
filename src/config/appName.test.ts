@@ -5,6 +5,7 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { APP_DISPLAY_NAME } from './appName.ts'
 import { HELP_SECTIONS } from '../pages/Help/helpCopy.ts'
+import { PRIVACY_HEADING, PRIVACY_INTRO, PRIVACY_SECTIONS } from '../pages/Security/privacyCopy.ts'
 import {
   SECURITY_FOOTER_COLUMNS,
   SECURITY_HEADING,
@@ -27,6 +28,9 @@ function visibleCopy(): string {
     ...SECURITY_NETWORK_ROWS.map((row) => row.endpoint),
     ...SECURITY_SECTIONS.flatMap((section) => section.paragraphs),
     ...SECURITY_FOOTER_COLUMNS.map((column) => column.title),
+    PRIVACY_HEADING,
+    PRIVACY_INTRO,
+    ...PRIVACY_SECTIONS.flatMap((section) => section.paragraphs),
   ].join('\n')
   return `${help}\n${security}`
 }

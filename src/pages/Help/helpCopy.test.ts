@@ -55,6 +55,9 @@ describe('ヘルプの文言', () => {
     assert.ok(ids.includes('what'))
     assert.ok(ids.includes('rececon'))
     assert.ok(ids.includes('network'))
+    assert.ok(ids.includes('privacy'))
+    assert.ok(ids.includes('deletion'))
+    assert.ok(ids.includes('incident'))
   })
 })
 

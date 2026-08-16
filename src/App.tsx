@@ -30,6 +30,7 @@ import {
 } from '@/pages/Account'
 import { AnnouncementsPage } from '@/pages/Announcements/AnnouncementsPage'
 import { HelpPage } from '@/pages/Help/HelpPage'
+import { PrivacyPage } from '@/pages/Security/PrivacyPage'
 import { SecurityNetworkPage } from '@/pages/Security/SecurityNetworkPage'
 import { SecurityPage } from '@/pages/Security/SecurityPage'
 
@@ -54,6 +55,7 @@ function App() {
                 <>
                   <Route path="/__preview__/security" element={<SecurityPage />} />
                   <Route path="/__preview__/security/network" element={<SecurityNetworkPage />} />
+                  <Route path="/__preview__/security/privacy" element={<PrivacyPage />} />
                   <Route path="/__preview__/help" element={<HelpPage />} />
                 </>
               ) : null}
@@ -66,6 +68,7 @@ function App() {
                     <Route path="/mypage" element={<MyPage />} />
                     <Route path="/announcements" element={<AnnouncementsPage />} />
                     <Route path="/security" element={<SecurityPage />} />
+                    <Route path="/security/privacy" element={<PrivacyPage />} />
                     <Route path="/security/network" element={<SecurityNetworkPage />} />
                     <Route path="/help" element={<HelpPage />} />
                     <Route path="/account/contractor" element={<ContractorInfoPage />} />

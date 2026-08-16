@@ -115,6 +115,19 @@ function main() {
   if (
     files.some(
       (file) =>
+        file.startsWith('src/features/feedback/') ||
+        file.startsWith('src/components/features/feedback/') ||
+        file.startsWith('src/pages/Feedback/') ||
+        file.startsWith('server/feedback/') ||
+        file.startsWith('api/feedback/'),
+    )
+  ) {
+    addCommand(commands, 'pnpm run feedback:test-security', 'ご意見チャットの保安回帰');
+  }
+
+  if (
+    files.some(
+      (file) =>
         file.startsWith('src/') ||
         file.startsWith('api/') ||
         file.startsWith('supabase/') ||

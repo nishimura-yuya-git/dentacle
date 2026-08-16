@@ -17,6 +17,7 @@
     "security:hook": "node scripts/cursor-security-hook.mjs",
     "test:security-scan": "node scripts/security-scan.test.mjs",
     "auth:test-security": "node --experimental-strip-types --test src/features/auth/authErrors.test.ts src/features/auth/authErrors.adversarial.test.ts src/features/auth/loginSecurityContract.test.ts src/features/auth/loginSourceSecurity.test.ts src/features/auth/platformMfaGate.test.ts src/pages/Login/otpCodeUtils.test.ts src/pages/Login/setPasswordPolicy.test.ts src/pages/Login/needsPasswordSetup.test.ts src/pages/AuthAudit/applyTrustedMapSvg.test.ts server/admins/markMustSetPassword.test.ts server/admins/invitePlatformAdmin.test.ts",
+    "feedback:test-security": "node --experimental-strip-types --test src/features/feedback/feedbackSecurityContract.test.ts src/features/feedback/feedbackSourceSecurity.test.ts src/pages/Progress/isSafeGithubIssueUrl.test.ts server/feedback/canSendFeedback.test.ts server/feedback/submitFeedback.test.ts",
     "test:security-hook": "node scripts/cursor-security-hook.test.mjs",
     "test": "pnpm run lint && pnpm run type-check && pnpm run check:forbidden-libs && pnpm run version:check",
     "version:check": "node scripts/release.mjs check",

@@ -63,6 +63,18 @@ function testLoginAuthRules() {
     otherHtml.filter((item) => item.ruleId === 'SEC-LOGIN-DANGER-HTML').length,
     0,
   );
+
+  const feedbackHtml = scanFileContent(
+    'src/components/features/feedback/FeedbackChatPanel.tsx',
+    'root.innerHTML = message.body;',
+  );
+  assert.ok(feedbackHtml.some((item) => item.ruleId === 'SEC-FEEDBACK-DANGER-HTML'));
+
+  const feedbackSql = scanFileContent(
+    'server/feedback/supabaseStore.ts',
+    'const q = `INSERT INTO feedback_messages (body) VALUES (${body})`;',
+  );
+  assert.ok(feedbackSql.some((item) => item.ruleId === 'SEC-FEEDBACK-SQL-CONCAT'));
 }
 
 function testLockfileRule() {

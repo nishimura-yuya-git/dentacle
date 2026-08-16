@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase'
+import { FEEDBACK_UNREAD_LOAD_FAILED } from '@/features/feedback/feedbackSecurityContract'
 
 /** 本人の未読返信があるか。件数は返さない。 */
 export async function loadHasUnreadFeedbackReply(): Promise<boolean> {
@@ -9,7 +10,7 @@ export async function loadHasUnreadFeedbackReply(): Promise<boolean> {
     .limit(1)
 
   if (error) {
-    throw new Error(error.message)
+    throw new Error(FEEDBACK_UNREAD_LOAD_FAILED)
   }
 
   return (data?.length ?? 0) > 0

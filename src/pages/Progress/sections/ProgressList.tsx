@@ -13,6 +13,7 @@ import {
   isImprovementStatus,
   type ImprovementStatus,
 } from '@/pages/Progress/improvementItemPolicy'
+import { isSafeGithubIssueUrl } from '@/pages/Progress/isSafeGithubIssueUrl'
 import type { ImprovementItemView } from '@/pages/Progress/improvementItemTypes'
 
 const STATUS_OPTIONS = IMPROVEMENT_STATUSES.map((status) => ({
@@ -70,6 +71,9 @@ export function ProgressList({
           const tone = IMPROVEMENT_STATUS_TONES[item.status]
           const pageLabel = formatImprovementPageLabel(item.pagePath)
           const rowBg = index % 2 === 0 ? 'bg-white' : 'bg-slate-50/80'
+          const githubIssueUrl = isSafeGithubIssueUrl(item.githubIssueUrl)
+            ? item.githubIssueUrl
+            : null
           return (
             <tr key={item.id} className={`${rowBg} hover:bg-emerald-50/40`}>
               <td className={`${TD} whitespace-nowrap text-slate-500`}>
@@ -113,9 +117,9 @@ export function ProgressList({
                       }
                     }}
                   />
-                  {item.githubIssueUrl ? (
+                  {githubIssueUrl ? (
                     <a
-                      href={item.githubIssueUrl}
+                      href={githubIssueUrl}
                       target="_blank"
                       rel="noreferrer noopener"
                       className="text-xs font-bold text-[#008C01] underline-offset-2 hover:underline"

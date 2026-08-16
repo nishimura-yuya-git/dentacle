@@ -1,4 +1,6 @@
+import { fetchIsPlatformAdminAal2 } from '../auth/platformAdminAal2.ts'
 import { createUserSupabaseClient } from '../schedule/createUserClient.ts'
+import { decideFeedbackCanSend } from './canSendFeedback.ts'
 import type {
   FeedbackStore,
   FeedbackThreadRecord,
@@ -27,13 +29,14 @@ export function createSupabaseFeedbackStore(
     },
 
     async canSend(userId, clinicId) {
-      const { data: platformAdmin } = await supabase
-        .from('platform_admins')
-        .select('user_id')
-        .eq('user_id', userId)
-        .maybeSingle()
-      if (platformAdmin) return true
-      if (!clinicId) return false
+      const isPlatformAdminAal2 = await fetchIsPlatformAdminAal2(supabase)
+      if (!clinicId) {
+        return decideFeedbackCanSend({
+          isPlatformAdminAal2,
+          clinicId: null,
+          isClinicMember: false,
+        })
+      }
 
       const { data: membership, error } = await supabase
         .from('clinic_members')
@@ -45,9 +48,17 @@ export function createSupabaseFeedbackStore(
         .maybeSingle()
       if (error) {
         console.error('[feedback:store] membership', error.message)
-        return false
+        return decideFeedbackCanSend({
+          isPlatformAdminAal2,
+          clinicId,
+          isClinicMember: false,
+        })
       }
-      return Boolean(membership)
+      return decideFeedbackCanSend({
+        isPlatformAdminAal2,
+        clinicId,
+        isClinicMember: Boolean(membership),
+      })
     },
 
     async getClinicName(clinicId) {

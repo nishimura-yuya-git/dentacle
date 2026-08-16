@@ -1,4 +1,8 @@
 import { supabase } from '@/lib/supabase'
+import {
+  FEEDBACK_SESSION_REQUIRED,
+  toClientFeedbackError,
+} from '@/features/feedback/feedbackSecurityContract'
 
 export type FeedbackChatMessage = {
   id: string
@@ -29,7 +33,7 @@ export async function sendFeedback(input: {
   } = await supabase.auth.getSession()
 
   if (sessionError || !session?.access_token) {
-    throw new Error(sessionError?.message || 'ログインセッションが必要です')
+    throw new Error(FEEDBACK_SESSION_REQUIRED)
   }
 
   const response = await fetch('/api/feedback/send', {
@@ -58,7 +62,7 @@ export async function sendFeedback(input: {
     | null
 
   if (!response.ok || !payload?.ok) {
-    throw new Error(payload?.error || `ご意見の送信に失敗しました（HTTP ${response.status}）`)
+    throw new Error(toClientFeedbackError(payload?.error, response.status))
   }
 
   return {

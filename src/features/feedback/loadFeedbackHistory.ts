@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase'
+import { FEEDBACK_HISTORY_LOAD_FAILED } from '@/features/feedback/feedbackSecurityContract'
 import type { FeedbackChatMessage } from '@/features/feedback/sendFeedback'
 import { pickFeedbackThread } from '@/features/feedback/pickFeedbackThread'
 
@@ -32,7 +33,7 @@ async function loadThreadMessages(threadId: string): Promise<FeedbackChatMessage
     .order('created_at', { ascending: true })
 
   if (messageError) {
-    throw new Error(messageError.message)
+    throw new Error(FEEDBACK_HISTORY_LOAD_FAILED)
   }
 
   return (rows ?? [])
@@ -70,7 +71,7 @@ export async function loadLatestFeedbackThread(): Promise<FeedbackHistoryThread 
     .limit(20)
 
   if (unreadError) {
-    throw new Error(unreadError.message)
+    throw new Error(FEEDBACK_HISTORY_LOAD_FAILED)
   }
 
   const { data: latestRows, error: latestError } = await supabase
@@ -80,7 +81,7 @@ export async function loadLatestFeedbackThread(): Promise<FeedbackHistoryThread 
     .limit(20)
 
   if (latestError) {
-    throw new Error(latestError.message)
+    throw new Error(FEEDBACK_HISTORY_LOAD_FAILED)
   }
 
   const byId = new Map<string, FeedbackThreadRow>()

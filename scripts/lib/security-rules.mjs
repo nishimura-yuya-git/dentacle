@@ -159,6 +159,44 @@ export const SECURITY_RULES = [
       return normalized.startsWith('src/pages/Login/') || normalized.startsWith('src/features/auth/');
     },
   },
+  {
+    id: 'SEC-FEEDBACK-DANGER-HTML',
+    severity: 'high',
+    title: 'ご意見チャット経路で HTML 埋め込みが検知されました',
+    remediation:
+      'ご意見は React のテキスト描画のみにしてください。innerHTML / dangerouslySetInnerHTML は使いません。',
+    scope: 'line',
+    pattern: /dangerouslySetInnerHTML|\.innerHTML\s*=/,
+    applies: ({ filePath }) => {
+      const normalized = filePath.replace(/\\/g, '/');
+      return (
+        normalized.startsWith('src/features/feedback/') ||
+        normalized.startsWith('src/components/features/feedback/') ||
+        normalized.startsWith('src/pages/Feedback/') ||
+        normalized.startsWith('server/feedback/') ||
+        normalized.startsWith('api/feedback/')
+      );
+    },
+  },
+  {
+    id: 'SEC-FEEDBACK-SQL-CONCAT',
+    severity: 'high',
+    title: 'ご意見チャット経路で SQL 文字列結合が疑われます',
+    remediation: '本文を SQL に連結せず、パラメータ付き insert / RPC 引数で渡してください。',
+    scope: 'line',
+    pattern:
+      /(?:SELECT|INSERT|UPDATE|DELETE|DROP|UNION)\s+[\s\S]{0,80}(?:\$\{|\+\s*body)/i,
+    applies: ({ filePath }) => {
+      const normalized = filePath.replace(/\\/g, '/');
+      return (
+        normalized.startsWith('src/features/feedback/') ||
+        normalized.startsWith('src/components/features/feedback/') ||
+        normalized.startsWith('src/pages/Feedback/') ||
+        normalized.startsWith('server/feedback/') ||
+        normalized.startsWith('api/feedback/')
+      );
+    },
+  },
 ];
 
 /**

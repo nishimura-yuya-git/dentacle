@@ -147,6 +147,90 @@ export function applyVersionToChangelog(markdown, { version, date, notes }) {
   return next.replace(/\n{3,}/g, '\n\n').replace(/\s+$/, '\n')
 }
 
+const CHANGELOG_SECTIONS = ['追加', '変更', '修正', '削除']
+
+export function compareSemver(left, right) {
+  const a = parseSemver(left)
+  const b = parseSemver(right)
+  if (a.major !== b.major) return a.major - b.major
+  if (a.minor !== b.minor) return a.minor - b.minor
+  return a.patch - b.patch
+}
+
+export function pickLatestVersionTag(tags) {
+  const parsed = []
+  for (const tag of tags) {
+    try {
+      parsed.push({ tag: String(tag).trim(), version: parseGitTag(tag) })
+    } catch {
+      // 製品版以外のタグは無視する
+    }
+  }
+  parsed.sort((left, right) => compareSemver(right.version, left.version))
+  return parsed[0]?.tag ?? null
+}
+
+export function classifyCommitForChangelog(title) {
+  const text = String(title || '').trim()
+  if (!text) return null
+  if (/^Merge\b/.test(text)) return null
+  if (/^origin\/main を取り込み/.test(text)) return null
+  if (/^製品版 SemVer の運用/.test(text)) return null
+  if (/^release bump /.test(text)) return null
+
+  if (/バグ|不具合|修正|直す|fix/i.test(text)) return { section: '修正', text }
+  if (/削除|廃止/.test(text)) return { section: '削除', text }
+  if (/改善|リファクタ|整理/.test(text)) return { section: '変更', text }
+  return { section: '追加', text }
+}
+
+export function formatDraftNotes(commitTitles) {
+  const groups = Object.fromEntries(CHANGELOG_SECTIONS.map((section) => [section, []]))
+  for (const title of commitTitles) {
+    const item = classifyCommitForChangelog(title)
+    if (!item) continue
+    groups[item.section].push(`- ${item.text}`)
+  }
+
+  const parts = []
+  for (const section of CHANGELOG_SECTIONS) {
+    if (groups[section].length === 0) continue
+    parts.push(`### ${section}`, '', ...groups[section], '')
+  }
+  return parts.join('\n').trim()
+}
+
+export function suggestBumpLevel(commitTitles) {
+  const items = commitTitles.map((title) => classifyCommitForChangelog(title)).filter(Boolean)
+  if (items.some((item) => /破壊|互換を壊/.test(item.text))) return 'major'
+  if (items.some((item) => item.section === '追加')) return 'minor'
+  return 'patch'
+}
+
+export function writeUnreleasedNotes(markdown, notes) {
+  const body = String(notes || '').trim()
+  if (!body) {
+    throw new Error('未公開メモが空です')
+  }
+
+  const headingRe = new RegExp(`^## ${escapeRegExp(UNRELEASED_HEADING)}(?:\\s|$)`)
+  const lines = String(markdown || '').split(/\r?\n/)
+  const range = findHeadingRange(lines, headingRe)
+  if (!range) {
+    throw new Error('CHANGELOG に ## 未公開 がありません')
+  }
+
+  const next = [
+    ...lines.slice(0, range.start + 1),
+    '',
+    ...body.split('\n'),
+    '',
+    ...lines.slice(range.end),
+  ].join('\n')
+
+  return next.replace(/\n{3,}/g, '\n\n').replace(/\s+$/, '\n')
+}
+
 export function collectVersionMismatches({ packageVersion, appVersion, changelog, tag }) {
   const version = parseSemver(packageVersion).version
   const errors = []

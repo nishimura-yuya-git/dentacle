@@ -5,6 +5,9 @@ Dentacle の製品版は SemVer（`MAJOR.MINOR.PATCH`）です。正本は Git �
 院向けお知らせ（`update #N`）や、`product_updates.version`（楽観ロック）とは混ぜません。
 コードを main に載せただけでは版は上がりません。本番に出したまとまりごとに上げます。
 
+日常のコミットと push は `/git-push`。製品版の公開は **`/release`**（「公開して」）。
+`/git-push` では版を上げず、CHANGELOG の公開節も書かず、タグも打ちません。
+
 ## 番号の上げ方
 
 | 上げる単位 | 例 | 使うとき |
@@ -15,31 +18,45 @@ Dentacle の製品版は SemVer（`MAJOR.MINOR.PATCH`）です。正本は Git �
 
 `0.x` は正式版前です。`PROJECT_MEMORY.md` の v0 Must（§6.19）は機能範囲の話で、タグ番号とは別です。
 
-## 毎回の手順
+## 毎回の手順（`/release` が正）
 
-1. `CHANGELOG.md` の「未公開」に、開発者向けの変更を日本語で書く。
-2. main にマージする（またはマージ直前の main で作業する）。
-3. 版を上げる。
+エージェントは `.cursor/commands/release.md` に従う。手で打つなら次と同じ。
+
+1. 実装は先に main へ載せる（`/git-push`）。公開コミットに実装差分を混ぜない。
+2. main を最新にする。
+
+```bash
+git checkout main
+git pull origin main
+```
+
+3. 前回タグ以降のコミットから、CHANGELOG の「未公開」を書く。
+
+```bash
+pnpm run release -- draft
+```
+
+4. 版を上げる。
 
 ```bash
 pnpm run release -- bump patch
 # または bump minor / bump major
 ```
 
-4. `package.json` / `src/config/appVersion.ts` / `CHANGELOG.md` の差分を確認してコミットする。
-5. 揃っているか確認する。
+5. `package.json` / `src/config/appVersion.ts` / `CHANGELOG.md` の差分を確認してコミットし、main へ push する。
+6. 揃っているか確認する。
 
 ```bash
 pnpm run version:check
 ```
 
-6. **main 上**でタグを打ち、push する。
+7. **main 上**でタグを打ち、push する。
 
 ```bash
 pnpm run release -- tag --push
 ```
 
-7. タグ `v*` の push を受けて、GitHub Actions が GitHub Release を作る。
+8. タグ `v*` の push を受けて、GitHub Actions が GitHub Release を作る。
    本文は `CHANGELOG.md` の該当節です。
 
 作業ツリーが汚いとき、または main 以外では `tag` は止まります。

@@ -8,16 +8,21 @@ import { readFileSync } from 'node:fs'
 import {
   applyVersionToChangelog,
   bumpSemver,
+  classifyCommitForChangelog,
   collectVersionMismatches,
   extractChangelogSection,
   extractUnreleasedNotes,
   formatAppVersionLabel,
+  formatDraftNotes,
   formatGitTag,
   parseGitTag,
   parseSemver,
+  pickLatestVersionTag,
   readAppVersionConst,
   replaceAppVersionConst,
   replacePackageJsonVersion,
+  suggestBumpLevel,
+  writeUnreleasedNotes,
 } from './lib/app-version.mjs'
 
 let failed = 0
@@ -129,6 +134,30 @@ function assertThrows(fn, message) {
     tag: 'v0.3.0',
   })
   assertEqual(ng.errors.length, 3, 'ズレと CHANGELOG 欠落を全部出す')
+}
+
+{
+  assertEqual(classifyCommitForChangelog('Merge branch main'), null, 'マージコミットは公開メモにしない')
+  assertEqual(classifyCommitForChangelog('ログイン監査のバグ修正')?.section, '修正', 'バグ修正は修正へ')
+  assertEqual(classifyCommitForChangelog('お知らせ画面の実装')?.section, '追加', '機能追加は追加へ')
+  assertEqual(pickLatestVersionTag(['v0.1.0', 'v0.2.0', 'nightly']), 'v0.2.0', '最新の製品版タグだけ見る')
+
+  const notes = formatDraftNotes([
+    'Merge pull request #14',
+    'お知らせ画面の実装',
+    'カレンダー表示のバグ修正',
+  ])
+  assertEqual(notes.includes('### 追加'), true, '下書きに追加節を出す')
+  assertEqual(notes.includes('お知らせ画面の実装'), true, '機能コミットを残す')
+  assertEqual(notes.includes('Merge pull request'), false, 'マージは下書きから除く')
+  assertEqual(suggestBumpLevel(['お知らせ画面の実装']), 'minor', '追加があれば minor')
+  assertEqual(suggestBumpLevel(['カレンダー表示のバグ修正']), 'patch', '修正だけなら patch')
+
+  const drafted = writeUnreleasedNotes(
+    '# 変更履歴\n\n## 未公開\n\n## 0.1.0 - 2026-08-16\n\n- 最初の版\n',
+    '### 追加\n\n- 次の機能\n',
+  )
+  assertEqual(extractUnreleasedNotes(drafted).includes('次の機能'), true, '未公開へ下書きを書ける')
 }
 
 {

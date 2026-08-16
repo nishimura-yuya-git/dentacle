@@ -3,6 +3,7 @@
  * 製品版の確認・上げ・タグ打ち。
  *
  *   pnpm run version:check
+ *   pnpm run release -- draft
  *   pnpm run release -- bump minor
  *   pnpm run release -- notes
  *   pnpm run release -- tag --push
@@ -15,12 +16,16 @@ import {
   collectVersionMismatches,
   extractChangelogSection,
   extractUnreleasedNotes,
+  formatDraftNotes,
   formatGitTag,
   parseGitTag,
   parseSemver,
+  pickLatestVersionTag,
   readAppVersionConst,
   replaceAppVersionConst,
   replacePackageJsonVersion,
+  suggestBumpLevel,
+  writeUnreleasedNotes,
 } from './lib/app-version.mjs'
 
 const PACKAGE_JSON_PATH = 'package.json'
@@ -32,11 +37,13 @@ function printHelp() {
 
 使い方:
   node scripts/release.mjs check
+  node scripts/release.mjs draft
   node scripts/release.mjs bump major|minor|patch
   node scripts/release.mjs notes [vX.Y.Z]
   node scripts/release.mjs tag [--push] [--allow-dirty] [--allow-branch]
 
 check  … package.json / APP_VERSION / CHANGELOG が揃っているか確認
+draft  … 前回の製品版タグ以降のコミットから CHANGELOG の未公開を書く
 bump   … 版を上げ、未公開メモを CHANGELOG の新節へ移す（コミットはしない）
 notes  … GitHub Release 用に CHANGELOG の該当節を出す
 tag    … 現在の製品版で annotated タグを打つ。main 上・作業ツリーがきれいなときだけ
@@ -153,6 +160,60 @@ function git(args, options = {}) {
   })
 }
 
+function listVersionTags() {
+  const listed = git(['tag', '-l', 'v*.*.*'])
+  if (listed.status !== 0) return []
+  return listed.stdout
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
+}
+
+function commitTitlesSince(tag) {
+  const range = tag ? `${tag}..HEAD` : 'HEAD'
+  const log = git(['log', range, '--pretty=format:%s'])
+  if (log.status !== 0) return []
+  return log.stdout
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
+}
+
+function runDraft() {
+  const latestTag = pickLatestVersionTag(listVersionTags())
+  if (!latestTag) {
+    console.log('製品版タグがまだありません。初回は bump せず、pnpm run version:check のあと pnpm run release -- tag --push だけです。')
+    return
+  }
+
+  const sources = loadSources()
+  const existing = extractUnreleasedNotes(sources.changelog)
+  if (existing) {
+    console.error('未公開に既にメモがあります。空にしてから draft するか、そのまま bump してください。')
+    process.exitCode = 1
+    return
+  }
+
+  const titles = commitTitlesSince(latestTag)
+  const notes = formatDraftNotes(titles)
+  if (!notes) {
+    console.error(`${latestTag} 以降のコミットから、公開メモを作れませんでした。`)
+    process.exitCode = 1
+    return
+  }
+
+  try {
+    writeFileSync(CHANGELOG_PATH, writeUnreleasedNotes(sources.changelog, notes))
+  } catch (error) {
+    console.error(error instanceof Error ? error.message : String(error))
+    process.exitCode = 1
+    return
+  }
+
+  console.log(`${latestTag} 以降のコミットから未公開を書きました。`)
+  console.log(`suggested-bump: ${suggestBumpLevel(titles)}`)
+}
+
 function runTag({ push, allowDirty, allowBranch }) {
   const checked = runCheck({ quiet: true })
   if (!checked) return
@@ -204,6 +265,9 @@ const parsed = parseArgs(process.argv.slice(2))
 switch (parsed.command) {
   case 'check':
     runCheck()
+    break
+  case 'draft':
+    runDraft()
     break
   case 'bump':
     runBump(parsed.positionals[0])

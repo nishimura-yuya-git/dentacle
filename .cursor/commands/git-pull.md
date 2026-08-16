@@ -159,7 +159,7 @@ git log --oneline -5
 - 次: なし / ユーザー確認（ファイル名）
 ```
 
-commit も push もしない。続けて上げる場合は `/git-push` を使う。
+commit も push もしない。続けてコードを載せる場合は `/git-push`。製品版を出す場合は `/release`。
 
 ---
 

@@ -2,12 +2,25 @@
 description: >-
   gitの差分を調べてコミットメッセージを作成し、mainブランチにpushするコマンド。
   「gitにpushして」「コミットしてpushして」「差分を調べてpushして」「mainにあげて」
-  と言われたときに使用する。
+  と言われたときに使用する。製品版の公開（タグ・CHANGELOG・GitHub Release）はしない。
+  公開は /release。
 globs:
 alwaysApply: false
 ---
 
 # Git Diff → Commit → Push コマンド
+
+呼び出し名は **`/git-push`**。日常のコミットと main への push 専用。
+
+製品版（`v0.1.0`）はここで上げない。`CHANGELOG.md` の公開節も書かない。タグも打たない。
+「公開して」「リリースして」「バージョン上げて」は **`/release`** へ切り替える。
+
+```text
+/git-push
+gitにpushして
+コミットしてpushして
+mainにあげて
+```
 
 ## 🚨 絶対禁止事項
 
@@ -15,6 +28,8 @@ alwaysApply: false
 - **`--no-verify` によるフック無効化は絶対禁止**
 - **`.env` や認証情報ファイルをコミットしない**
 - **`git config` の変更は絶対禁止**
+- **製品版の bump / タグ打ち / GitHub Release 作成は禁止**（`/release` の仕事）
+- **院向けお知らせの `update #N` や DB の楽観ロック `version` を製品版にしない**
 
 ---
 
@@ -127,6 +142,7 @@ push成功後、以下を報告する：
 
 **コミットID**: `<hash>`
 **変更ファイル数**: XX ファイル（XX 行追加 / XX 行削除）
+**製品版**: 未変更（公開するなら `/release`）
 
 ### 主な変更内容
 
@@ -136,6 +152,8 @@ push成功後、以下を報告する：
 | 改善 | ... |
 | 削除 | ... |
 ```
+
+今の `package.json` の version を一言添える。上げたとは書かない。
 
 ---
 
@@ -156,3 +174,8 @@ push成功後、以下を報告する：
 ### ブランチ確認
 - 必ず `main` ブランチにいることを確認してからpushする
 - `git status` の1行目で `On branch main` を確認する
+
+### 製品版との境界
+- このコマンドは「コードを main に載せる」まで
+- 版番号・CHANGELOG 公開節・タグは `/release`
+- 同じ発言で「push して公開もして」と言われたら、先にこのコマンドで載せ、続けて `/release` を実行する

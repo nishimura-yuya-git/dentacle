@@ -107,11 +107,19 @@ function runBump(level) {
   const next = bumpSemver(current, level)
   const notes = extractUnreleasedNotes(sources.changelog)
   const date = new Date().toISOString().slice(0, 10)
-  const changelog = applyVersionToChangelog(sources.changelog, {
-    version: next,
-    date,
-    notes,
-  })
+
+  let changelog
+  try {
+    changelog = applyVersionToChangelog(sources.changelog, {
+      version: next,
+      date,
+      notes,
+    })
+  } catch (error) {
+    console.error(error instanceof Error ? error.message : String(error))
+    process.exitCode = 1
+    return
+  }
 
   writeFileSync(PACKAGE_JSON_PATH, replacePackageJsonVersion(sources.packageJson, next))
   writeFileSync(APP_VERSION_PATH, replaceAppVersionConst(sources.appVersion, next))

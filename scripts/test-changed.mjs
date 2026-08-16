@@ -186,6 +186,21 @@ function main() {
     addCommand(commands, 'pnpm run test:working-graph', 'Working Graph の回帰確認');
   }
 
+  if (
+    files.some(
+      (file) =>
+        file === 'scripts/lib/app-version.mjs' ||
+        file === 'scripts/release.mjs' ||
+        file === 'scripts/app-version.test.mjs' ||
+        file === 'src/config/appVersion.ts' ||
+        file === 'src/config/appVersion.test.ts' ||
+        file === 'CHANGELOG.md',
+    )
+  ) {
+    addCommand(commands, 'pnpm run test:app-version', '製品版 SemVer の回帰確認');
+    addCommand(commands, 'pnpm run version:check', 'package.json / APP_VERSION / CHANGELOG の一致確認');
+  }
+
   if (files.some((file) => file.startsWith('src/pages/') || file.startsWith('src/components/'))) {
     addCommand(commands, 'pnpm run test:e2e -- --list', '該当画面のE2E候補確認');
   }

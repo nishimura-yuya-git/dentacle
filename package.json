@@ -1,7 +1,7 @@
 {
   "name": "vite-react-typescript-starter",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.1.0",
   "type": "module",
   "scripts": {
     "preinstall": "node -e \"const ua=process.env.npm_config_user_agent||''; if(!ua.startsWith('pnpm/')) { console.error('このプロジェクトではpnpmのみ使用してください。npm/yarnは禁止です。'); process.exit(1); }\"",
@@ -17,7 +17,10 @@
     "security:hook": "node scripts/cursor-security-hook.mjs",
     "test:security-scan": "node scripts/security-scan.test.mjs",
     "test:security-hook": "node scripts/cursor-security-hook.test.mjs",
-    "test": "pnpm run lint && pnpm run type-check && pnpm run check:forbidden-libs",
+    "test": "pnpm run lint && pnpm run type-check && pnpm run check:forbidden-libs && pnpm run version:check",
+    "version:check": "node scripts/release.mjs check",
+    "release": "node scripts/release.mjs",
+    "test:app-version": "node scripts/app-version.test.mjs && node --experimental-strip-types --test src/config/appVersion.test.ts",
     "doctor": "node scripts/doctor.mjs",
     "test:changed": "node scripts/test-changed.mjs",
     "check:architecture": "node scripts/check-architecture-boundaries.mjs",

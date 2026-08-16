@@ -7,6 +7,8 @@ export type NormalizedStaffSeed = {
 
 export type NormalizedPatientSeed = {
   chartNumber: string
+  /** レセコン内部の安定患者ID。CSV種まきでは常に null */
+  externalId: string | null
   nameKana: string
   nameKanji: string
   primaryDoctorCode: string | null
@@ -78,6 +80,7 @@ export function normalizePatientCsvRows(
 
     patients.push({
       chartNumber: row.chartNumber,
+      externalId: null,
       nameKana: row.nameKana,
       nameKanji,
       primaryDoctorCode: doctorCode || null,

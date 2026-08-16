@@ -539,6 +539,7 @@ export type Database = {
           created_by: string | null
           deleted_at: string | null
           deleted_by: string | null
+          external_code: string | null
           id: string
           is_active: boolean
           metadata: Json
@@ -554,6 +555,7 @@ export type Database = {
           created_by?: string | null
           deleted_at?: string | null
           deleted_by?: string | null
+          external_code?: string | null
           id?: string
           is_active?: boolean
           metadata?: Json
@@ -569,6 +571,7 @@ export type Database = {
           created_by?: string | null
           deleted_at?: string | null
           deleted_by?: string | null
+          external_code?: string | null
           id?: string
           is_active?: boolean
           metadata?: Json
@@ -1050,6 +1053,7 @@ export type Database = {
           created_by: string | null
           deleted_at: string | null
           deleted_by: string | null
+          external_id: string | null
           facility_id: string | null
           id: string
           is_active: boolean
@@ -1074,6 +1078,7 @@ export type Database = {
           created_by?: string | null
           deleted_at?: string | null
           deleted_by?: string | null
+          external_id?: string | null
           facility_id?: string | null
           id?: string
           is_active?: boolean
@@ -1098,6 +1103,7 @@ export type Database = {
           created_by?: string | null
           deleted_at?: string | null
           deleted_by?: string | null
+          external_id?: string | null
           facility_id?: string | null
           id?: string
           is_active?: boolean

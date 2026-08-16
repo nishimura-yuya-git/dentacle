@@ -1,5 +1,6 @@
-import { supabase } from '@/lib/supabase'
+import { findRececonPatientMatch } from '@/features/patientImport/findRececonPatient'
 import type { NormalizedPatientSeed, NormalizedStaffSeed } from '@/features/patientImport/normalizePatientCsv'
+import { supabase } from '@/lib/supabase'
 
 export type ImportProgressStep =
   | '準備'
@@ -93,19 +94,23 @@ export async function importNormalizedPatients(input: {
         ? staffMap.get(patient.primaryDoctorCode) ?? null
         : null
 
-      const { data: existing } = await supabase
-        .from('patients')
-        .select('id')
-        .eq('clinic_id', input.clinicId)
-        .eq('chart_number', patient.chartNumber)
-        .is('deleted_at', null)
-        .maybeSingle()
+      const match = await findRececonPatientMatch(input.clinicId, {
+        chartNumber: patient.chartNumber,
+        externalId: patient.externalId,
+      })
+      if (match.kind === 'invalid') {
+        throw new Error('カルテ番号または外部患者IDが必要です')
+      }
+      if (match.kind === 'conflict') {
+        throw new Error('カルテ番号と外部患者IDが別の患者を指しています')
+      }
 
-      let patientId = existing?.id
+      let patientId = match.kind === 'none' ? undefined : match.id
       const metadata =
         patient.visitCount != null
           ? { visit_count: patient.visitCount, seed_source: 'rececon_csv' }
           : { seed_source: 'rececon_csv' }
+      const externalId = patient.externalId?.trim() || null
 
       if (patientId) {
         const { error } = await supabase
@@ -116,6 +121,7 @@ export async function importNormalizedPatients(input: {
             primary_doctor_id: primaryDoctorId,
             is_active: true,
             metadata,
+            ...(externalId ? { external_id: externalId } : {}),
           })
           .eq('id', patientId)
         if (error) throw error
@@ -125,7 +131,8 @@ export async function importNormalizedPatients(input: {
           .from('patients')
           .insert({
             clinic_id: input.clinicId,
-            chart_number: patient.chartNumber,
+            chart_number: patient.chartNumber || null,
+            external_id: externalId,
             name_kanji: patient.nameKanji,
             name_kana: patient.nameKana || null,
             primary_doctor_id: primaryDoctorId,

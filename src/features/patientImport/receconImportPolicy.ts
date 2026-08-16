@@ -1,4 +1,4 @@
-/** レセコンCSV種まきの境界（案A）。常時接続・監視SaaSは置かない。 */
+/** レセコンCSV種まきの境界（案A）。常時接続・監視SaaSは置かない。身元突合は receconIdentity.contract。 */
 
 export const RECECON_IMPORT_ACTION = 'patient.import_rececon_csv'
 export const RECECON_IMPORT_ENTITY = 'patient_import'

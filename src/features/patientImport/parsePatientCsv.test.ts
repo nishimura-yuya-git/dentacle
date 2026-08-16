@@ -30,6 +30,7 @@ const normalized = normalizePatientCsvRows(parsed.rows, { defaultYear: 2026 })
 assert.equal(normalized.patients.length, 2)
 assert.equal(normalized.staff.length, 2)
 assert.equal(normalized.patients[0]?.lastVisitDate, '2026-06-08')
+assert.equal(normalized.patients[0]?.externalId, null)
 assert.ok(normalized.warnings.some((w) => w.includes('完成データではありません')))
 
 /** 実ファイルは件数のみ検証（個人情報をログしない） */

@@ -1,3 +1,4 @@
+import { fetchIsPlatformAdminAal2 } from '../auth/platformAdminAal2.ts'
 import { loadCursorServerEnv } from '../cursor/env.ts'
 import { runCursorAgentPrompt } from '../cursor/runAgent.ts'
 import { buildGapFillPrompt } from './buildGapFillPrompt.ts'
@@ -177,14 +178,10 @@ async function runGapFillJobInner(
     }
   }
 
+  // 運営の空き埋めは AAL2。身分だけの platform_admins 行では足りない。
   let allowed = Boolean(membership && WRITE_ROLES.has(membership.role))
   if (!allowed) {
-    const { data: platformAdmin } = await supabase
-      .from('platform_admins')
-      .select('user_id')
-      .eq('user_id', user.id)
-      .maybeSingle()
-    allowed = Boolean(platformAdmin)
+    allowed = await fetchIsPlatformAdminAal2(supabase)
   }
 
   if (!allowed) {

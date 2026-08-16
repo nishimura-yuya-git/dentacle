@@ -1,7 +1,9 @@
+import { fetchIsPlatformAdminAal2 } from '../auth/platformAdminAal2.ts'
 import { createUserSupabaseClient } from '../schedule/createUserClient.ts'
 import { createServiceSupabaseClient } from './createServiceClient.ts'
 import { isAlreadyRegisteredAuthError, normalizeInviteEmail } from './inviteEmail.ts'
 import { resolveInviteRedirectTo } from './inviteRedirect.ts'
+import { markInvitedUserMustSetPassword } from './markMustSetPassword.ts'
 import { toPublicAdminInviteError } from './publicErrors.ts'
 
 const INVITE_COOLDOWN_MS = 15_000
@@ -88,12 +90,11 @@ export function createInvitePlatformAdminDeps(
     },
     async isPlatformAdmin(accessToken) {
       const userClient = createUserSupabaseClient(accessToken, env)
-      const { data, error } = await userClient.rpc('is_platform_admin')
-      return !error && data === true
+      return fetchIsPlatformAdminAal2(userClient)
     },
     async inviteUserByEmail(email, redirectTo) {
       const service = createServiceSupabaseClient(env)
-      const { error } = await service.auth.admin.inviteUserByEmail(email, {
+      const { data, error } = await service.auth.admin.inviteUserByEmail(email, {
         redirectTo,
         data: {
           must_set_password: true,
@@ -101,6 +102,18 @@ export function createInvitePlatformAdminDeps(
         },
       })
       if (error) return { ok: false, message: error.message }
+      const invitedUser = data.user
+      if (invitedUser?.id) {
+        const marked = await markInvitedUserMustSetPassword({
+          userId: invitedUser.id,
+          existingAppMetadata: invitedUser.app_metadata,
+          updateUserById: async (userId, attributes) => {
+            const updated = await service.auth.admin.updateUserById(userId, attributes)
+            return { error: updated.error }
+          },
+        })
+        if (!marked.ok) return marked
+      }
       return { ok: true }
     },
     async grantByEmail(accessToken, email, options) {

@@ -9,5 +9,19 @@ describe('needsPasswordSetup', () => {
     assert.equal(needsPasswordSetup(null), false)
     assert.equal(needsPasswordSetup({ user_metadata: { must_set_password: 'true' } }), false)
     assert.equal(needsPasswordSetup({ user_metadata: { must_set_password: '<script>' } }), false)
+    assert.equal(
+      needsPasswordSetup({
+        app_metadata: { must_set_password: true },
+        user_metadata: { must_set_password: false },
+      }),
+      true,
+    )
+    assert.equal(
+      needsPasswordSetup({
+        app_metadata: { must_set_password: false },
+        user_metadata: { must_set_password: true },
+      }),
+      false,
+    )
   })
 })

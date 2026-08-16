@@ -12,6 +12,7 @@ import {
   zoomSvgToElements,
   zoomSvgToSelector,
 } from '@/pages/AuthAudit/japanMapZoom'
+import { applyTrustedMapSvg } from '@/pages/AuthAudit/applyTrustedMapSvg'
 import type { AuthAuditMapCluster } from '@/pages/AuthAudit/resolveAuthAuditMapPin'
 import { AUTH_AUDIT_PIN_OVERSEAS } from '@/pages/AuthAudit/resolveAuthAuditMapPin'
 
@@ -128,7 +129,9 @@ export function AuthAuditJapanMap({ clusters, selectedKey, onSelect, loading }: 
         if (!response.ok) throw new Error(`地図の読み込みに失敗しました（${response.status}）`)
         const markup = await response.text()
         if (cancelled || !hostRef.current) return
-        hostRef.current.innerHTML = markup
+        if (!applyTrustedMapSvg(hostRef.current, markup)) {
+          throw new Error('地図データが不正です')
+        }
         const svg = hostRef.current.querySelector('svg')
         if (svg) {
           svg.setAttribute('width', '100%')

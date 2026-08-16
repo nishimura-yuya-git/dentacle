@@ -5,6 +5,7 @@ import { applyProposeResult } from './applyProposeResult.ts'
 import { buildLocalProposeSlots } from './buildLocalProposeSlots.ts'
 import { buildProposePrompt } from './buildProposePrompt.ts'
 import { buildProposeSnapshot } from './buildProposeSnapshot.ts'
+import { fetchIsPlatformAdminAal2 } from '../auth/platformAdminAal2.ts'
 import { createUserSupabaseClient } from './createUserClient.ts'
 import { loadPlatformCursorModel } from './loadPlatformCursorModel.ts'
 import { packProposeSlots } from './packProposeSlots.ts'
@@ -128,15 +129,10 @@ async function runProposeJobInner(
     }
   }
 
-  // platform_admins は UI 側でも提案可。DB 直確認
+  // 運営の自動提案は AAL2。身分だけの platform_admins 行では足りない。
   let allowed = Boolean(membership && WRITE_ROLES.has(membership.role))
   if (!allowed) {
-    const { data: platformAdmin } = await supabase
-      .from('platform_admins')
-      .select('user_id')
-      .eq('user_id', user.id)
-      .maybeSingle()
-    allowed = Boolean(platformAdmin)
+    allowed = await fetchIsPlatformAdminAal2(supabase)
   }
 
   if (!allowed) {

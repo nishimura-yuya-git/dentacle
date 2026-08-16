@@ -1929,6 +1929,7 @@ export type Database = {
       is_clinic_admin: { Args: { p_clinic_id: string }; Returns: boolean }
       is_clinic_member: { Args: { p_clinic_id: string }; Returns: boolean }
       is_platform_admin: { Args: never; Returns: boolean }
+      is_platform_admin_aal2: { Args: never; Returns: boolean }
       is_platform_admin_user: { Args: { p_user_id: string }; Returns: boolean }
       is_request_ip_blocked: { Args: never; Returns: boolean }
       list_auth_presence: {

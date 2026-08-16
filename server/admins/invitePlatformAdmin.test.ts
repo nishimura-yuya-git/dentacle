@@ -1,10 +1,15 @@
 import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
+import { dirname, join } from 'node:path'
 import { describe, it } from 'node:test'
+import { fileURLToPath } from 'node:url'
 import {
   invitePlatformAdmin,
   resetInviteRateLimitForTests,
   type InvitePlatformAdminDeps,
 } from './invitePlatformAdmin.ts'
+
+const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '../..')
 
 function deps(overrides: Partial<InvitePlatformAdminDeps> = {}): InvitePlatformAdminDeps {
   return {
@@ -50,6 +55,14 @@ describe('invitePlatformAdmin', () => {
     )
     assert.deepEqual(result, { ok: true, invited: false })
     assert.equal(invited, false)
+  })
+
+  it('本番経路は AAL2 判定と app_metadata 強制を使う', () => {
+    const source = readFileSync(join(repoRoot, 'server/admins/invitePlatformAdmin.ts'), 'utf8')
+    const aal2 = readFileSync(join(repoRoot, 'server/auth/platformAdminAal2.ts'), 'utf8')
+    assert.match(source, /fetchIsPlatformAdminAal2/)
+    assert.match(source, /markInvitedUserMustSetPassword/)
+    assert.match(aal2, /is_platform_admin_aal2/)
   })
 
   it('運営以外は拒否する', async () => {

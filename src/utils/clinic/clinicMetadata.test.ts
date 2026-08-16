@@ -2,8 +2,10 @@ import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
 import {
   readIntroductionLane,
+  readRececonVendorId,
   readVisitMenuEnabled,
   withIntroductionLane,
+  withRececonVendorId,
   withVisitMenuEnabled,
 } from './clinicMetadata.ts'
 
@@ -29,5 +31,21 @@ describe('clinicMetadata visit_menu_enabled', () => {
       'startup',
     )
     assert.deepEqual(readVisitMenuEnabled(next as never), { extraction: false })
+  })
+})
+
+describe('clinicMetadata rececon_vendor', () => {
+  it('未設定はノーザ想定にし、他の metadata は消さない', () => {
+    assert.equal(readRececonVendorId(null), 'nhosa')
+    assert.equal(readRececonVendorId({ introduction_lane: 'existing' }), 'nhosa')
+
+    const next = withRececonVendorId(
+      { introduction_lane: 'existing', visit_menu_enabled: { extraction: false } },
+      'nhosa',
+    )
+    assert.equal(next.rececon_vendor, 'nhosa')
+    assert.equal(readIntroductionLane(next as never), 'existing')
+    assert.deepEqual(readVisitMenuEnabled(next as never), { extraction: false })
+    assert.equal(readRececonVendorId(next as never), 'nhosa')
   })
 })

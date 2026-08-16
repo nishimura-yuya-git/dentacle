@@ -1,7 +1,7 @@
 /**
  * レセコン連携の安全契約。
- * いまの取込は院内CSV。将来の医院LAN接続（VPN・閉域・TLS API・院内中継）も同じ最小限に従う。
- * 「医院LANに入らない」は当面の手段であり、永久禁止ではない。
+ * いま開いている経路は院内CSV。ノーザ導入に備え、医院LAN接続（VPN・閉域・TLS API・院内中継）も同じ最小限に従う。
+ * 「医院LANに入らない」はいまのCSV経路の説明であり、永久禁止ではない。
  */
 
 export const RECECON_CONNECTION_MODES = [
@@ -12,7 +12,7 @@ export const RECECON_CONNECTION_MODES = [
 ] as const
 export type RececonConnectionMode = (typeof RECECON_CONNECTION_MODES)[number]
 
-/** いま開いている経路。将来の接続モードを排除しない。 */
+/** いま開いている経路。導入に備えた接続モードを契約から外さない。 */
 export const RECECON_CURRENT_CONNECTION_MODE: RececonConnectionMode = 'clinic_csv_export'
 
 export const RECECON_SECURED_LINK_MODES = [

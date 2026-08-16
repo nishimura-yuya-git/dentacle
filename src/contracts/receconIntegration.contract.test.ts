@@ -26,7 +26,7 @@ function readRepo(relativeFromContracts: string): string {
 }
 
 describe('receconIntegration.contract', () => {
-  it('医院LANに入らないことは永久禁止ではなく、将来接続はTLS1.3と443に限る', () => {
+  it('医院LANに入らないことは永久禁止ではなく、導入に備えた接続はTLS1.3と443に限る', () => {
     assert.equal(isClinicLanEntryForeverForbidden(), false)
     assert.equal(RECECON_CURRENT_CONNECTION_MODE, 'clinic_csv_export')
     assert.equal(RECECON_MIN_TLS_VERSION, '1.3')
@@ -114,5 +114,7 @@ describe('receconIntegration.contract', () => {
     assert.equal(/準拠したデータ運用/.test(joined), false)
     assert.equal(/医院LANへ常時入る接続は行いません。/.test(joined), false)
     assert.match(joined, /医院LANに入らないことが前提ではありません/)
+    assert.match(joined, /導入に備え/)
+    assert.equal(/将来レセコンと接続する場合/.test(joined), false)
   })
 })

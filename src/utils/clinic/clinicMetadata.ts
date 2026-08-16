@@ -1,3 +1,8 @@
+import {
+  RECECON_ASSUMED_VENDOR_ID,
+  isRececonVendorId,
+  type RececonVendorId,
+} from '../../contracts/receconVendor.contract.ts'
 import type { Json } from '../../types/database.types.ts'
 import {
   DEFAULT_INTRODUCTION_LANE,
@@ -56,5 +61,24 @@ export function withVisitMenuEnabled(
   return {
     ...asRecord(metadata),
     visit_menu_enabled: stored,
+  }
+}
+
+/** 未設定は想定ベンダー（ノーザ）。院向け画面には出さない */
+export function readRececonVendorId(
+  metadata: Json | null | undefined,
+): RececonVendorId {
+  const raw = asRecord(metadata).rececon_vendor
+  return isRececonVendorId(raw) ? raw : RECECON_ASSUMED_VENDOR_ID
+}
+
+/** rececon_vendor だけをマージする。他の metadata は消さない */
+export function withRececonVendorId(
+  metadata: Json | null | undefined,
+  vendorId: RececonVendorId,
+): MetadataRecord {
+  return {
+    ...asRecord(metadata),
+    rececon_vendor: vendorId,
   }
 }

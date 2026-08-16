@@ -1,4 +1,4 @@
-/** いまのCSV種まき境界。将来接続の安全条件は receconIntegration.contract。身元突合は receconIdentity.contract。 */
+/** いまのCSV種まき境界。導入に備えた安全条件は receconIntegration.contract。身元突合は receconIdentity.contract。 */
 
 export const RECECON_IMPORT_ACTION = 'patient.import_rececon_csv'
 export const RECECON_IMPORT_ENTITY = 'patient_import'

@@ -82,7 +82,7 @@ describe('安全性ページの文言', () => {
     assert.equal(/issue/i.test(allCopy()), false)
   })
 
-  it('レセコン連携はいまのCSVと将来接続の安全条件を書き、監視SaaS名を出さない', () => {
+  it('レセコン連携はいまのCSVと導入に備えた安全条件を書き、監視SaaS名を出さない', () => {
     const rececon = SECURITY_SECTIONS.find((section) => section.id === 'rececon')
     assert.ok(rececon)
     const text = rececon.paragraphs.join('\n')

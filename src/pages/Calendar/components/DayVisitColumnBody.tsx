@@ -15,10 +15,12 @@ import {
 } from '@/pages/Calendar/utils/visitBlockAppearance'
 import { formatTime } from '@/utils/dates'
 import { visitStatusLabel } from '@/utils/roleLabels'
-import type {
-  CalendarBlock,
-  CalendarVisit,
-} from '@/pages/Calendar/components/dayVisitGrid.types'
+import { CalendarPeerBadge } from '@/pages/Calendar/components/CalendarPeerBadge'
+import {
+  focusPeersForVisit,
+  remoteGhostsForTeam,
+  type CalendarPeerView,
+} from '@/pages/Calendar/utils/calendarLivePeers'
 
 const BLOCK_LABEL: Record<string, string> = {
   break: '休憩',
@@ -47,6 +49,8 @@ type Props = {
   resizeStart: string | null
   resizeEnd: string | null
   hideVisitId: string | null
+  remoteHideVisitIds?: string[]
+  livePeers?: CalendarPeerView[]
   canResize: boolean
   onVisitPointerDown: (
     visit: CalendarVisit,
@@ -71,6 +75,8 @@ export function DayVisitColumnBody({
   resizeStart,
   resizeEnd,
   hideVisitId,
+  remoteHideVisitIds = [],
+  livePeers = [],
   canResize,
   onVisitPointerDown,
   onResizePointerDown,
@@ -110,6 +116,25 @@ export function DayVisitColumnBody({
           <p className="truncate text-[10px] font-bold text-[#008C01]">移動中</p>
         </div>
       ) : null}
+
+      {remoteGhostsForTeam(livePeers, teamId, {
+        occupyingVisits: visits,
+        ignoreVisitIds: hideVisitId ? [hideVisitId] : [],
+      }).map((ghost) => (
+        <div
+          key={`live-${ghost.peerId}`}
+          className="pointer-events-none absolute left-1 right-1 z-[3] overflow-visible rounded-md border border-dashed border-slate-400 bg-slate-100/80 px-1.5 py-1"
+          style={visitBlockStyle(ghost.startTime, ghost.endTime)}
+          aria-hidden
+        >
+          <div className="absolute -right-1 -top-1">
+            <CalendarPeerBadge pcLabel={ghost.pcLabel} size="sm" />
+          </div>
+          <p className="truncate text-[10px] font-bold text-slate-600">
+            {ghost.mode === 'create' ? '入力中' : '操作中'}
+          </p>
+        </div>
+      ))}
 
       {loading
         ? SKELETON_BLOCKS.map((block, index) => {
@@ -157,6 +182,7 @@ export function DayVisitColumnBody({
       {!loading
         ? visits.map((visit) => {
             if (hideVisitId === visit.id) return null
+            if (remoteHideVisitIds.includes(visit.id)) return null
             const displayStart =
               resizeVisitId === visit.id && resizeStart
                 ? resizeStart
@@ -171,9 +197,10 @@ export function DayVisitColumnBody({
             const statusText = provisionalAuto
               ? provisionalStatusLabel(blockHeight)
               : visitStatusLabel(visit.status)
+            const watching = focusPeersForVisit(livePeers, visit.id)
             return (
+              <div key={visit.id}>
               <button
-                key={visit.id}
                 type="button"
                 data-visit-block="true"
                 title={
@@ -211,6 +238,21 @@ export function DayVisitColumnBody({
                   />
                 ) : null}
               </button>
+                {watching.length > 0 ? (
+                  <span
+                    className="pointer-events-none absolute z-[5] flex -space-x-1"
+                    style={{ top: Math.max(0, top - 8), right: 2 }}
+                  >
+                    {watching.map((item) => (
+                      <CalendarPeerBadge
+                        key={item.peerId}
+                        pcLabel={item.pcLabel}
+                        size="sm"
+                      />
+                    ))}
+                  </span>
+                ) : null}
+              </div>
             )
           })
         : null}

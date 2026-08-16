@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState, type Dispatch, type SetStateAction } from 'react'
 import { supabase } from '@/lib/supabase'
 import type { Json } from '@/types/database.types'
 import { readVisitMenuEnabled } from '@/utils/clinic/clinicMetadata'
@@ -12,7 +12,9 @@ import { INITIAL_VISIBLE_VEHICLE_COLUMNS } from '@/pages/Calendar/utils/vehicleT
 import {
   isLatestCalendarDayLoad,
   shouldClearCalendarDayLoading,
+  shouldUseCalendarDayOnlyReload,
 } from '@/pages/Calendar/hooks/calendarDayLoadState'
+import { useCalendarRealtimeSync } from '@/pages/Calendar/hooks/useCalendarRealtimeSync'
 import {
   readStoredVisibleColumns,
   resolveVisibleColumns,
@@ -50,6 +52,8 @@ export function useCalendarDayData(clinicId: string | undefined, date: string) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const loadSeqRef = useRef(0)
+  const allTeamsRef = useRef<VehicleTeam[]>([])
+  const allTeamsClinicRef = useRef<string | undefined>(undefined)
 
   useEffect(() => {
     if (!clinicId) {
@@ -67,17 +71,96 @@ export function useCalendarDayData(clinicId: string | undefined, date: string) {
       setLoading(true)
       setVisits([])
     }
+    if (allTeamsClinicRef.current !== clinicId) {
+      allTeamsClinicRef.current = clinicId
+      allTeamsRef.current = []
+    }
 
-    const ensured = await ensureVehicleTeams(clinicId)
-    if (!isLatestCalendarDayLoad(seq, loadSeqRef.current)) return
-    if (ensured.error) {
+    const dayOnly = shouldUseCalendarDayOnlyReload({
+      silent,
+      hasTeams: allTeamsRef.current.length > 0,
+    })
+
+    let teams = allTeamsRef.current
+    if (!dayOnly) {
+      const ensured = await ensureVehicleTeams(clinicId)
+      if (!isLatestCalendarDayLoad(seq, loadSeqRef.current)) return
+      if (ensured.error) {
+        if (shouldClearCalendarDayLoading({ isLatest: true, silent })) {
+          setLoading(false)
+        }
+        setError(ensured.error)
+        return
+      }
+      teams = ensured.teams
+      allTeamsRef.current = teams
+      setAllTeams(teams)
+    }
+
+    const visitsQuery = supabase
+      .from('visits')
+      .select(
+        'id, patient_id, team_id, staff_id, start_time, end_time, status, source, metadata, patients(name_kanji)',
+      )
+      .eq('clinic_id', clinicId)
+      .eq('scheduled_date', date)
+      .is('deleted_at', null)
+      .neq('status', 'cancelled')
+      .order('start_time')
+    const blocksQuery = supabase
+      .from('calendar_blocks')
+      .select('id, team_id, start_time, end_time, block_type, title')
+      .eq('clinic_id', clinicId)
+      .eq('scheduled_date', date)
+      .is('deleted_at', null)
+      .order('start_time')
+    const memoQuery = supabase
+      .from('clinic_day_memos')
+      .select('body')
+      .eq('clinic_id', clinicId)
+      .eq('memo_date', date)
+      .is('deleted_at', null)
+      .maybeSingle()
+    const cancelledQuery = supabase
+      .from('visits')
+      .select('id', { count: 'exact', head: true })
+      .eq('clinic_id', clinicId)
+      .eq('scheduled_date', date)
+      .eq('status', 'cancelled')
+      .is('deleted_at', null)
+
+    if (dayOnly) {
+      const [visitsRes, blocksRes, memoRes, cancelledRes] = await Promise.all([
+        visitsQuery,
+        blocksQuery,
+        memoQuery,
+        cancelledQuery,
+      ])
+      if (!isLatestCalendarDayLoad(seq, loadSeqRef.current)) return
       if (shouldClearCalendarDayLoading({ isLatest: true, silent })) {
         setLoading(false)
       }
-      setError(ensured.error)
+      if (visitsRes.error) {
+        setError(visitsRes.error.message || '読込に失敗しました')
+        return
+      }
+      applyCalendarDaySurface({
+        clinicId,
+        teams,
+        visits: (visitsRes.data ?? []) as VisitRow[],
+        blocks: (blocksRes.data ?? []) as CalendarBlock[],
+        dayMemo: memoRes.data?.body ?? '',
+        cancelledCount: cancelledRes.count ?? 0,
+        usedTeamIds: ((visitsRes.data ?? []) as VisitRow[]).map((row) => row.team_id),
+        setVisits,
+        setBlocks,
+        setDayMemo,
+        setCancelledCount,
+        setVisibleColumns,
+      })
+      setError(null)
       return
     }
-    setAllTeams(ensured.teams)
 
     const [
       staffRes,
@@ -102,16 +185,7 @@ export function useCalendarDayData(clinicId: string | undefined, date: string) {
         .eq('clinic_id', clinicId)
         .is('deleted_at', null)
         .order('name_kanji'),
-      supabase
-        .from('visits')
-        .select(
-          'id, patient_id, team_id, staff_id, start_time, end_time, status, source, metadata, patients(name_kanji)',
-        )
-        .eq('clinic_id', clinicId)
-        .eq('scheduled_date', date)
-        .is('deleted_at', null)
-        .neq('status', 'cancelled')
-        .order('start_time'),
+      visitsQuery,
       supabase
         .from('visits')
         .select('team_id')
@@ -119,27 +193,9 @@ export function useCalendarDayData(clinicId: string | undefined, date: string) {
         .is('deleted_at', null)
         .neq('status', 'cancelled')
         .not('team_id', 'is', null),
-      supabase
-        .from('calendar_blocks')
-        .select('id, team_id, start_time, end_time, block_type, title')
-        .eq('clinic_id', clinicId)
-        .eq('scheduled_date', date)
-        .is('deleted_at', null)
-        .order('start_time'),
-      supabase
-        .from('clinic_day_memos')
-        .select('body')
-        .eq('clinic_id', clinicId)
-        .eq('memo_date', date)
-        .is('deleted_at', null)
-        .maybeSingle(),
-      supabase
-        .from('visits')
-        .select('id', { count: 'exact', head: true })
-        .eq('clinic_id', clinicId)
-        .eq('scheduled_date', date)
-        .eq('status', 'cancelled')
-        .is('deleted_at', null),
+      blocksQuery,
+      memoQuery,
+      cancelledQuery,
       supabase
         .from('clinics')
         .select('metadata')
@@ -165,29 +221,23 @@ export function useCalendarDayData(clinicId: string | undefined, date: string) {
 
     setStaff(staffRes.data ?? [])
     setPatients(patientsRes.data ?? [])
-    setVisits(
-      ((visitsRes.data ?? []) as VisitRow[]).map((row) => ({
-        ...row,
-        cell_color: readVisitCellColor(row.metadata),
-      })),
-    )
-    setBlocks((blocksRes.data ?? []) as CalendarBlock[])
-    setDayMemo(memoRes.data?.body ?? '')
-    setCancelledCount(cancelledRes.count ?? 0)
-    setVisitMenuEnabled(readVisitMenuEnabled(clinicRes.data?.metadata ?? null))
-
-    setVisibleColumns((current) => {
-      const stored = readStoredVisibleColumns(clinicId) ?? current
-      const next = resolveVisibleColumns({
-        stored,
-        teams: ensured.teams,
-        usedTeamIds: usedTeamsRes.error
-          ? []
-          : (usedTeamsRes.data ?? []).map((row) => row.team_id),
-      })
-      if (next > stored) writeStoredVisibleColumns(clinicId, next)
-      return next
+    applyCalendarDaySurface({
+      clinicId,
+      teams,
+      visits: (visitsRes.data ?? []) as VisitRow[],
+      blocks: (blocksRes.data ?? []) as CalendarBlock[],
+      dayMemo: memoRes.data?.body ?? '',
+      cancelledCount: cancelledRes.count ?? 0,
+      usedTeamIds: usedTeamsRes.error
+        ? []
+        : (usedTeamsRes.data ?? []).map((row) => row.team_id),
+      setVisits,
+      setBlocks,
+      setDayMemo,
+      setCancelledCount,
+      setVisibleColumns,
     })
+    setVisitMenuEnabled(readVisitMenuEnabled(clinicRes.data?.metadata ?? null))
     setError(null)
   }, [clinicId, date])
 
@@ -222,6 +272,8 @@ export function useCalendarDayData(clinicId: string | undefined, date: string) {
     void load()
   }, [load])
 
+  useCalendarRealtimeSync(clinicId, date, load)
+
   return {
     visibleColumns,
     allTeams,
@@ -241,4 +293,39 @@ export function useCalendarDayData(clinicId: string | undefined, date: string) {
     patchVisitsLocal,
     removeVisitsLocal,
   }
+}
+
+function applyCalendarDaySurface(input: {
+  clinicId: string
+  teams: VehicleTeam[]
+  visits: VisitRow[]
+  blocks: CalendarBlock[]
+  dayMemo: string
+  cancelledCount: number
+  usedTeamIds: Array<string | null | undefined>
+  setVisits: Dispatch<SetStateAction<VisitRow[]>>
+  setBlocks: Dispatch<SetStateAction<CalendarBlock[]>>
+  setDayMemo: Dispatch<SetStateAction<string>>
+  setCancelledCount: Dispatch<SetStateAction<number>>
+  setVisibleColumns: Dispatch<SetStateAction<number>>
+}) {
+  input.setVisits(
+    input.visits.map((row) => ({
+      ...row,
+      cell_color: readVisitCellColor(row.metadata),
+    })),
+  )
+  input.setBlocks(input.blocks)
+  input.setDayMemo(input.dayMemo)
+  input.setCancelledCount(input.cancelledCount)
+  input.setVisibleColumns((current) => {
+    const stored = readStoredVisibleColumns(input.clinicId) ?? current
+    const next = resolveVisibleColumns({
+      stored,
+      teams: input.teams,
+      usedTeamIds: input.usedTeamIds,
+    })
+    if (next > stored) writeStoredVisibleColumns(input.clinicId, next)
+    return next
+  })
 }

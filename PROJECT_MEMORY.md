@@ -268,6 +268,8 @@
 | ヘルプ文言 | `src/pages/Help/helpCopy.ts` | FAQ・セクション見出しの正。Nani の本文は借りない（§6.59） | `/help` |
 | 対外ブランド名 | `src/config/appName.ts`（`APP_DISPLAY_NAME`） | 画面の正は Dentacle。内部識別子 Detacle と混ぜない（§6.17） | タブ・安全性・ヘルプ・契約・ロゴ alt |
 | 製品版番号 | `APP_VERSION` + `package.json` version + Git タグ `vX.Y.Z` | 開発者向け SemVer。院向け `update #N` と混ぜない（§6.64） | `/release`、CHANGELOG、GitHub Release |
+| 診療カレンダー他端末の操作中表示 | `calendarLivePeers.ts` + `clinic_calendar_peers` | PC丸・ゴースト・元枠非表示。氏名は持たない（§6.65） | 診療カレンダー |
+| 診療カレンダー silent 再取得 | `shouldUseCalendarDayOnlyReload` + `calendarRealtimeSync.ts` | 号車済み silent は当日分だけ。先頭ティックは即時、連打は静穏 400ms（§6.65） | 診療カレンダー |
 
 ### 禁止
 
@@ -328,6 +330,7 @@ DB上の確定・集計テーブル
 | ご意見の正記録 | GitHub Issue（本体／コメント） | `feedback_threads` / `feedback_messages`（履歴） | Issue またはコメント作成成功後 | GitHub 失敗時は履歴も作らない。履歴保存失敗はログのみ（Issue は残す）。§6.54 |
 | 院向けご意見返答 | `product_updates`（`published`） | GitHub Issue コメントは開発用。院画面には出さない | 運営が「入れる」したあと | 入れない限り院に届かない。エージェントは提案まで。§6.54 / §6.55 |
 | 改善の進捗→お知らせ | `improvement_items`（反映済み） | `product_updates`（提案してから入れる） | 運営が `/progress` で反映済みにしたとき | お知らせ作成失敗時は状態更新も失敗。再掲載しない。送信時・見送りでは載せない。§6.55 / §6.57 |
+| 診療カレンダー保存ティック | `visits` / `calendar_blocks` / `clinic_day_memos` | `clinic_calendar_sync.last_change_at` | AFTER INSERT/UPDATE/DELETE | 同一トランザクション。ティック失敗は本体も戻る。画面は先頭即時の silent reload（当日分）。連打は静穏 400ms（§6.32 / §6.65） |
 
 ### 禁止例
 
@@ -732,7 +735,7 @@ DB上の確定・集計テーブル
 訪問カレンダーは Apotool 風の日別×号車グリッドを土台に、次を v0 で守る。
 
 - **ドラッグ移動・リサイズ**: 訪問ブロックをドラッグで号車・時刻を変更し、下端ハンドルで終了時刻を変更する（`DayVisitGrid` / `visitTimeMath`）。詳細モーダルの「更新」なしでも即反映する。
-- **楽観更新 + silent reload（2026-08-11 / 2026-08-16 追記）**: 移動・リサイズ後はローカルパッチし、`load({ silent: true })` で再取得する。`setVisits([])` で枠を空にしない。最新リクエストなら silent でも `loading` を下ろす（§10.16 / §10.54）。
+- **楽観更新 + silent reload（2026-08-11 / 2026-08-16 追記）**: 移動・リサイズ後はローカルパッチし、`load({ silent: true })` で再取得する。`setVisits([])` で枠を空にしない。最新リクエストなら silent でも `loading` を下ろす（§10.16 / §10.54）。号車済み silent は当日分だけ取る（§6.65）。他端末への自動反映は §6.65。
 - **手動仮予約 → 電話確認**: 手動登録でも `ensurePhoneConfirmationForVisit` により電話確認キューへ載せる（§6.6）。
 - **電話確認NG → 取消＋同日再提案**: NG時は訪問を取消し、同患者のみの Day0 再提案を自動採用する最小ループ（§6.6）。
 - **運用補助**: 日別メモ（`clinic_day_memos`）、空きブロック（`calendar_blocks`: 休憩・移動・会議等）、電話未確認／当日取消の見える化、簡易週ストリップ、患者絞り込み、標準所要時間の手動登録時適用、操作ログ簡易UI（`/operations`・§6.50）、稼働枠サマリー表示。
@@ -740,7 +743,7 @@ DB上の確定・集計テーブル
 - **日別CSV（2026-08-11 改定）**: カレンダー見出し操作からは外す（主導線ではない）。患者一覧の「データ出力」・CSV取込は別導線として維持。
 - **カレンダーからの自動提案実行**: §6.34。空き枠埋め副導線は §6.47。
 - 操作の裏書きは `operation_traces` に残す（失敗しても業務処理は止めない）。
-- 関連: `CalendarPage.tsx`, `DayVisitGrid.tsx`, `useCalendarDayData.ts`, `useCalendarVisitActions.ts`, `ContactsPage.tsx`, `proposalActions.ts`, `OperationsTracesPage.tsx`, `supabase/migrations/20260809140000_calendar_ops_extensions.sql`, §6.6, §6.19, §6.30, §6.34, §6.47, §6.50
+- 関連: `CalendarPage.tsx`, `DayVisitGrid.tsx`, `useCalendarDayData.ts`, `useCalendarVisitActions.ts`, `ContactsPage.tsx`, `proposalActions.ts`, `OperationsTracesPage.tsx`, `supabase/migrations/20260809140000_calendar_ops_extensions.sql`, §6.6, §6.19, §6.30, §6.34, §6.47, §6.50, §6.65
 
 ### 6.33 左サイドバー業務ナビ（表示切替・ドロワー・アイコン）（2026-08-10 決定 / 2026-08-11 改定 / 2026-08-12 追記 / 2026-08-14 改定）
 
@@ -1173,11 +1176,12 @@ DB上の確定・集計テーブル
 
 - **閲覧・操作は運営のみ**。院ユーザー・院 admin/owner には出さない（メニューも URL 直打ちも不可。`PlatformAdminRoute`）。
 - **入口**: アカウントメニュー（改善の進捗の次）。見出しは「運営」。院のユーザー管理・安全性・サイドバーには置かない（§6.24 / §6.29）。
-- **追加**: 確認メールや OTP は送らない。すでにログインできる人のメールを `profiles` で照合する。クリニック所属者には付けない。
+- **追加（2026-08-16 改定）**: クリニック所属者には付けない。新規アカウントは Auth の招待メール。リンク先 `/set-password` でパスワードを決め、登録後はログアウトして `/login` へ。既存アカウントはメールを送らず付与する。
+- **Admin API**: `inviteUserByEmail` はサーバーの `SUPABASE_SERVICE_ROLE_KEY` のみ。`VITE_` 禁止。フロントから Admin API を呼ばない。
 - **編集**: `profiles.display_name` と `platform_admins.note` だけ。メール変更はこの画面ではしない。
 - **削除**: 画面文言は「削除」。実体は権限削除（revoke）。自分と最後の1人は削除できない。1人のときは削除ボタンを出さない。
 - **書込**: `grant_platform_admin` / `revoke_platform_admin` / `update_platform_admin`。`platform_admins` への authenticated 直書きはしない。
-- 関連: `AdminsPage.tsx`, `platformAdminPolicy.ts`, `formatPlatformAdmin.ts`, `accountMenuLinks.ts`, `20260816001000_platform_admin_manage_rpcs.sql`, `20260816002000_platform_admin_update_rpc.sql`, §6.24, §6.25, §6.29
+- 関連: `AdminsPage.tsx`, `platformAdminPolicy.ts`, `formatPlatformAdmin.ts`, `accountMenuLinks.ts`, `api/admins/invite.ts`, `server/admins/invitePlatformAdmin.ts`, `SetPasswordPage.tsx`, `20260816001000_platform_admin_manage_rpcs.sql`, `20260816002000_platform_admin_update_rpc.sql`, §6.24, §6.25, §6.29
 
 ### 6.64 製品版番号（SemVer・2026-08-16 決定）
 
@@ -1192,6 +1196,21 @@ DB上の確定・集計テーブル
 - 機能ブランチへ先に打たない。タグ `v*` の push で GitHub Release を作る（`.github/workflows/release.yml`）。
 - 院向けお知らせは `update #N`。`product_updates.version` は楽観ロック。院向け画面に SemVer を出さない。
 - 関連: `docs/release.md`, `.cursor/commands/release.md`, `.cursor/commands/git-push.md`, `scripts/lib/app-version.mjs`, `scripts/release.mjs`, §6.19, §6.55
+
+### 6.65 診療カレンダーの他端末同期（2026-08-16 決定）
+
+片方のPCで保存した訪問・空きブロック・日別メモは、同じ院のカレンダーを開いている他端末へ更新ボタンなしで反映する。
+
+- **対象は診療カレンダーのみ**。電話確認一覧と患者一覧は次フェーズ。
+- **再取得**: `clinic_calendar_sync` を購読し `load({ silent: true })`。`setVisits([])` で枠を消さない（§6.32 / §10.16）。
+- **silent は当日分（2026-08-16 追記）**: 号車が既にあるなら当日の visits / calendar_blocks / clinic_day_memos / cancelled だけ取る。`ensureVehicleTeams`・職員・全患者・全日 team_id・院 metadata は日付切替の非silent に任せる。
+- **再取得の待ち（2026-08-16 追記）**: 先頭ティックは待たない。自動提案の連打は静穏 400ms 後に1回追加する。`CALENDAR_SYNC_RELOAD_DEBOUNCE_MS` は 400 のまま（連打の静穏待ち）。
+- **識別**: 氏名は出さない。丸の中に `PC2`。同一アカウントの複数ログインはタブごとの `peerId` で区別し、空いている最小番号を付ける。
+- **操作中**: 詳細を開いている枠に PC 丸。ドラッグ開始後だけゴースト。マウス座標の追従はしない。
+- **同時編集**: セルロックなし。後から保存した方が残る。
+- **ゴースト**: 元位置に残っている枠だけ隠す。保存後に実枠と同じ位置なら出さない。同じ訪問のゴーストは1つ（§10.56〜10.58）。
+- **在席行**: `clinic_calendar_peers` の削除は `pagehide` と心拍切れだけ。React effect cleanup で消さない（§10.57）。氏名は持たない。`user_id = auth.uid()`。
+- 関連: `useCalendarRealtimeSync.ts`, `useCalendarLivePeers.ts`, `useCalendarDayData.ts`, `calendarDayLoadState.ts`, `calendarRealtimeSync.ts`, `calendarLivePeers.ts`, `CalendarPeerBadge.tsx`, `20260816160000_clinic_calendar_realtime.sql`, §6.32, §10.16, §10.56〜10.60
 
 ---
 
@@ -1210,7 +1229,9 @@ DB上の確定・集計テーブル
 | `POST /api/feedback/send` | — | ログイン済み | — | — | JWT必須。トークンはサーバ専用。15秒クールダウン。公開エラーは固定文言（§6.54） |
 | お知らせ（`product_updates`） | published は認証済み。提案中・入れないは運営のみ | `propose_product_update` のみ | `publish_product_update` / `reject_product_update` / `update_product_update_copy` / `set_product_update_in_progress_badge` / `set_product_update_timeline_mark` | `delete_product_update`（進捗未連動のみ） | いきなり published 禁止。進捗連動件は削除しない。進捗の反映済みからも propose→publish（§6.55 / §6.57） |
 | `improvement_items` | 運営のみ | `create_improvement_item_for_thread` | `set_improvement_item_status` | grant なし | 院には出さない。反映済みでお知らせ1件。§6.57 |
-| 運営（`platform_admins`） | 運営のみ | `grant_platform_admin` | `update_platform_admin` | `revoke_platform_admin` | 直書き禁止。自分と最後の1人は削除不可。クリニック所属者には付けない（§6.63） |
+| 運営（`platform_admins`） | 運営のみ | `grant_platform_admin`（新規はサーバー招待） | `update_platform_admin` | `revoke_platform_admin` | 直書き禁止。自分と最後の1人は削除不可。クリニック所属者には付けない。Admin API はサーバーのみ（§6.63） |
+| `clinic_calendar_sync` | 所属院 | トリガーのみ | トリガーのみ | 原則不可 | 画面は購読して silent reload。`version` なし。`set_updated_at` 禁止（§6.65 / §10.59） |
+| `clinic_calendar_peers` | 所属院 | 本人行 | 本人行 | 本人（pagehide） | 氏名なし。`user_id = auth.uid()`。React cleanup で消さない（§6.65 / §10.57） |
 | `[table_a]` | `[role]` | `[role]` | `[role]` | `[role]` | `[制約]` |
 | `[table_b]` | `[role]` | `[role]` | `[role]` | `[role]` | `[制約]` |
 
@@ -1329,6 +1350,11 @@ AIが自分の実装に合わせて期待値を作ることは禁止。
 | 2026-08-14 | 予約キャンセルがブラウザ confirm | 画面内確認を使わなかった | `VisitCancelConfirm` を使う（§6.61 / §10.50） |
 | 2026-08-14 | 訪問詳細を広げても時刻が1列 | 幅だけ変えて中のグリッドを触らなかった | 開始/終了は2列、メニューと色は全幅（§6.61 / §10.51） |
 | 2026-08-16 | 提案後に件数だけ出てスケルトンが固まる | silent 再読込が非silent に勝ち、loading を下ろさなかった | 最新なら silent でも loading を下ろす（§6.34 / §10.54 / §10.55） |
+| 2026-08-16 | 枠移動で操作中ゴーストと実枠が重なる | 元枠非表示とゴーストが独立し、保存後も残った | 同位置の実枠があるときはゴーストを出さない（§6.65 / §10.56） |
+| 2026-08-16 | 在席行が増えて人が複数に見える | effect cleanup で DELETE し再マウントと競合 | pagehide と心拍切れだけ消す（§6.65 / §10.57） |
+| 2026-08-16 | 同じ訪問のゴーストが重なる | peer 行ごとにゴーストを描いた | visitId 単位で1つ（§6.65 / §10.58） |
+| 2026-08-16 | カレンダー同期テーブルの upsert が 400 | `version` のない表に `set_updated_at` を付けた | version がない表には付けない（§10.48 / §10.59） |
+| 2026-08-16 | 他端末の枠反映が約1.5秒遅れる | silent でも号車確保と全患者まで取り、先頭を400ms待っていた | 当日分だけ取り、先頭は即時（§6.65 / §10.60） |
 
 ### 記録ルール
 
@@ -1712,6 +1738,41 @@ AIが自分の実装に合わせて期待値を作ることは禁止。
 - 再発防止: 「件数はあるのにスケルトン」は visits 欠落ではなく `loading` 固着を疑う。
 - 関連: `DayVisitGrid.tsx`, `CalendarPage.tsx`, §6.34, §10.54
 
+### 10.56 移動ゴーストは保存後の実枠と同位置なら出さない（2026-08-16）
+
+- 事象: 診療カレンダーで枠を移動すると、操作中ゴーストと実枠が重なり別の人のように増えて見えた。
+- 原因: 元枠非表示とゴースト表示が独立で、保存後もゴーストが残った。
+- 再発防止: 元位置に残っている枠だけ隠す。保存後に実枠と同じ位置ならゴーストを出さない。ドロップしたら待たずに操作中を消す。
+- 関連: `calendarLivePeers.ts`, `DayVisitColumnBody.tsx`, `DayVisitGrid.tsx`, §6.65
+
+### 10.57 ライブ在席行は React cleanup で消さない（2026-08-16）
+
+- 事象: `clinic_calendar_peers` を effect cleanup で DELETE すると、再マウントで行が増え同じ人が複数の PC 丸／ゴーストになる。
+- 原因: Strict Mode や画面再参加の cleanup が join と競合する。
+- 再発防止: 削除は `pagehide` と心拍切れだけにする。
+- 関連: `useCalendarLivePeers.ts`, §6.65
+
+### 10.58 同じ訪問の操作中ゴーストは1つ（2026-08-16）
+
+- 事象: 同一訪問を指す peer 行が複数あるとゴーストが重なって人が増幅して見える。
+- 原因: 端末ごとにゴーストをそのまま描いていた。
+- 再発防止: `visitId` 単位で1つにまとめる。
+- 関連: `calendarLivePeers.ts`, §6.65
+
+### 10.59 version のないテーブルに set_updated_at を付けない（2026-08-16）
+
+- 事象: `clinic_calendar_sync` / `clinic_calendar_peers` の upsert と訪問移動が 400 になった。
+- 原因: 共通 `set_updated_at` が `new.version` を触る。同期テーブルに `version` が無かった。
+- 再発防止: `version` が無いテーブルにはこのトリガーを付けない。`updated_at` は SQL / クライアントで書く。`product_updates` のように version がある表は §10.48。
+- 関連: `set_updated_at`, `clinic_calendar_sync`, `clinic_calendar_peers`, §6.65
+
+### 10.60 silent 再取得で号車確保と全患者まで取らない（2026-08-16）
+
+- 事象: 診療カレンダーの他端末反映が約1.5秒遅れた。
+- 原因: sync 購読後に 400ms 待ったうえで、`ensureVehicleTeams` と職員・全患者・全日 team_id・院 metadata まで毎回取り直していた。
+- 再発防止: silent かつ号車済みは当日分だけ取る。先頭ティックは即時。連打の静穏待ちだけ 400ms。`setVisits([])` はしない。
+- 関連: `useCalendarDayData.ts`, `calendarDayLoadState.ts`, `calendarRealtimeSync.ts`, §6.65
+
 ---
 
 ## 11. 🔗 重要ドキュメント・参照先
@@ -1812,10 +1873,11 @@ AIは作業開始時に以下を確認する。
 □ 日付・時刻入力なら §6.43（DatePicker / TimePicker。ネイティブ type=date / type=time の見た目を増やさない。近傍ポップオーバー内 portal は §10.18）を守った
 □ お支払い履歴なら §6.27（銀行振替前提・縦タイムラインUI。カード決済前提にしない）を守った
 □ 契約者情報・契約情報なら §6.28（8項目表示・login_email独立・運営のみ書込・締結PDF）を守った
-□ 運営スーパー権限なら §6.29 / §6.40（clinic_members非掲載・bootstrap に not is_platform_admin・is_platform_admin_user で所属拒否・全院アクセス・切替UI運営のみ・ユーザー管理除外・/proposals 運営専用は§6.34・/progress 運営専用は§6.57）を守った
+□ 運営スーパー権限なら §6.29 / §6.40 / §6.63（clinic_members非掲載・bootstrap に not is_platform_admin・is_platform_admin_user で所属拒否・全院アクセス・切替UI運営のみ・ユーザー管理除外・/proposals 運営専用は§6.34・/progress 運営専用は§6.57・運営追加は新規招待メール／既存は付与のみ・Admin API はサーバーのみ）を守った
 □ カレンダー日付ナビなら §6.30 / §10.7（titleAside 横並び。グリッド上・右サイドに独立セクションを置かない。見える「日付」ラベルは出さない）を守った
 □ 患者管理なら §6.31（サイドバー内アコーディオンで一覧/電話確認・開閉は sessionStorage 保持・灰ピルの新規登録とデータ出力・データ統合しない）を守った
-□ カレンダー運用なら §6.32 / §6.6（ドラッグ移動・リサイズ、楽観更新＋silent reload、手動→電話確認、NG取消＋同日再提案、日別メモ・空きブロック・斜線は calendar_blocks・残件・簡易週表示・日別CSVは見出しから外す・操作ログは§6.50、枠クリックは詳細§6.35、空き枠埋めは§6.47、メニューは§6.60、詳細は§6.61）を守った
+□ カレンダー運用なら §6.32 / §6.6 / §6.65（ドラッグ移動・リサイズ、楽観更新＋silent reload、他端末は clinic_calendar_sync、手動→電話確認、NG取消＋同日再提案、日別メモ・空きブロック・斜線は calendar_blocks・残件・簡易週表示・日別CSVは見出しから外す・操作ログは§6.50、枠クリックは詳細§6.35、空き枠埋めは§6.47、メニューは§6.60、詳細は§6.61）を守った
+□ 診療カレンダー他端末同期なら §6.65 / §10.56〜10.60（対象はカレンダーのみ。氏名なし PC 丸。ゴーストは元位置だけ隠し同位置の実枠には出さない。在席は cleanup で消さない。version のない表に set_updated_at 禁止。silent は当日分。先頭は待たない。連打は400ms）を守った
 □ 左サイドバーなら §6.33 / §10.9 / §6.62（縦ナビ・layouting.png 開閉・Security モバイルは grid.png・calendar/gears/patient/windows/ai・ログイン監査は運営のみ・自動提案ナビは運営のみ・お知らせは置かない・fillViewport 右カラム min-h-0/min-w-0・業務枠に min-h-screen 禁止・スクロールバーは見せず overflow は残す）を守った
 □ カレンダー自動提案なら §6.34 / §10.20〜10.22 / §10.54 / §10.55（右上は遷移せず即実行・操作は titleAside 1行・nowrap・アイコンと文言密着・クリア／一括確定は近傍ポップオーバー・SDK Adapter・仮予約・グリッドのみスケルトン。完了後 silent 再読込は最新なら loading を下ろす。/proposals は運営専用）を守った
 □ 仮枠UI・枠クリックなら §6.35（点線仮枠・クリックは詳細・確定は詳細または一括・楽観更新・moved 時のみ移動プレビュー・左緑バー／常時緑リサイズ禁止・電話確認 pending→ok）を守った
@@ -1936,4 +1998,6 @@ AIは作業開始時に以下を確認する。
 - `2026-08-14`: 未反映53件を整理して反映。お知らせ画面改定（§6.55）・枠クリックは詳細（§6.6/§6.35）・訪問メニュー（§6.60）・訪問詳細（§6.61）・シェル固定（§6.62）・サイドバー layouting.png（§6.33）・斜線ブロック（§6.32/§6.47）・設定5択（§6.51）・再発防止（§10.46〜10.51）・§3 / §7 / §11 / §12（`/project-memory-learn`）。上書きされた旧案5件は破棄
 - `2026-08-16`: 提案後スケルトン固着（§6.32 / §6.34 / §10.16 / §10.54 / §10.55）・日付ナビの「日付」ラベル非表示（§6.30）・スクロールバー非表示（§6.62）を追記（`/project-memory-learn`）
 - `2026-08-16`: 製品版 SemVer（§6.64）を追記。正本は Git タグ。`/git-push` では上げず、公開は `/release`。院向け `update #N` と混ぜない。§3 / §11 / §12（`/project-memory-learn`）
+- `2026-08-16`: 運営追加の招待メール（新規のみ）と Admin API はサーバーのみを §6.63 / §7 / §12 に改定。診療カレンダー他端末同期を §6.65 / §3 / §5 / §7 / §10.56〜10.59 / §12 に追記（`/project-memory-learn`）
+- `2026-08-16`: 診療カレンダー silent 再取得は当日分・先頭即時・連打は400ms を §6.32 / §6.65 / §3 / §5 / §10.60 / §12 に追記（`/project-memory-learn`）
 

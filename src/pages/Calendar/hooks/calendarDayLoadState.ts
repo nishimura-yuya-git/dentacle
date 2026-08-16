@@ -8,6 +8,17 @@ export function isLatestCalendarDayLoad(seq: number, latestSeq: number): boolean
   return seq === latestSeq
 }
 
+/**
+ * 他端末同期・移動後の silent 再取得は、号車が既にあるなら当日分だけ取る。
+ * 号車確保・職員・全患者・全日 team_id・院 metadata は日付切替の非silent に任せる。
+ */
+export function shouldUseCalendarDayOnlyReload(input: {
+  silent: boolean
+  hasTeams: boolean
+}): boolean {
+  return input.silent === true && input.hasTeams === true
+}
+
 export function shouldClearCalendarDayLoading(input: {
   isLatest: boolean
   silent: boolean

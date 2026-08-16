@@ -1,6 +1,8 @@
 import { Button } from '@/components/ui/Button'
 import { DatePicker } from '@/components/ui/DatePicker'
 import { CalendarDayMemo } from '@/pages/Calendar/components/CalendarDayMemo'
+import { CalendarPeerPresenceBar } from '@/pages/Calendar/components/CalendarPeerPresenceBar'
+import type { CalendarPeerView } from '@/pages/Calendar/utils/calendarLivePeers'
 import { CancelListModal } from '@/pages/Calendar/components/CancelListModal'
 import { ContactListModal } from '@/pages/Calendar/components/ContactListModal'
 import {
@@ -19,6 +21,7 @@ type Props = {
   dayMemo: string
   memoSaving: boolean
   onMemoSave: (body: string) => boolean | void | Promise<boolean | void>
+  livePeers?: CalendarPeerView[]
 }
 
 /** ヘッダー左側の日付ナビ＋患者絞り込み＋連絡者／キャンセル／日別メモ */
@@ -32,6 +35,7 @@ export function CalendarDateControls({
   dayMemo,
   memoSaving,
   onMemoSave,
+  livePeers = [],
 }: Props) {
   return (
     <div
@@ -93,6 +97,7 @@ export function CalendarDateControls({
         saving={memoSaving}
         onSave={onMemoSave}
       />
+      <CalendarPeerPresenceBar peers={livePeers} />
     </div>
   )
 }

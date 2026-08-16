@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url'
 import {
   isLatestCalendarDayLoad,
   shouldClearCalendarDayLoading,
+  shouldUseCalendarDayOnlyReload,
 } from './calendarDayLoadState.ts'
 
 const here = dirname(fileURLToPath(import.meta.url))
@@ -35,7 +36,23 @@ describe('calendarDayLoadState', () => {
     const source = readFileSync(join(here, 'useCalendarDayData.ts'), 'utf8')
     assert.match(source, /shouldClearCalendarDayLoading/)
     assert.match(source, /isLatestCalendarDayLoad/)
+    assert.match(source, /shouldUseCalendarDayOnlyReload/)
     assert.equal(source.includes('if (!silent) setLoading(false)'), false)
     assert.equal(source.includes('if (!silent) {\n      setLoading(false)'), false)
+  })
+
+  it('silent かつ号車済みのときだけ当日分の再取得にする', () => {
+    assert.equal(
+      shouldUseCalendarDayOnlyReload({ silent: true, hasTeams: true }),
+      true,
+    )
+    assert.equal(
+      shouldUseCalendarDayOnlyReload({ silent: true, hasTeams: false }),
+      false,
+    )
+    assert.equal(
+      shouldUseCalendarDayOnlyReload({ silent: false, hasTeams: true }),
+      false,
+    )
   })
 })

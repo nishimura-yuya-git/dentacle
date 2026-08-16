@@ -322,6 +322,94 @@ export type Database = {
           },
         ]
       }
+      clinic_calendar_peers: {
+        Row: {
+          clinic_id: string
+          created_at: string
+          drag_end_time: string | null
+          drag_mode: string | null
+          drag_start_time: string | null
+          drag_team_id: string | null
+          drag_visit_id: string | null
+          focus_visit_id: string | null
+          id: string
+          last_seen_at: string
+          pc_label: number
+          peer_id: string
+          scheduled_date: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          clinic_id: string
+          created_at?: string
+          drag_end_time?: string | null
+          drag_mode?: string | null
+          drag_start_time?: string | null
+          drag_team_id?: string | null
+          drag_visit_id?: string | null
+          focus_visit_id?: string | null
+          id?: string
+          last_seen_at?: string
+          pc_label: number
+          peer_id: string
+          scheduled_date: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          clinic_id?: string
+          created_at?: string
+          drag_end_time?: string | null
+          drag_mode?: string | null
+          drag_start_time?: string | null
+          drag_team_id?: string | null
+          drag_visit_id?: string | null
+          focus_visit_id?: string | null
+          id?: string
+          last_seen_at?: string
+          pc_label?: number
+          peer_id?: string
+          scheduled_date?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clinic_calendar_peers_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      clinic_calendar_sync: {
+        Row: {
+          clinic_id: string
+          last_change_at: string
+          updated_at: string
+        }
+        Insert: {
+          clinic_id: string
+          last_change_at?: string
+          updated_at?: string
+        }
+        Update: {
+          clinic_id?: string
+          last_change_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clinic_calendar_sync_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: true
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clinic_day_memos: {
         Row: {
           body: string

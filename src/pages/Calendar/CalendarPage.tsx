@@ -21,6 +21,7 @@ import {
   type VisitCreateForm,
 } from '@/pages/Calendar/components/VisitCreateModal'
 import { useCalendarDayData, type VisitRow } from '@/pages/Calendar/hooks/useCalendarDayData'
+import { useCalendarLivePeers } from '@/pages/Calendar/hooks/useCalendarLivePeers'
 import {
   clearAutoProposalTentatives,
   confirmAutoProposalTentatives,
@@ -73,6 +74,20 @@ export function CalendarPage() {
   const [memoSaving, setMemoSaving] = useState(false)
   const [gapFillOpen, setGapFillOpen] = useState(false)
   const [gapFillSeed, setGapFillSeed] = useState<GapFillSeed | null>(null)
+  const live = useCalendarLivePeers({
+    clinicId: clinic?.id,
+    userId: user?.id,
+    date,
+    detailVisitId: detailOpen ? selectedVisit?.id ?? null : null,
+    createPreview:
+      createOpen && createForm.team_id
+        ? {
+            teamId: createForm.team_id,
+            startTime: createForm.start_time,
+            endTime: createForm.end_time,
+          }
+        : null,
+  })
 
   const canPropose =
     isPlatformAdmin ||
@@ -311,6 +326,7 @@ export function CalendarPage() {
               setMemoSaving(false)
               return ok
             }}
+            livePeers={live.others}
           />
           {/* actions スロットに分けると右端へ寄るため、日付ナビと同じ行に続ける */}
           <div className="flex shrink-0 flex-nowrap items-center gap-2">
@@ -426,6 +442,8 @@ export function CalendarPage() {
                     void persistResizeVisit(actionCtx, visitId, endTime)
                 : undefined
             }
+            livePeers={live.others}
+            onLiveDragChange={live.setGridDrag}
           />
           {showProposeOverlay ? <AiComposingOverlay /> : null}
         </section>

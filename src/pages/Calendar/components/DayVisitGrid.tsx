@@ -31,6 +31,10 @@ import {
 } from '@/pages/Calendar/utils/gridTimeDrag'
 import { resolveNowLineTopPx } from '@/pages/Calendar/utils/nowLine'
 import type { VehicleTeam } from '@/pages/Calendar/utils/ensureVehicleTeams'
+import {
+  shouldHideVisitForRemotePeers,
+  type CalendarPeerView,
+} from '@/pages/Calendar/utils/calendarLivePeers'
 
 export type { CalendarBlock, CalendarVisit }
 
@@ -50,6 +54,17 @@ type Props = {
     endTime: string,
   ) => void
   onResizeVisit?: (visitId: string, startTime: string, endTime: string) => void
+  livePeers?: CalendarPeerView[]
+  onLiveDragChange?: (
+    drag: {
+      mode: 'move' | 'resize' | 'create'
+      visitId: string | null
+      teamId: string
+      startTime: string
+      endTime: string
+      preview: boolean
+    } | null,
+  ) => void
 }
 
 type CreateDrag = {
@@ -94,6 +109,8 @@ export function DayVisitGrid({
   onEmptySlotSelect,
   onMoveVisit,
   onResizeVisit,
+  livePeers = [],
+  onLiveDragChange,
 }: Props) {
   const [drag, setDrag] = useState<DragState | null>(null)
   const [nowLineTop, setNowLineTop] = useState<number | null>(() =>
@@ -114,6 +131,34 @@ export function DayVisitGrid({
     dragRef.current = next
     setDrag(next)
   }, [])
+
+  useEffect(() => {
+    if (!onLiveDragChange) return
+    if (!drag) {
+      onLiveDragChange(null)
+      return
+    }
+    if (drag.mode === 'create') {
+      const range = resolveDragTimeRange(drag.anchorSlot, drag.currentSlot)
+      onLiveDragChange({
+        mode: 'create',
+        visitId: null,
+        teamId: drag.teamId,
+        startTime: range.startTime,
+        endTime: range.endTime,
+        preview: true,
+      })
+      return
+    }
+    onLiveDragChange({
+      mode: drag.mode,
+      visitId: drag.visitId,
+      teamId: drag.teamId,
+      startTime: drag.startTime,
+      endTime: drag.endTime,
+      preview: drag.mode === 'resize' ? true : drag.moved,
+    })
+  }, [drag, onLiveDragChange])
 
   const slotFromPointer = useCallback((teamId: string, clientY: number): number | null => {
     const el = columnRefs.current[teamId]
@@ -345,6 +390,9 @@ export function DayVisitGrid({
               drag?.mode === 'move' && drag.moved && drag.teamId === team.id
                 ? drag
                 : null
+            const remoteHidden = visits
+              .filter((visit) => shouldHideVisitForRemotePeers(visit, livePeers))
+              .map((visit) => visit.id)
 
             return (
               <div
@@ -376,6 +424,8 @@ export function DayVisitGrid({
                   hideVisitId={
                     drag?.mode === 'move' && drag.moved ? drag.visitId : null
                   }
+                  remoteHideVisitIds={remoteHidden}
+                  livePeers={livePeers}
                   canResize={Boolean(onResizeVisit)}
                   onVisitPointerDown={(visit, event) =>
                     handleVisitPointerDown(visit, team.id, event)

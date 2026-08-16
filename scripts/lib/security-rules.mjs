@@ -132,6 +132,33 @@ export const SECURITY_RULES = [
     scope: 'line',
     pattern: /dangerouslySetInnerHTML/,
   },
+  {
+    id: 'SEC-LOGIN-DANGER-HTML',
+    severity: 'high',
+    title: 'ログイン／認証経路で HTML 埋め込みが検知されました',
+    remediation:
+      'ログイン系は React のテキスト描画のみにしてください。innerHTML / dangerouslySetInnerHTML は使いません。',
+    scope: 'line',
+    pattern: /dangerouslySetInnerHTML|\.innerHTML\s*=/,
+    applies: ({ filePath }) => {
+      const normalized = filePath.replace(/\\/g, '/');
+      return normalized.startsWith('src/pages/Login/') || normalized.startsWith('src/features/auth/');
+    },
+  },
+  {
+    id: 'SEC-LOGIN-SQL-CONCAT',
+    severity: 'high',
+    title: 'ログイン／認証経路で SQL 文字列結合が疑われます',
+    remediation:
+      'メール／パスワードを SQL に連結せず、signInWithPassword または RPC 引数で渡してください。',
+    scope: 'line',
+    pattern:
+      /(?:SELECT|INSERT|UPDATE|DELETE|DROP|UNION)\s+[\s\S]{0,80}(?:\$\{|\+\s*email|\+\s*password)/i,
+    applies: ({ filePath }) => {
+      const normalized = filePath.replace(/\\/g, '/');
+      return normalized.startsWith('src/pages/Login/') || normalized.startsWith('src/features/auth/');
+    },
+  },
 ];
 
 /**

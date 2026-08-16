@@ -42,6 +42,29 @@ function testDetectsSecretsAndEval() {
   assert.ok(ids.includes('SEC-CLIENT-SERVICE-ROLE'));
 }
 
+function testLoginAuthRules() {
+  const htmlFindings = scanFileContent(
+    'src/pages/Login/LoginPage.tsx',
+    'root.innerHTML = userInput;',
+  );
+  assert.ok(htmlFindings.some((item) => item.ruleId === 'SEC-LOGIN-DANGER-HTML'));
+
+  const sqlFindings = scanFileContent(
+    'src/features/auth/AuthProvider.tsx',
+    'const q = `SELECT * FROM users WHERE email = ${email}`;',
+  );
+  assert.ok(sqlFindings.some((item) => item.ruleId === 'SEC-LOGIN-SQL-CONCAT'));
+
+  const otherHtml = scanFileContent(
+    'src/pages/AuthAudit/AuthAuditJapanMap.tsx',
+    'hostRef.current.innerHTML = markup',
+  );
+  assert.equal(
+    otherHtml.filter((item) => item.ruleId === 'SEC-LOGIN-DANGER-HTML').length,
+    0,
+  );
+}
+
 function testLockfileRule() {
   const findings = scanFileContent('package-lock.json', '{}');
   assert.equal(findings.length, 1);
@@ -88,6 +111,7 @@ function main() {
   testKnowledgeFilter();
   testShouldScan();
   testDetectsSecretsAndEval();
+  testLoginAuthRules();
   testLockfileRule();
   testSeverityGate();
   console.log('security-scan.test.mjs: OK');

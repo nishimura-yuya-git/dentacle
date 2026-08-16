@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { APP_DISPLAY_NAME } from '@/config/appName'
 import { Button } from '@/components/ui/Button'
+import { isSafeMfaQrSrc } from '@/features/auth/loginSecurityContract'
 import { supabase } from '@/lib/supabase'
 import { OtpCodeInput } from '@/pages/Login/OtpCodeInput'
 import { normalizeOtpDigits } from '@/pages/Login/otpCodeUtils'
@@ -93,10 +94,14 @@ export function MfaEnrollPanel({ onVerified, onCancel }: Props) {
         </p>
       </div>
 
-      {qrCode ? (
+      {qrCode && isSafeMfaQrSrc(qrCode) ? (
         <div className="flex justify-center rounded-2xl border border-slate-100 bg-slate-50 p-6">
           <img src={qrCode} alt="認証アプリ登録用QRコード" className="h-44 w-44" />
         </div>
+      ) : qrCode ? (
+        <p className="text-sm font-medium text-slate-500">
+          QRコードを表示できません。下の手動入力用キーを使ってください。
+        </p>
       ) : null}
 
       {secret ? (

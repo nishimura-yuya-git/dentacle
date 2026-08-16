@@ -103,6 +103,18 @@ function main() {
   if (
     files.some(
       (file) =>
+        file.startsWith('src/features/auth/') ||
+        file.startsWith('src/pages/Login/') ||
+        file === 'src/components/common/ProtectedRoute.tsx' ||
+        file === 'src/App.tsx',
+    )
+  ) {
+    addCommand(commands, 'pnpm run auth:test-security', 'ログイン／認証の保安回帰');
+  }
+
+  if (
+    files.some(
+      (file) =>
         file.startsWith('src/') ||
         file.startsWith('api/') ||
         file.startsWith('supabase/') ||

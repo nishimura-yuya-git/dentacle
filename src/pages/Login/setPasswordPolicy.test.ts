@@ -11,4 +11,13 @@ describe('validateNewPassword', () => {
     assert.match(validateNewPassword('short', 'short') ?? '', /8文字/)
     assert.match(validateNewPassword('abcdefgh', 'abcdefgH') ?? '', /一致/)
   })
+
+  it('失敗文に入力パスワードを埋め込まない', () => {
+    const secret = 'short<script>alert(1)</script>'
+    const message = validateNewPassword(secret, 'other-value')
+    assert.ok(message)
+    assert.equal(message.includes(secret), false)
+    assert.equal(message.includes('other-value'), false)
+    assert.equal(/<script/i.test(message), false)
+  })
 })

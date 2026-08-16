@@ -1,7 +1,7 @@
 /**
  * レセコン連携の身元契約。
- * 当面の取込はCSV種まきのみ。常時接続・API直結はしない。
- * 製品名は未確認のまま確定しない。
+ * いまの取込はCSV種まき。将来の医院LAN接続を排除しない。
+ * 経路・権限・保持の正は receconIntegration.contract。
  */
 
 export const RECECON_SEED_SOURCES = ['rececon_csv', 'rececon_api'] as const

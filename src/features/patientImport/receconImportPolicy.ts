@@ -1,4 +1,4 @@
-/** レセコンCSV種まきの境界（案A）。常時接続・監視SaaSは置かない。身元突合は receconIdentity.contract。 */
+/** いまのCSV種まき境界。将来接続の安全条件は receconIntegration.contract。身元突合は receconIdentity.contract。 */
 
 export const RECECON_IMPORT_ACTION = 'patient.import_rececon_csv'
 export const RECECON_IMPORT_ENTITY = 'patient_import'
@@ -94,7 +94,7 @@ export function receconImportAuditHasForbiddenKeys(
 }
 
 export function formatRececonImportAllowedColumnsLabel(): string {
-  return 'カルテ番号・氏名（漢字/カナ）・主担当医・最終日付'
+  return 'カルテ番号・氏名（漢字/カナ）・主担当医・最終日付・診療回数'
 }
 
 export const RECECON_IMPORT_PAGE_AUDIT_NOTE =

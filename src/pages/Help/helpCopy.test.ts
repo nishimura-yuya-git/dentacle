@@ -39,6 +39,10 @@ describe('ヘルプの文言', () => {
     assert.match(copy, /氏名・電話番号・生住所をAIへ送りません/)
     assert.match(copy, /種まき/)
     assert.match(copy, /個人別全集計/)
+    assert.match(copy, /医院LANに入らないことが前提ではありません/)
+    assert.match(copy, /TLS 1\.3/)
+    assert.equal(/準拠しています/.test(copy), false)
+    assert.equal(/準拠したデータ運用/.test(copy), false)
   })
 
   it('院向け文言に Issue と書かない', () => {

@@ -147,7 +147,7 @@ export const HELP_SECTIONS: HelpSection[] = [
         question: 'データを消したいときは？',
         paragraphs: [
           '画面からの自己削除はありません。医院管理者または運営が対象範囲を確認して消します。',
-          'ログの保存年数は未決です。取込CSVそのものは取込後に残していません。',
+          'ログイン監査と操作ログは5年残します。種まきは利用中保持し、契約終了または削除指示から90日以内に消します。取込CSVそのものは取込後に残していません。',
         ],
         links: [{ href: '/security/privacy#retention', label: '保管と削除を見る' }],
       },
@@ -155,7 +155,7 @@ export const HELP_SECTIONS: HelpSection[] = [
         id: 'incident',
         question: '事故が起きたら？',
         paragraphs: [
-          '運営が影響範囲を切り分け、対象医院の管理者へ連絡します。公開の電話窓口はありません。',
+          '運営が影響範囲を切り分け、覚知から24時間以内に対象医院の管理者へ連絡します。公開の電話窓口はありません。',
           '院からはご意見画面へ連絡してください。患者氏名やカルテ番号は載せないでください。',
         ],
         links: [{ href: '/security/privacy#incident', label: '事故時の手順を見る' }],

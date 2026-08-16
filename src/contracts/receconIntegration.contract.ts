@@ -71,8 +71,8 @@ export const RECECON_ACCESS_LOG_POLICY = {
   importPayload: 'counts_and_outcome_only',
   includeChartNumber: false,
   includePatientName: false,
-  /** 接続開始前に契約で決める。未決のまま本番接続しない。 */
-  retentionYears: null,
+  /** 方針決定: 5年。改ざん防止。運営のみ。 */
+  retentionYears: 5,
 } as const
 
 export const RECECON_GUIDELINE_STANCE = 'design_to_comply' as const

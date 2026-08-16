@@ -16,7 +16,7 @@ describe('guidelineMapping.contract', () => {
   it('姿勢は取り入れであり、準拠済み判定は持たない', () => {
     assert.equal(GUIDELINE_STANCE, 'design_to_comply')
     assert.equal(hasGuidelineCompliantClaim(), false)
-    assert.ok(listGuidelineRowsByStatus('pending_decision').length >= 3)
+    assert.ok(listGuidelineRowsByStatus('pending_decision').length >= 2)
     assert.ok(listGuidelineRowsByStatus('implemented_design').length >= 6)
     assert.ok(
       GUIDELINE_MAPPING_ROWS.every((row) => row.status !== ('compliant' as string)),

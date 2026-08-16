@@ -88,6 +88,7 @@ describe('receconIntegration.contract', () => {
     assert.equal(RECECON_CREDENTIAL_POLICY.storeInBrowser, false)
     assert.equal(RECECON_CREDENTIAL_POLICY.giveToAgent, false)
     assert.equal(RECECON_ACCESS_LOG_POLICY.includeChartNumber, false)
+    assert.equal(RECECON_ACCESS_LOG_POLICY.retentionYears, 5)
     assert.equal(RECECON_GUIDELINE_STANCE, 'design_to_comply')
     assert.equal(RECECON_RESPONSIBILITY.clinicLanInterior, 'clinic')
     assert.equal(RECECON_RESPONSIBILITY.securedLinkCloudEndpoint, 'dentacle')

@@ -1,8 +1,11 @@
 import { APP_DISPLAY_NAME } from '../../config/appName.ts'
 import {
+  COMPLIANCE_ACCESS_LOG_RETENTION_YEARS,
   COMPLIANCE_DATA_REGION,
   COMPLIANCE_DELETION_STEPS,
+  COMPLIANCE_INCIDENT_REPORT_HOURS,
   COMPLIANCE_INCIDENT_STEPS,
+  COMPLIANCE_SEED_DELETION_DAYS,
   COMPLIANCE_SUBPROCESSORS,
   formatSubprocessorLine,
 } from '../../contracts/complianceAssets.contract.ts'
@@ -69,7 +72,8 @@ export const PRIVACY_SECTIONS: SecuritySection[] = [
     title: '保管と削除',
     paragraphs: [
       '取り込んだ患者種まきと予約は、業務データとして残ります。アップロードしたCSVそのものは取込後に残しません。',
-      'ログの保存年数と、契約終了後の削除期限は未決です。決まるまで、画面に年数を書きません。',
+      `ログイン監査と操作ログは ${COMPLIANCE_ACCESS_LOG_RETENTION_YEARS} 年残します。改ざん防止のため、運営だけが扱います。`,
+      `患者種まきは利用中保持します。契約終了または削除指示から ${COMPLIANCE_SEED_DELETION_DAYS} 日以内に消します。診療録の法定保存とは別です。`,
       ...COMPLIANCE_DELETION_STEPS,
       '画面からのアカウント自己削除は、現時点ではありません。削除は運営へ連絡してください。',
     ],
@@ -85,7 +89,8 @@ export const PRIVACY_SECTIONS: SecuritySection[] = [
     paragraphs: [
       '漏えい、紛失、不正アクセスを覚知した運営は、次の順で動かします。',
       ...COMPLIANCE_INCIDENT_STEPS,
-      '医院への報告期限（何時間以内か）は未決です。公開の電話窓口は置いていません。',
+      `医院の管理者へは、覚知から ${COMPLIANCE_INCIDENT_REPORT_HOURS} 時間以内に連絡します。公開の電話窓口は置いていません。`,
+      '国外保存の書面同意と、データ処理契約の署名は先送りしません。準拠済みは、突合の合格と署名のあとだけ検討します。',
     ],
     callout: {
       title: '連絡先',

@@ -1,6 +1,9 @@
 import { APP_DISPLAY_NAME } from '../../config/appName.ts'
 import {
+  COMPLIANCE_ACCESS_LOG_RETENTION_YEARS,
   COMPLIANCE_DATA_REGION,
+  COMPLIANCE_INCIDENT_REPORT_HOURS,
+  COMPLIANCE_SEED_DELETION_DAYS,
   COMPLIANCE_SUBPROCESSORS,
   formatSubprocessorLine,
 } from '../../contracts/complianceAssets.contract.ts'
@@ -134,7 +137,8 @@ export const SECURITY_SECTIONS: SecuritySection[] = [
     paragraphs: [
       '画面からのアカウント自己削除は、現時点では用意していません。削除が必要な場合は運営へ連絡してください。',
       '医院管理者または運営が対象範囲を確認し、患者種まき・予約・所属を消します。取込CSVそのものは取込後に残していません。',
-      '操作ログとログイン監査の保存年数は未決です。決まるまで自動では消しません。',
+      `操作ログとログイン監査は ${COMPLIANCE_ACCESS_LOG_RETENTION_YEARS} 年残します。改ざん防止のため、運営だけが扱います。`,
+      `患者種まきは利用中保持し、契約終了または削除指示から ${COMPLIANCE_SEED_DELETION_DAYS} 日以内に消します。`,
       'オーナー権限の所属は、画面からもデータベースの権限でも安易に外せないようにしています。',
     ],
     callout: {
@@ -158,7 +162,7 @@ export const SECURITY_SECTIONS: SecuritySection[] = [
     title: '事故が起きたとき',
     paragraphs: [
       '漏えい、紛失、不正アクセスを覚知した運営は、影響範囲を切り分け、対象医院の管理者へ連絡します。',
-      '公開の電話窓口は置いていません。院からはご意見画面、または契約している運営窓口へ連絡してください。報告期限は未決です。',
+      `公開の電話窓口は置いていません。院からはご意見画面、または契約している運営窓口へ連絡してください。医院の管理者へは、覚知から ${COMPLIANCE_INCIDENT_REPORT_HOURS} 時間以内に連絡します。`,
     ],
     callout: {
       title: '連絡',

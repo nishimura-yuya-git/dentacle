@@ -267,6 +267,7 @@
 | AI処理中表示 | `ComposingOrb.tsx` | thinking-orbs composing の唯一の入口。直 import 禁止。theme light・日本語（§2.16） | カレンダー自動提案、空き枠埋め、運営ハブ生成 |
 | ヘルプ文言 | `src/pages/Help/helpCopy.ts` | FAQ・セクション見出しの正。Nani の本文は借りない（§6.59） | `/help` |
 | 対外ブランド名 | `src/config/appName.ts`（`APP_DISPLAY_NAME`） | 画面の正は Dentacle。内部識別子 Detacle と混ぜない（§6.17） | タブ・安全性・ヘルプ・契約・ロゴ alt |
+| 製品版番号 | `APP_VERSION` + `package.json` version + Git タグ `vX.Y.Z` | 開発者向け SemVer。院向け `update #N` と混ぜない（§6.64） | `/release`、CHANGELOG、GitHub Release |
 
 ### 禁止
 
@@ -1178,6 +1179,20 @@ DB上の確定・集計テーブル
 - **書込**: `grant_platform_admin` / `revoke_platform_admin` / `update_platform_admin`。`platform_admins` への authenticated 直書きはしない。
 - 関連: `AdminsPage.tsx`, `platformAdminPolicy.ts`, `formatPlatformAdmin.ts`, `accountMenuLinks.ts`, `20260816001000_platform_admin_manage_rpcs.sql`, `20260816002000_platform_admin_update_rpc.sql`, §6.24, §6.25, §6.29
 
+### 6.64 製品版番号（SemVer・2026-08-16 決定）
+
+開発者向けの製品版。院向けお知らせ（§6.55）とは別。
+
+- 形式は SemVer（`MAJOR.MINOR.PATCH`）。正本は Git の annotated タグ `vX.Y.Z`。
+- `package.json` の `version` と `APP_VERSION`（`src/config/appVersion.ts`）と `CHANGELOG.md` を同じ数字に揃える。
+- 最初の版は `v0.1.0`。`0.x` は正式版前。§6.19 の v0 Must は機能範囲であり、タグ番号とは別。
+- コードを main に載せただけでは上げない。出荷のまとまりごとに上げる。
+- `/git-push` は載せるだけ。公開は `/release`（「公開して」）。
+- 公開時: 前回タグ以降のコミットから `CHANGELOG.md` の未公開を `pnpm run release -- draft` で書き、`bump` してから **main 上**で `pnpm run release -- tag --push`。
+- 機能ブランチへ先に打たない。タグ `v*` の push で GitHub Release を作る（`.github/workflows/release.yml`）。
+- 院向けお知らせは `update #N`。`product_updates.version` は楽観ロック。院向け画面に SemVer を出さない。
+- 関連: `docs/release.md`, `.cursor/commands/release.md`, `.cursor/commands/git-push.md`, `scripts/lib/app-version.mjs`, `scripts/release.mjs`, §6.19, §6.55
+
 ---
 
 ## 7. 🔐 RLS・権限・セキュリティ
@@ -1728,6 +1743,10 @@ AIが自分の実装に合わせて期待値を作ることは禁止。
 - `.cursor/commands/issues.md` — `/issues`（ご意見 Issue の処理。院向け返答はお知らせ提案。§6.54 / §6.55）
 - `src/pages/Progress/` — 改善の進捗（運営のみ。反映済みでお知らせへ。§6.57）
 - `src/pages/Announcements/` — お知らせ（リリース予定チップ／更新情報タイムライン。§6.55）
+- `docs/release.md` / `.cursor/commands/release.md` — 製品版 SemVer の公開（§6.64）
+- `.cursor/commands/git-push.md` — 日常 push。版は上げない（§6.64）
+- `src/config/appVersion.ts` / `scripts/release.mjs` — 製品版 SSoT と公開 CLI（§6.64）
+- `.github/workflows/release.yml` — タグ `v*` から GitHub Release（§6.64）
 - `scripts/isolate.mjs` — 危険差分の worktree / shadow 隔離 CLI
 - `scripts/security-scan.mjs` / `pnpm run security:hook` — GPT非依存セキュリティ差分スキャン（手動。§2.12）
 - `.github/workflows/security-harness.yml` — PR 差分セキュリティ CI（APIキー不要）
@@ -1806,6 +1825,7 @@ AIは作業開始時に以下を確認する。
 □ 操作ログなら §6.50 / §10.42（表形式日本語・fillViewport・白 article・浮いたカードなし・操作/対象/クリニックSelect・ページネーション・全院時のみクリニック列・右下はFABと重ねない）を守った
 □ 設定画面なら §6.51 / §6.60 / §10.24 / §10.42（見出し右は灰トラック＋白ピル5択・メニューを含む・白 article・同名見出しなし・導入タイプも灰トラック＋白ピル・追加フォームの Select は残す・sticky は border-separate・追加はFABと重ねない・お知らせは混ぜない）を守った
 □ お知らせなら §6.55 / §6.57 / §10.43 / §10.48 / §10.49（入口はアカウントメニュー／`/announcements`・見出し右に予定登録と更新情報の登録・淡い緑・ログイン非掲載・デプロイ自動掲載禁止・予定は項目のみチップ・公開はタイムライン・通し番号は update #N・右上 edit.png・左アイコンは news・予定パネルに入れる入れないは出さない・対象環境は platform 表示のみ・`/proposals` と混ぜない・エージェントは提案まで・ご意見返答はお知らせ提案必須・送信時自動掲載禁止・反映済みのときだけ入れる・1改善1件・進捗連動は削除しない・院向けに GitHub/Issue を出さない・画面にデプロイ説明を置かない）を守った
+□ 製品版なら §6.64（SemVer。正本は Git タグ。/git-push では上げない。公開は /release。院向け SemVer 禁止。お知らせの update #N と DB version と混ぜない）を守った
 □ 患者住所・ジオコードなら §6.20 / §6.49 / §10.23（住所の正はApotool・CSVに住所なし・座標化して距離根拠・外れ値はNULL・latitude NULL は再実行）を守った
 □ Cursor SDK 基盤なら §6.36 / §10.10（server/cursor・Private中 local・Cloud URL・鍵を VITE_ に出さない・health は CURSOR_HEALTH_SECRET Bearer 必須・公開DTO最小化）を守った
 □ 本番公開／Vercel デプロイなら §6.36 / §10.10（`CURSOR_HEALTH_SECRET` とサーバー専用 `CURSOR_*` を Environment Variables へ。`VITE_` 禁止。未設定なら手順を案内）を守った
@@ -1915,4 +1935,5 @@ AIは作業開始時に以下を確認する。
 - `2026-08-14`: ヘルプセンターを §6.59 / §2.15 / §3 / §6.24 / §6.56 / §10.45 / §12 に追記（`/project-memory-learn`）。文書シェルは SecurityLayout。FAQ見出しは井戸の内側。左右ふちは細い。正本は helpCopy.ts
 - `2026-08-14`: 未反映53件を整理して反映。お知らせ画面改定（§6.55）・枠クリックは詳細（§6.6/§6.35）・訪問メニュー（§6.60）・訪問詳細（§6.61）・シェル固定（§6.62）・サイドバー layouting.png（§6.33）・斜線ブロック（§6.32/§6.47）・設定5択（§6.51）・再発防止（§10.46〜10.51）・§3 / §7 / §11 / §12（`/project-memory-learn`）。上書きされた旧案5件は破棄
 - `2026-08-16`: 提案後スケルトン固着（§6.32 / §6.34 / §10.16 / §10.54 / §10.55）・日付ナビの「日付」ラベル非表示（§6.30）・スクロールバー非表示（§6.62）を追記（`/project-memory-learn`）
+- `2026-08-16`: 製品版 SemVer（§6.64）を追記。正本は Git タグ。`/git-push` では上げず、公開は `/release`。院向け `update #N` と混ぜない。§3 / §11 / §12（`/project-memory-learn`）
 

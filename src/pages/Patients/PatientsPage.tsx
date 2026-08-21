@@ -13,7 +13,15 @@ import { DownloadIcon, PlusIcon } from '@/pages/Patients/PatientActionIcons'
 import { PatientSummaryBar } from '@/pages/Patients/PatientSummaryBar'
 import { PatientsTable } from '@/pages/Patients/PatientsTable'
 import { downloadPatientsCsv } from '@/pages/Patients/exportPatientsCsv'
+import { NameChartSearchInput } from '@/pages/Patients/NameChartSearchInput'
+import { PatientIconPicker } from '@/pages/Patients/PatientIconPicker'
+import {
+  resolvePatientIconId,
+  withPatientIcon,
+  type PatientIconId,
+} from '@/pages/Patients/patientIconPolicy'
 import type { PatientListRow, StaffOption } from '@/pages/Patients/patientListTypes'
+import type { Json } from '@/types/database.types'
 
 /** 自動提案の白1枚と同型。角丸カード・外枠・影は置かない。 */
 const PATIENTS_ARTICLE_CLASS =
@@ -46,6 +54,7 @@ const EMPTY_FORM = {
   address: '',
   primary_doctor_id: '',
   last_visit_date: '',
+  icon_id: '1' as PatientIconId,
 }
 
 function readVisitCount(metadata: unknown): number | null {
@@ -147,6 +156,7 @@ export function PatientsPage() {
         next_visit_time: next?.time ?? null,
         next_visit_provisional: next?.provisional ?? false,
         visit_count: readVisitCount(row.metadata),
+        icon_id: resolvePatientIconId(row.metadata, row.id),
       }
     })
 
@@ -195,6 +205,7 @@ export function PatientsPage() {
         area_label: form.area_label.trim() || null,
         address: form.address.trim() || null,
         primary_doctor_id: form.primary_doctor_id || null,
+        metadata: withPatientIcon({}, form.icon_id) as Json,
       })
       .select('id')
       .single()
@@ -239,7 +250,12 @@ export function PatientsPage() {
   }
 
   const listActions = (
-    <div className="flex flex-wrap items-center gap-2">
+    <div className="flex flex-nowrap items-center gap-2">
+      <NameChartSearchInput
+        id="patient-list-search"
+        value={search}
+        onChange={setSearch}
+      />
       <Button
         variant="soft"
         className="!px-4 !py-2.5 !text-sm !font-medium"
@@ -282,7 +298,7 @@ export function PatientsPage() {
   return (
     <DashboardLayout title="患者管理" fillViewport actions={listActions}>
       <article className={PATIENTS_ARTICLE_CLASS}>
-        <div className="flex shrink-0 flex-wrap items-end justify-between gap-3">
+        <div className="flex shrink-0 items-end">
           <PatientSummaryBar
             totalPatients={totalPatients}
             newPatientsThisMonth={newPatientsThisMonth}
@@ -290,16 +306,6 @@ export function PatientsPage() {
             searching={Boolean(search.trim())}
             loading={loading}
           />
-          <div className="w-full min-w-[12rem] max-w-xs md:w-64">
-            <Input
-              id="patient-list-search"
-              label="氏名・カルテで検索"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="例: 山田"
-              className="!py-2"
-            />
-          </div>
         </div>
 
         <div className="mt-4 flex min-h-0 flex-1 flex-col overflow-auto rounded-2xl border border-slate-200 bg-white">
@@ -335,6 +341,11 @@ export function PatientsPage() {
         }
       >
         <form id="create-patient-form" onSubmit={handleCreate} className="grid gap-4 md:grid-cols-2">
+          <PatientIconPicker
+            value={form.icon_id}
+            disabled={busy}
+            onChange={(iconId) => setForm((current) => ({ ...current, icon_id: iconId }))}
+          />
           <Input
             label="氏名（漢字）"
             value={form.name_kanji}

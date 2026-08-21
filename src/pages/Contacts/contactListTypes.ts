@@ -1,3 +1,5 @@
+import type { PatientIconId } from '@/pages/Patients/patientIconPolicy'
+
 export type PhoneStatus =
   | 'pending'
   | 'ok'
@@ -13,6 +15,7 @@ export type ContactRow = {
   contacted_at: string | null
   visit_id: string
   patient_id: string
+  icon_id: PatientIconId
   visits: {
     scheduled_date: string
     start_time: string

@@ -1,3 +1,5 @@
+import type { PatientIconId } from '@/pages/Patients/patientIconPolicy'
+
 export type PatientListRow = {
   id: string
   name_kanji: string
@@ -11,6 +13,7 @@ export type PatientListRow = {
   next_visit_time: string | null
   next_visit_provisional: boolean
   visit_count: number | null
+  icon_id: PatientIconId
 }
 
 export type StaffOption = {

@@ -12,8 +12,10 @@ import { writeOperationTrace } from '@/features/calendar/writeOperationTrace'
 import { supabase } from '@/lib/supabase'
 import { ensureVehicleTeams } from '@/pages/Calendar/utils/ensureVehicleTeams'
 import type { ContactRow, PhoneStatus } from '@/pages/Contacts/contactListTypes'
+import { NameChartSearchInput } from '@/pages/Patients/NameChartSearchInput'
 import { ContactsSummaryBar } from '@/pages/Contacts/ContactsSummaryBar'
 import { ContactsTable } from '@/pages/Contacts/ContactsTable'
+import { toContactRow, type ContactRowSource } from '@/pages/Contacts/mapContactRow'
 import { generateAndAdoptDay0ForDate } from '@/pages/Proposals/hooks/proposalActions'
 import { phoneStatusLabel } from '@/utils/roleLabels'
 
@@ -69,7 +71,7 @@ export function ContactsPage() {
     let query = supabase
       .from('visit_phone_confirmations')
       .select(
-        'id, status, result_note, contacted_at, visit_id, patient_id, visits(scheduled_date, start_time, end_time, status), patients(name_kanji, name_kana, chart_number, phone, area_label)',
+        'id, status, result_note, contacted_at, visit_id, patient_id, visits(scheduled_date, start_time, end_time, status), patients(name_kanji, name_kana, chart_number, phone, area_label, metadata)',
       )
       .eq('clinic_id', clinic.id)
       .is('deleted_at', null)
@@ -105,7 +107,7 @@ export function ContactsPage() {
       setSelectedIds(new Set())
       return
     }
-    setRows((listRes.data ?? []) as ContactRow[])
+    setRows(((listRes.data ?? []) as ContactRowSource[]).map(toContactRow))
     setOpenCount(openRes.count ?? 0)
     setPendingCount(pendingRes.count ?? 0)
     setSelectedIds(new Set())
@@ -267,17 +269,24 @@ export function ContactsPage() {
     await applyStatus(noteTarget, noteStatus, noteText.trim() || null)
   }
 
-  const filterAction = (
-    <div className="w-[12rem]">
-      <Select
-        id="contacts-status-filter"
-        label="状態"
-        labelTone="muted"
-        size="sm"
-        value={filter}
-        onChange={(event) => setFilter(event.target.value)}
-        options={STATUS_OPTIONS}
+  const headerActions = (
+    <div className="flex flex-nowrap items-end gap-3">
+      <NameChartSearchInput
+        id="contacts-list-search"
+        value={search}
+        onChange={setSearch}
       />
+      <div className="w-[12rem]">
+        <Select
+          id="contacts-status-filter"
+          label="状態"
+          labelTone="muted"
+          size="sm"
+          value={filter}
+          onChange={(event) => setFilter(event.target.value)}
+          options={STATUS_OPTIONS}
+        />
+      </div>
     </div>
   )
 
@@ -302,25 +311,15 @@ export function ContactsPage() {
   }
 
   return (
-    <DashboardLayout title="患者管理" fillViewport actions={filterAction}>
+    <DashboardLayout title="患者管理" fillViewport actions={headerActions}>
       <article className={CONTACTS_ARTICLE_CLASS}>
-        <div className="flex shrink-0 flex-wrap items-end justify-between gap-3">
+        <div className="flex shrink-0 items-end">
           <ContactsSummaryBar
             visibleCount={filtered.length}
             openCount={openCount}
             pendingCount={pendingCount}
             loading={loading}
           />
-          <div className="w-full min-w-[12rem] max-w-xs md:w-64">
-            <Input
-              id="contacts-list-search"
-              label="氏名・カルテで検索"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="例: 山田"
-              className="!py-2"
-            />
-          </div>
         </div>
 
         <div className="mt-4 flex min-h-0 flex-1 flex-col overflow-auto rounded-2xl border border-slate-200 bg-white">

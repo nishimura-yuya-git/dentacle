@@ -1,6 +1,8 @@
 import { findRececonPatientMatch } from '@/features/patientImport/findRececonPatient'
 import type { NormalizedPatientSeed, NormalizedStaffSeed } from '@/features/patientImport/normalizePatientCsv'
 import { supabase } from '@/lib/supabase'
+import { withRececonImportMetadata } from '@/pages/Patients/patientIconPolicy'
+import type { Json } from '@/types/database.types'
 
 export type ImportProgressStep =
   | '準備'
@@ -106,13 +108,18 @@ export async function importNormalizedPatients(input: {
       }
 
       let patientId = match.kind === 'none' ? undefined : match.id
-      const metadata =
-        patient.visitCount != null
-          ? { visit_count: patient.visitCount, seed_source: 'rececon_csv' }
-          : { seed_source: 'rececon_csv' }
       const externalId = patient.externalId?.trim() || null
 
       if (patientId) {
+        const { data: existing } = await supabase
+          .from('patients')
+          .select('metadata')
+          .eq('id', patientId)
+          .maybeSingle()
+        const metadata = withRececonImportMetadata(
+          existing?.metadata,
+          patient.visitCount ?? null,
+        ) as Json
         const { error } = await supabase
           .from('patients')
           .update({
@@ -136,7 +143,7 @@ export async function importNormalizedPatients(input: {
             name_kanji: patient.nameKanji,
             name_kana: patient.nameKana || null,
             primary_doctor_id: primaryDoctorId,
-            metadata,
+            metadata: withRececonImportMetadata({}, patient.visitCount ?? null) as Json,
           })
           .select('id')
           .single()

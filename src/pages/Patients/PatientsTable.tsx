@@ -1,9 +1,6 @@
 import { Link } from 'react-router-dom'
-import {
-  formatListDate,
-  formatNextVisit,
-  patientInitial,
-} from '@/pages/Patients/formatPatientList'
+import { formatListDate, formatNextVisit } from '@/pages/Patients/formatPatientList'
+import { PatientIcon } from '@/pages/Patients/PatientIcon'
 import type { PatientListRow } from '@/pages/Patients/patientListTypes'
 
 type Props = {
@@ -38,8 +35,8 @@ export function PatientsTable({ patients }: Props) {
                   to={`/patients/${patient.id}`}
                   className="flex min-w-[220px] items-start gap-3"
                 >
-                  <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-200 text-xs font-bold text-slate-600">
-                    {patientInitial(patient.name_kanji)}
+                  <span className="mt-0.5 shrink-0">
+                    <PatientIcon iconId={patient.icon_id} name={patient.name_kanji} />
                   </span>
                   <span className="min-w-0">
                     <span className="block truncate font-bold text-slate-900">

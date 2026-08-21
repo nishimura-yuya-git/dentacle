@@ -13,6 +13,8 @@ import {
   type Day0Condition,
   type Day0Patient,
 } from '@/pages/Patients/PatientDay0Form'
+import { resolvePatientIconId, withPatientIcon } from '@/pages/Patients/patientIconPolicy'
+import type { Json } from '@/types/database.types'
 
 type Constraint = {
   id: string
@@ -52,7 +54,7 @@ export function PatientDetailPage() {
       supabase
         .from('patients')
         .select(
-          'id, name_kanji, name_kana, chart_number, area_label, address, primary_doctor_id'
+          'id, name_kanji, name_kana, chart_number, area_label, address, primary_doctor_id, metadata'
         )
         .eq('clinic_id', clinic.id)
         .eq('id', id)
@@ -97,7 +99,18 @@ export function PatientDetailPage() {
       toast.error('患者が見つかりません')
       return
     }
-    setPatient(patientRes.data)
+    const row = patientRes.data
+    setPatient({
+      id: row.id,
+      name_kanji: row.name_kanji,
+      name_kana: row.name_kana,
+      chart_number: row.chart_number,
+      area_label: row.area_label,
+      address: row.address,
+      primary_doctor_id: row.primary_doctor_id,
+      icon_id: resolvePatientIconId(row.metadata, row.id),
+      metadata: row.metadata,
+    })
     setCondition(condRes.data)
     setConstraints(constRes.data ?? [])
     setStaff(staffRes.data ?? [])
@@ -131,6 +144,7 @@ export function PatientDetailPage() {
         area_label: patient.area_label?.trim() || null,
         address: patient.address?.trim() || null,
         primary_doctor_id: patient.primary_doctor_id || null,
+        metadata: withPatientIcon(patient.metadata, patient.icon_id) as Json,
       })
       .eq('id', patient.id)
       .eq('clinic_id', clinic.id)

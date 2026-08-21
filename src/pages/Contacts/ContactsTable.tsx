@@ -1,7 +1,8 @@
 import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/Button'
 import type { ContactRow, PhoneStatus } from '@/pages/Contacts/contactListTypes'
-import { formatListDate, patientInitial } from '@/pages/Patients/formatPatientList'
+import { formatListDate } from '@/pages/Patients/formatPatientList'
+import { PatientIcon } from '@/pages/Patients/PatientIcon'
 import { formatTime } from '@/utils/dates'
 import { phoneStatusLabel, visitStatusLabel } from '@/utils/roleLabels'
 
@@ -114,8 +115,8 @@ export function ContactsTable({
                     to={`/patients/${row.patient_id}`}
                     className="flex min-w-[220px] items-start gap-3"
                   >
-                    <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-200 text-xs font-bold text-slate-600">
-                      {patientInitial(name)}
+                    <span className="mt-0.5 shrink-0">
+                      <PatientIcon iconId={row.icon_id} name={name} />
                     </span>
                     <span className="min-w-0">
                       <span className="block truncate font-bold text-slate-900">

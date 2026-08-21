@@ -44,4 +44,11 @@ state/
 
 # Apotool 一時スクレイプ成果物（個人情報）
 tmp/
+
+# 手元調査・実データ（Git に載せない。開発用にローカルへ置く）
+doc/患者データ.csv
+doc/Apotool管理ツール調査結果_訪問歯科スケジュール自動化.md
+
+# DB ダンプ
+backups/
 *.tsbuildinfo

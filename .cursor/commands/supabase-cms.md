@@ -21,8 +21,8 @@ Supabaseを使用した簡易CMS（ブログ・お知らせ機能）を実装す
 `VITE_TENANT_ID` はユーザーから聴取した値を設定してください。
 
 ```env
-VITE_SUPABASE_URL=https://jujkuqbzrfrseiusszag.supabase.co
-VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp1amt1cWJ6cmZyc2VpdXNzemFnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkxOTI0NzIsImV4cCI6MjA2NDc2ODQ3Mn0.CU_le8mDYVn2bQet9vJXPm3_RIMWy9wdn-y-Dv9Qrmc
+VITE_SUPABASE_URL=https://YOUR_PROJECT_REF.supabase.co
+VITE_SUPABASE_ANON_KEY=
 VITE_TENANT_ID=<ユーザーから指定されたID>
 ```
 

@@ -3,7 +3,7 @@
  * Cookie は Playwright ログイン後に渡す。認証情報はファイルに残さない。
  *
  * 使い方:
- *   APOTOOL_COOKIE='SID=...' node scripts/scrape-apotool-addresses.mjs
+ *   APOTOOL_OFFICE_KEY=... APOTOOL_COOKIE='SID=...' node scripts/scrape-apotool-addresses.mjs
  *   APOTOOL_COOKIE='...' APOTOOL_CHARTS='1,2,3' node scripts/scrape-apotool-addresses.mjs
  */
 import { mkdirSync, writeFileSync, readFileSync, existsSync } from 'node:fs'
@@ -11,11 +11,16 @@ import { join } from 'node:path'
 
 const BASE = 'https://apo-toolboxes.stransa.co.jp'
 const OUT_DIR = join(process.cwd(), 'tmp')
-const OFFICE_KEY = process.env.APOTOOL_OFFICE_KEY || 'c3b97fc366474e25cb71c1d027e73f11'
+const OFFICE_KEY = process.env.APOTOOL_OFFICE_KEY?.trim() || ''
 const COOKIE = process.env.APOTOOL_COOKIE || ''
 const CONCURRENCY = Number(process.env.APOTOOL_CONCURRENCY || 6)
 const chartsEnv = process.env.APOTOOL_CHARTS || ''
 const chartsFile = process.env.APOTOOL_CHARTS_FILE || ''
+
+if (!OFFICE_KEY) {
+  console.error('APOTOOL_OFFICE_KEY を環境変数で指定してください（値は Git に書かない）')
+  process.exit(1)
+}
 
 if (!COOKIE.includes('SID=')) {
   console.error('APOTOOL_COOKIE に SID=... を含めて指定してください')

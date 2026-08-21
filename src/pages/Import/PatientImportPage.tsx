@@ -195,9 +195,7 @@ export function PatientImportPage() {
         <section className="rounded-[28px] border border-slate-100 bg-white p-6 shadow-sm md:p-8">
           <h2 className="text-sm font-bold text-slate-900">対応形式</h2>
           <p className="mt-3 max-w-2xl text-sm font-medium leading-relaxed text-slate-500">
-            レセコンの「管理集計【個人別全集計データ】」CSV（例:{' '}
-            <code className="text-slate-700">doc/患者データ.csv</code>
-            ）を想定しています。Apotoolのエクスポートではありません。いま開いている経路はこのCSV取込です。レセコン接続は導入に備え、身元と安全条件を先に固定しています。
+            レセコンの「管理集計【個人別全集計データ】」CSVを想定しています。Apotoolのエクスポートではありません。いま開いている経路はこのCSV取込です。レセコン接続は導入に備え、身元と安全条件を先に固定しています。
           </p>
           <p className="mt-3 max-w-2xl text-sm font-medium leading-relaxed text-slate-500">
             登録する列: {formatRececonImportAllowedColumnsLabel()}

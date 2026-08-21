@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { readFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { detectCsvDefaultYear } from './detectCsvYear.ts'
@@ -33,22 +33,25 @@ assert.equal(normalized.patients[0]?.lastVisitDate, '2026-06-08')
 assert.equal(normalized.patients[0]?.externalId, null)
 assert.ok(normalized.warnings.some((w) => w.includes('完成データではありません')))
 
-/** 実ファイルは件数のみ検証（個人情報をログしない） */
+/** 手元の実CSVがあるときだけ件数検証（個人情報はログしない。Git 管理外） */
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '../../..')
 const realPath = join(repoRoot, 'doc/患者データ.csv')
-const realText = readFileSync(realPath, 'utf8')
-const realParsed = parsePatientCsv(realText)
-assert.ok(realParsed.rows.length >= 100, '実CSVの解析件数が少なすぎます')
-assert.equal(realParsed.detectedYear, 2026)
-const realNormalized = normalizePatientCsvRows(realParsed.rows, {
-  defaultYear: realParsed.detectedYear ?? 2026,
-})
-assert.equal(realNormalized.patients.length, realParsed.rows.length)
-assert.equal(
-  realNormalized.warnings.filter((w) => w.includes('最終日付を解釈できません')).length,
-  0
-)
-
-console.log(
-  `parsePatientCsv.test.ts: ok (synthetic=2, realRows=${realParsed.rows.length}, staff=${realNormalized.staff.length})`
-)
+if (existsSync(realPath)) {
+  const realText = readFileSync(realPath, 'utf8')
+  const realParsed = parsePatientCsv(realText)
+  assert.ok(realParsed.rows.length >= 100, '実CSVの解析件数が少なすぎます')
+  assert.equal(realParsed.detectedYear, 2026)
+  const realNormalized = normalizePatientCsvRows(realParsed.rows, {
+    defaultYear: realParsed.detectedYear ?? 2026,
+  })
+  assert.equal(realNormalized.patients.length, realParsed.rows.length)
+  assert.equal(
+    realNormalized.warnings.filter((w) => w.includes('最終日付を解釈できません')).length,
+    0,
+  )
+  console.log(
+    `parsePatientCsv.test.ts: ok (synthetic=2, realRows=${realParsed.rows.length}, staff=${realNormalized.staff.length})`,
+  )
+} else {
+  console.log('parsePatientCsv.test.ts: ok (synthetic=2, realCsv=skipped)')
+}

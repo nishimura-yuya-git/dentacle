@@ -11,7 +11,7 @@
 
 ### 1. 接続情報の確認
 ダッシュボードの **Settings → Database** から以下の情報を取得します。
-- **Host**: `db.upxdwuzisclcekxmpaoa.supabase.co`
+- **Host**: `db.YOUR_PROJECT_REF.supabase.co`（Dashboard の値を使う。リポジトリに実ホストを書かない）
 - **User**: `postgres`
 - **Database**: `postgres`
 
@@ -20,7 +20,7 @@
 
 ```bash
 # Mac (Homebrew) でインストールされたパスを指定
-/opt/homebrew/opt/postgresql@17/bin/pg_dump -h db.upxdwuzisclcekxmpaoa.supabase.co -U postgres -d postgres > backups/full_backup_$(date +%Y%m%d).sql
+/opt/homebrew/opt/postgresql@17/bin/pg_dump -h db.YOUR_PROJECT_REF.supabase.co -U postgres -d postgres > backups/full_backup_$(date +%Y%m%d).sql
 ```
 
 ### 3. ファイルの保護（.gitignore）

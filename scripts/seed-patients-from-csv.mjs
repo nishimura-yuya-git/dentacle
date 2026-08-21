@@ -5,24 +5,23 @@
  *
  * 使い方:
  *   SUPABASE_SERVICE_ROLE_KEY=... node scripts/seed-patients-from-csv.mjs \
- *     --clinic-id=32fcf9f5-f05c-426f-9184-61f170d12c73
+ *     --clinic-id=<clinic-uuid>
  *
  * SQL バッチ出力（MCP execute_sql 用）:
  *   node scripts/seed-patients-from-csv.mjs --clinic-id=... --emit-sql-dir=/tmp/dentacle-seed
  */
 import { createClient } from '@supabase/supabase-js'
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const repoRoot = join(__dirname, '..')
 const DEFAULT_CSV = join(repoRoot, 'doc/患者データ.csv')
-const HIMAWARI_CLINIC_ID = '32fcf9f5-f05c-426f-9184-61f170d12c73'
 
 function parseArgs(argv) {
   const out = {
-    clinicId: HIMAWARI_CLINIC_ID,
+    clinicId: '',
     csvPath: DEFAULT_CSV,
     emitSqlDir: null,
     limit: null,
@@ -383,6 +382,16 @@ async function seedViaServiceRole({ url, serviceKey, clinicId, staff, patients }
 
 async function main() {
   const args = parseArgs(process.argv.slice(2))
+  if (!args.clinicId) {
+    console.error('--clinic-id= が必要です（実クリニックIDは Git に書かない）')
+    process.exit(1)
+  }
+  if (!existsSync(args.csvPath)) {
+    console.error(
+      `CSV が見つかりません: ${args.csvPath}（実患者CSVは Git 管理外です。手元に置いてから実行してください）`,
+    )
+    process.exit(1)
+  }
   const text = readFileSync(args.csvPath, 'utf8')
   const { year, staff, patients } = parseAndNormalize(text, { limit: args.limit })
   console.log(

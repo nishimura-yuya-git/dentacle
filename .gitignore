@@ -52,3 +52,6 @@ doc/Apotool管理ツール調査結果_訪問歯科スケジュール自動化.m
 # DB ダンプ
 backups/
 *.tsbuildinfo
+
+# 調査用の一時スクリプト（個人情報・eval を含みうる）
+.tmp-*.js

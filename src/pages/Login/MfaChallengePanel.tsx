@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react'
+import { useRef, useState, type FormEvent } from 'react'
 import { Button } from '@/components/ui/Button'
 import { supabase } from '@/lib/supabase'
 import { LoginErrorText } from '@/pages/Login/LoginErrorText'
@@ -16,16 +16,18 @@ export function MfaChallengePanel({ factorId, onVerified, onCancel }: Props) {
   const [code, setCode] = useState('')
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
+  const submittingRef = useRef(false)
 
-  async function handleSubmit(event: FormEvent) {
-    event.preventDefault()
+  async function verifyCode(rawCode: string) {
+    if (submittingRef.current) return
     setErrorMessage(null)
-    const trimmed = normalizeOtpDigits(code, 6)
+    const trimmed = normalizeOtpDigits(rawCode, 6)
     if (!/^\d{6}$/.test(trimmed)) {
       setErrorMessage('認証アプリの6桁コードを入力してください。')
       return
     }
 
+    submittingRef.current = true
     setSubmitting(true)
     try {
       const { data: challenge, error: challengeError } = await supabase.auth.mfa.challenge({
@@ -46,8 +48,14 @@ export function MfaChallengePanel({ factorId, onVerified, onCancel }: Props) {
       }
       onVerified()
     } finally {
+      submittingRef.current = false
       setSubmitting(false)
     }
+  }
+
+  function handleSubmit(event: FormEvent) {
+    event.preventDefault()
+    void verifyCode(code)
   }
 
   return (
@@ -60,7 +68,15 @@ export function MfaChallengePanel({ factorId, onVerified, onCancel }: Props) {
       </div>
 
       <div className="space-y-3">
-        <OtpCodeInput id="mfa-code" value={code} onChange={setCode} disabled={submitting} />
+        <OtpCodeInput
+          id="mfa-code"
+          value={code}
+          onChange={setCode}
+          onComplete={(nextCode) => {
+            void verifyCode(nextCode)
+          }}
+          disabled={submitting}
+        />
         {errorMessage ? <LoginErrorText>{errorMessage}</LoginErrorText> : null}
       </div>
 

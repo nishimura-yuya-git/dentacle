@@ -130,6 +130,21 @@ describe('ログイン入力の送り先', () => {
     assert.doesNotMatch(source, /justify-between/)
   })
 
+  it('確認コードは6桁揃った時だけ自動送信し、送信中の二重実行を防ぐ', () => {
+    const input = readSrc('src/pages/Login/OtpCodeInput.tsx')
+    assert.match(input, /normalized\.length === 6/)
+    assert.match(input, /onComplete\?\.\(normalized\)/)
+
+    for (const relativePath of [
+      'src/pages/Login/MfaEnrollPanel.tsx',
+      'src/pages/Login/MfaChallengePanel.tsx',
+    ]) {
+      const source = readSrc(relativePath)
+      assert.match(source, /onComplete=/, relativePath)
+      assert.match(source, /submittingRef\.current/, relativePath)
+    }
+  })
+
   it('認証アプリ登録は確認コードと登録ボタンの間を空けない', () => {
     const enroll = readSrc('src/pages/Login/MfaEnrollPanel.tsx')
     assert.match(enroll, /flex flex-col gap-4/)

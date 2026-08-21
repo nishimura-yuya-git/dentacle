@@ -5,6 +5,7 @@ type Props = {
   id: string
   value: string
   onChange: (code: string) => void
+  onComplete?: (code: string) => void
   disabled?: boolean
   label?: string
 }
@@ -16,6 +17,7 @@ export function OtpCodeInput({
   id,
   value,
   onChange,
+  onComplete,
   disabled = false,
   label = '確認コード',
 }: Props) {
@@ -28,15 +30,21 @@ export function OtpCodeInput({
     el?.select()
   }
 
+  function commitCode(nextCode: string) {
+    const normalized = normalizeOtpDigits(nextCode, 6)
+    onChange(normalized)
+    if (normalized.length === 6) onComplete?.(normalized)
+  }
+
   function commit(nextDigits: string[]) {
-    onChange(nextDigits.join('').slice(0, 6))
+    commitCode(nextDigits.join(''))
   }
 
   function handlePaste(event: ClipboardEvent<HTMLInputElement>) {
     event.preventDefault()
     const pasted = normalizeOtpDigits(event.clipboardData.getData('text'), 6)
     if (!pasted) return
-    onChange(pasted)
+    commitCode(pasted)
     focusAt(Math.min(pasted.length, 5))
   }
 
@@ -78,7 +86,7 @@ export function OtpCodeInput({
     }
     // 1マスに複数入った／オートフィル相当も6桁へ展開
     if (cleaned.length > 1) {
-      onChange(cleaned)
+      commitCode(cleaned)
       focusAt(Math.min(cleaned.length, 5))
       return
     }

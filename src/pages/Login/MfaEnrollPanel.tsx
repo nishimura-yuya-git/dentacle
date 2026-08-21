@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { Button } from '@/components/ui/Button'
 import { isSafeMfaQrSrc } from '@/features/auth/loginSecurityContract'
 import { useAuth } from '@/features/auth/useAuth'
@@ -30,6 +30,7 @@ export function MfaEnrollPanel({ onVerified, onCancel }: Props) {
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
+  const submittingRef = useRef(false)
 
   useEffect(() => {
     if (!user?.id) return
@@ -55,16 +56,16 @@ export function MfaEnrollPanel({ onVerified, onCancel }: Props) {
     }
   }, [user?.id])
 
-  async function handleSubmit(event: FormEvent) {
-    event.preventDefault()
-    if (!factorId) return
+  async function verifyCode(rawCode: string) {
+    if (!factorId || submittingRef.current) return
     setErrorMessage(null)
-    const trimmed = normalizeOtpDigits(code, 6)
+    const trimmed = normalizeOtpDigits(rawCode, 6)
     if (!/^\d{6}$/.test(trimmed)) {
       setErrorMessage('認証アプリの6桁コードを入力してください。')
       return
     }
 
+    submittingRef.current = true
     setSubmitting(true)
     try {
       const { error } = await supabase.auth.mfa.challengeAndVerify({
@@ -77,8 +78,14 @@ export function MfaEnrollPanel({ onVerified, onCancel }: Props) {
       }
       onVerified()
     } finally {
+      submittingRef.current = false
       setSubmitting(false)
     }
+  }
+
+  function handleSubmit(event: FormEvent) {
+    event.preventDefault()
+    void verifyCode(code)
   }
 
   if (loading) {
@@ -136,6 +143,9 @@ export function MfaEnrollPanel({ onVerified, onCancel }: Props) {
           id="mfa-enroll-code"
           value={code}
           onChange={setCode}
+          onComplete={(nextCode) => {
+            void verifyCode(nextCode)
+          }}
           disabled={submitting}
         />
         {errorMessage ? <LoginErrorText>{errorMessage}</LoginErrorText> : null}

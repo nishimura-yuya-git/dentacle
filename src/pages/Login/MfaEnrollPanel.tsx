@@ -3,6 +3,13 @@ import { APP_DISPLAY_NAME } from '@/config/appName'
 import { Button } from '@/components/ui/Button'
 import { isSafeMfaQrSrc } from '@/features/auth/loginSecurityContract'
 import { supabase } from '@/lib/supabase'
+import {
+  MFA_AUTHENTICATOR_STORE_LINKS,
+  MFA_ENROLL_LEAD,
+  MFA_ENROLL_STEPS,
+  MFA_ENROLL_TITLE,
+  isAllowedAuthenticatorStoreHref,
+} from '@/pages/Login/mfaEnrollCopy'
 import { OtpCodeInput } from '@/pages/Login/OtpCodeInput'
 import { normalizeOtpDigits } from '@/pages/Login/otpCodeUtils'
 
@@ -87,11 +94,34 @@ export function MfaEnrollPanel({ onVerified, onCancel }: Props) {
   return (
     <form onSubmit={handleSubmit} className="space-y-8">
       <div>
-        <h2 className="text-lg font-bold text-slate-900">認証アプリを登録</h2>
-        <p className="mt-2 text-sm font-medium leading-relaxed text-slate-500">
-          運営アカウントは追加確認が必要です。Google Authenticator などのアプリで QR
-          コードを読み取り、表示された6桁コードで完了してください。
-        </p>
+        <h2 className="text-lg font-bold text-slate-900">{MFA_ENROLL_TITLE}</h2>
+        <p className="mt-2 text-sm font-medium leading-relaxed text-slate-500">{MFA_ENROLL_LEAD}</p>
+        <ol className="mt-4 list-decimal space-y-2 pl-5 text-sm font-medium leading-relaxed text-slate-500">
+          {MFA_ENROLL_STEPS.map((step, index) => (
+            <li key={step}>
+              {step}
+              {index === 0 ? (
+                <span className="mt-1 block text-xs font-medium text-slate-400">
+                  {MFA_AUTHENTICATOR_STORE_LINKS.filter((link) =>
+                    isAllowedAuthenticatorStoreHref(link.href),
+                  ).map((link, linkIndex) => (
+                    <span key={link.href}>
+                      {linkIndex > 0 ? ' ／ ' : null}
+                      <a
+                        href={link.href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="font-bold text-[#008C01] underline decoration-dotted underline-offset-4"
+                      >
+                        {link.label}
+                      </a>
+                    </span>
+                  ))}
+                </span>
+              ) : null}
+            </li>
+          ))}
+        </ol>
       </div>
 
       {qrCode && isSafeMfaQrSrc(qrCode) ? (

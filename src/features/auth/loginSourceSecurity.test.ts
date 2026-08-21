@@ -15,6 +15,7 @@ const LOGIN_AUTH_SOURCES = [
   'src/pages/Login/LoginPage.tsx',
   'src/pages/Login/MfaChallengePanel.tsx',
   'src/pages/Login/MfaEnrollPanel.tsx',
+  'src/pages/Login/mfaEnrollCopy.ts',
   'src/pages/Login/SetPasswordPage.tsx',
   'src/pages/Login/OtpCodeInput.tsx',
   'src/features/auth/AuthProvider.tsx',

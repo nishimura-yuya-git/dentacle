@@ -206,7 +206,10 @@ export function LoginPage() {
               : 'rounded-[28px] border border-slate-200 bg-white px-10 py-12 shadow-[0_8px_30px_rgba(15,23,42,0.06)] sm:px-12 sm:py-14'
           }
         >
-          <AuthCardBrand compact={useWideLoginCard} />
+          <AuthCardBrand
+            compact={useWideLoginCard}
+            align={useWideLoginCard ? 'end' : 'center'}
+          />
           {cardBody}
         </div>
       </div>

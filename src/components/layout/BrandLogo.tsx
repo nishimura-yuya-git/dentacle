@@ -6,6 +6,7 @@ const SIZE_CLASS = {
   nav: 'h-7 w-auto max-w-[148px] object-left',
   footer: 'h-8 w-auto max-w-[168px] object-left',
   auth: 'h-12 w-auto max-w-[220px] object-center',
+  authCompact: 'h-9 w-auto max-w-[168px] object-center',
 } as const
 
 type BrandLogoSize = keyof typeof SIZE_CLASS

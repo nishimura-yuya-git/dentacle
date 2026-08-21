@@ -31,7 +31,7 @@ describe('BrandLogo', () => {
     }
   })
 
-  it('認証シェルはカード内先頭・左側に公式ロゴを置く', () => {
+  it('ログインは中央、MFAは小さく右側、パスワード設定は左側に置く', () => {
     for (const file of [
       '../../pages/Login/LoginPage.tsx',
       '../../pages/Login/SetPasswordPage.tsx',
@@ -40,9 +40,14 @@ describe('BrandLogo', () => {
       assert.match(source, /AuthCardBrand/, file)
     }
     const brand = readSource('../../pages/Login/AuthCardBrand.tsx')
-    assert.match(brand, /size="auth"/)
     assert.match(brand, /justify-start/)
+    assert.match(brand, /justify-center/)
+    assert.match(brand, /justify-end/)
+    assert.match(brand, /authCompact/)
+    const login = readSource('../../pages/Login/LoginPage.tsx')
+    assert.match(login, /useWideLoginCard \? 'end' : 'center'/)
     const logo = readSource('BrandLogo.tsx')
     assert.match(logo, /auth: 'h-12/)
+    assert.match(logo, /authCompact: 'h-9/)
   })
 })

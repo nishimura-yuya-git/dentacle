@@ -154,7 +154,7 @@ describe('ログイン入力の送り先', () => {
     assert.match(signOut, /setUser\(null\)/)
   })
 
-  it('認証カードはカード内先頭・左側に公式ロゴを置き、パネルへ重複しない', () => {
+  it('ログインは中央、MFAは小さく右側、パスワード設定は左側に置く', () => {
     const login = readSrc('src/pages/Login/LoginPage.tsx')
     const setPassword = readSrc('src/pages/Login/SetPasswordPage.tsx')
     assert.match(login, /AuthCardBrand/)
@@ -162,8 +162,11 @@ describe('ログイン入力の送り先', () => {
     assert.doesNotMatch(readSrc('src/pages/Login/MfaEnrollPanel.tsx'), /AuthCardBrand|BrandLogo/)
     assert.doesNotMatch(readSrc('src/pages/Login/MfaChallengePanel.tsx'), /AuthCardBrand|BrandLogo/)
     const brand = readSrc('src/pages/Login/AuthCardBrand.tsx')
-    assert.match(brand, /size="auth"/)
     assert.match(brand, /justify-start/)
+    assert.match(brand, /justify-center/)
+    assert.match(brand, /justify-end/)
+    assert.match(brand, /authCompact/)
+    assert.match(login, /useWideLoginCard \? 'end' : 'center'/)
     assert.doesNotMatch(brand, /デンタクル/)
   })
 })

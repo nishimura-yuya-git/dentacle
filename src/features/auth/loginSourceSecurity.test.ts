@@ -15,12 +15,18 @@ const LOGIN_AUTH_SOURCES = [
   'src/pages/Login/LoginPage.tsx',
   'src/pages/Login/MfaChallengePanel.tsx',
   'src/pages/Login/MfaEnrollPanel.tsx',
+  'src/pages/Login/MfaStoreLinks.tsx',
   'src/pages/Login/mfaEnrollCopy.ts',
+  'src/pages/Login/startPlatformAdminTotpEnroll.ts',
+  'src/pages/Login/LoginErrorText.tsx',
+  'src/pages/Login/LoginSignOutButton.tsx',
+  'src/pages/Login/AuthCardBrand.tsx',
   'src/pages/Login/SetPasswordPage.tsx',
   'src/pages/Login/OtpCodeInput.tsx',
   'src/features/auth/AuthProvider.tsx',
   'src/features/auth/authErrors.ts',
   'src/features/auth/recordAuthAudit.ts',
+  'src/features/auth/signOutSession.ts',
   'src/features/auth/MfaGateRoute.tsx',
   'src/components/common/ProtectedRoute.tsx',
 ] as const
@@ -85,6 +91,80 @@ describe('ログイン入力の送り先', () => {
   it('MFA 登録 QR は許可スキームだけ img にする', () => {
     const source = readSrc('src/pages/Login/MfaEnrollPanel.tsx')
     assert.match(source, /isSafeMfaQrSrc/)
+    assert.match(source, /startPlatformAdminTotpEnroll/)
+    assert.match(source, /MFA_AUTHENTICATOR_ICON_SRC/)
+    assert.match(source, /MfaStoreLinks/)
+    assert.match(readSrc('src/pages/Login/MfaStoreLinks.tsx'), /link\.iconSrc/)
+  })
+
+  it('ログイン系エラーは塗り箱にせず赤テキストにする', () => {
+    const files = [
+      'src/pages/Login/LoginPage.tsx',
+      'src/pages/Login/MfaEnrollPanel.tsx',
+      'src/pages/Login/MfaChallengePanel.tsx',
+      'src/pages/Login/SetPasswordPage.tsx',
+      'src/pages/Login/LoginErrorText.tsx',
+    ]
+    for (const relativePath of files) {
+      const source = readSrc(relativePath)
+      assert.doesNotMatch(source, /bg-rose-50/, relativePath)
+      assert.match(source, /LoginErrorText|role="alert"/, relativePath)
+    }
+    assert.match(readSrc('src/pages/Login/LoginErrorText.tsx'), /text-rose-600/)
+    assert.doesNotMatch(readSrc('src/pages/Login/LoginErrorText.tsx'), /rounded-xl/)
+  })
+
+  it('認証アプリ登録は案内が収まる幅にし、パスワード欄は狭いままにする', () => {
+    const source = readSrc('src/pages/Login/LoginPage.tsx')
+    assert.match(source, /max-w-\[640px\]/)
+    assert.match(source, /max-w-\[440px\]/)
+    assert.match(source, /useWideLoginCard/)
+    assert.match(source, /min-h-dvh/)
+  })
+
+  it('確認コードの6マスは正方形で、カード幅に合わせて横に伸ばさない', () => {
+    const source = readSrc('src/pages/Login/OtpCodeInput.tsx')
+    assert.match(source, /size-12/)
+    assert.match(source, /sm:size-14/)
+    assert.doesNotMatch(source, /flex-1/)
+    assert.doesNotMatch(source, /justify-between/)
+  })
+
+  it('認証アプリ登録は確認コードと登録ボタンの間を空けない', () => {
+    const enroll = readSrc('src/pages/Login/MfaEnrollPanel.tsx')
+    assert.match(enroll, /flex flex-col gap-4/)
+    assert.doesNotMatch(enroll, /mt-auto/)
+    assert.doesNotMatch(enroll, /space-y-8/)
+  })
+
+  it('セッションがある待ち表示と登録準備中でもログアウトできる', () => {
+    const login = readSrc('src/pages/Login/LoginPage.tsx')
+    assert.match(
+      login,
+      /セキュリティ確認をしています…[\s\S]{0,250}LoginSignOutButton/,
+    )
+    const enroll = readSrc('src/pages/Login/MfaEnrollPanel.tsx')
+    assert.match(
+      enroll,
+      /認証アプリの登録を準備しています…[\s\S]{0,250}LoginSignOutButton/,
+    )
+    const signOut = readSrc('src/features/auth/AuthProvider.tsx')
+    assert.match(signOut, /void recordAuthAuditEvent\('logout'\)/)
+    assert.match(signOut, /signOutSession/)
+    assert.match(signOut, /setUser\(null\)/)
+  })
+
+  it('認証カードはカード内先頭・左側に公式ロゴを置き、パネルへ重複しない', () => {
+    const login = readSrc('src/pages/Login/LoginPage.tsx')
+    const setPassword = readSrc('src/pages/Login/SetPasswordPage.tsx')
+    assert.match(login, /AuthCardBrand/)
+    assert.match(setPassword, /AuthCardBrand/)
+    assert.doesNotMatch(readSrc('src/pages/Login/MfaEnrollPanel.tsx'), /AuthCardBrand|BrandLogo/)
+    assert.doesNotMatch(readSrc('src/pages/Login/MfaChallengePanel.tsx'), /AuthCardBrand|BrandLogo/)
+    const brand = readSrc('src/pages/Login/AuthCardBrand.tsx')
+    assert.match(brand, /size="auth"/)
+    assert.match(brand, /justify-start/)
+    assert.doesNotMatch(brand, /デンタクル/)
   })
 })
 

@@ -8,7 +8,10 @@ import {
 } from '@/features/auth/recordAuthAudit'
 import { MfaChallengePanel } from '@/pages/Login/MfaChallengePanel'
 import { MfaEnrollPanel } from '@/pages/Login/MfaEnrollPanel'
+import { AuthCardBrand } from '@/pages/Login/AuthCardBrand'
 import { EyeIcon, EyeOffIcon } from '@/pages/Login/LoginIcons'
+import { LoginErrorText } from '@/pages/Login/LoginErrorText'
+import { LoginSignOutButton } from '@/pages/Login/LoginSignOutButton'
 import { needsPasswordSetup } from '@/pages/Login/needsPasswordSetup'
 
 /**
@@ -98,7 +101,10 @@ export function LoginPage() {
   } else if (user) {
     // ログイン済みでゲート解決中／遷移中。メール・パスワード画面へ戻さない
     cardBody = (
-      <p className="text-sm font-medium text-slate-500">セキュリティ確認をしています…</p>
+      <div className="space-y-6">
+        <p className="text-sm font-medium text-slate-500">セキュリティ確認をしています…</p>
+        <LoginSignOutButton onSignOut={() => void signOut()} />
+      </div>
     )
   } else {
     cardBody = (
@@ -158,14 +164,7 @@ export function LoginPage() {
             </div>
           ) : null}
 
-          {errorMessage ? (
-            <div
-              role="alert"
-              className="rounded-xl border border-rose-200 bg-rose-50 px-5 py-4 text-sm font-medium text-rose-700"
-            >
-              {errorMessage}
-            </div>
-          ) : null}
+          {errorMessage ? <LoginErrorText>{errorMessage}</LoginErrorText> : null}
 
           <div className="pt-2">
             <Button type="submit" size="lg" className="!h-14 w-full !rounded-xl" loading={submitting}>
@@ -183,10 +182,31 @@ export function LoginPage() {
     )
   }
 
+  const useWideLoginCard = Boolean(user)
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-white px-6 py-16">
-      <div className="w-full max-w-[440px]">
-        <div className="rounded-[28px] border border-slate-200 bg-white px-10 py-12 shadow-[0_8px_30px_rgba(15,23,42,0.06)] sm:px-12 sm:py-14">
+    <div
+      className={
+        useWideLoginCard
+          ? 'flex min-h-dvh flex-col items-center justify-center bg-white px-4 py-4 sm:px-6'
+          : 'flex min-h-screen items-center justify-center bg-white px-6 py-16'
+      }
+    >
+      <div
+        className={
+          useWideLoginCard
+            ? 'mx-auto w-full max-w-[640px]'
+            : 'w-full max-w-[440px]'
+        }
+      >
+        <div
+          className={
+            useWideLoginCard
+              ? 'rounded-[28px] border border-slate-200 bg-white px-6 py-5 shadow-[0_8px_30px_rgba(15,23,42,0.06)] sm:px-8 sm:py-6'
+              : 'rounded-[28px] border border-slate-200 bg-white px-10 py-12 shadow-[0_8px_30px_rgba(15,23,42,0.06)] sm:px-12 sm:py-14'
+          }
+        >
+          <AuthCardBrand compact={useWideLoginCard} />
           {cardBody}
         </div>
       </div>

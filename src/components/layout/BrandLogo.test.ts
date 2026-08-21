@@ -31,9 +31,18 @@ describe('BrandLogo', () => {
     }
   })
 
-  it('ログイン画面にはロゴを置かない', () => {
-    const source = readSource('../../pages/Login/LoginPage.tsx')
-    assert.equal(source.includes('BrandLogo'), false)
-    assert.equal(source.includes('/icon/logo.png'), false)
+  it('認証シェルはカード内先頭・左側に公式ロゴを置く', () => {
+    for (const file of [
+      '../../pages/Login/LoginPage.tsx',
+      '../../pages/Login/SetPasswordPage.tsx',
+    ]) {
+      const source = readSource(file)
+      assert.match(source, /AuthCardBrand/, file)
+    }
+    const brand = readSource('../../pages/Login/AuthCardBrand.tsx')
+    assert.match(brand, /size="auth"/)
+    assert.match(brand, /justify-start/)
+    const logo = readSource('BrandLogo.tsx')
+    assert.match(logo, /auth: 'h-12/)
   })
 })

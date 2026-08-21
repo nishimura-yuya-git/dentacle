@@ -1,17 +1,20 @@
 import { useEffect, useState, type FormEvent } from 'react'
-import { APP_DISPLAY_NAME } from '@/config/appName'
 import { Button } from '@/components/ui/Button'
 import { isSafeMfaQrSrc } from '@/features/auth/loginSecurityContract'
+import { useAuth } from '@/features/auth/useAuth'
 import { supabase } from '@/lib/supabase'
 import {
-  MFA_AUTHENTICATOR_STORE_LINKS,
+  MFA_AUTHENTICATOR_ICON_SRC,
   MFA_ENROLL_LEAD,
   MFA_ENROLL_STEPS,
   MFA_ENROLL_TITLE,
-  isAllowedAuthenticatorStoreHref,
 } from '@/pages/Login/mfaEnrollCopy'
+import { LoginErrorText } from '@/pages/Login/LoginErrorText'
+import { LoginSignOutButton } from '@/pages/Login/LoginSignOutButton'
+import { MfaStoreLinks } from '@/pages/Login/MfaStoreLinks'
 import { OtpCodeInput } from '@/pages/Login/OtpCodeInput'
 import { normalizeOtpDigits } from '@/pages/Login/otpCodeUtils'
+import { startPlatformAdminTotpEnroll } from '@/pages/Login/startPlatformAdminTotpEnroll'
 
 type Props = {
   onVerified: () => void
@@ -19,6 +22,7 @@ type Props = {
 }
 
 export function MfaEnrollPanel({ onVerified, onCancel }: Props) {
+  const { user } = useAuth()
   const [factorId, setFactorId] = useState<string | null>(null)
   const [qrCode, setQrCode] = useState<string | null>(null)
   const [secret, setSecret] = useState<string | null>(null)
@@ -28,38 +32,28 @@ export function MfaEnrollPanel({ onVerified, onCancel }: Props) {
   const [submitting, setSubmitting] = useState(false)
 
   useEffect(() => {
+    if (!user?.id) return
     let cancelled = false
 
-    async function startEnroll() {
-      setLoading(true)
-      setErrorMessage(null)
-      // 中断した未検証 factor が残っていると enroll が失敗しやすいので掃除
-      const { data: existing } = await supabase.auth.mfa.listFactors()
-      const unverified = (existing?.all ?? []).filter((factor) => factor.status === 'unverified')
-      for (const factor of unverified) {
-        await supabase.auth.mfa.unenroll({ factorId: factor.id })
-      }
-      const { data, error } = await supabase.auth.mfa.enroll({
-        factorType: 'totp',
-        friendlyName: `${APP_DISPLAY_NAME}運営`,
-      })
+    setLoading(true)
+    setErrorMessage(null)
+    void startPlatformAdminTotpEnroll(user.id, supabase).then((result) => {
       if (cancelled) return
-      if (error || !data) {
+      if (!result.ok) {
         setErrorMessage('認証アプリの登録を開始できませんでした。')
         setLoading(false)
         return
       }
-      setFactorId(data.id)
-      setQrCode(data.totp.qr_code)
-      setSecret(data.totp.secret)
+      setFactorId(result.factorId)
+      setQrCode(result.qrCode)
+      setSecret(result.secret)
       setLoading(false)
-    }
+    })
 
-    void startEnroll()
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [user?.id])
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault()
@@ -88,45 +82,42 @@ export function MfaEnrollPanel({ onVerified, onCancel }: Props) {
   }
 
   if (loading) {
-    return <p className="text-sm font-medium text-slate-500">認証アプリの登録を準備しています…</p>
+    return (
+      <div className="space-y-6">
+        <p className="text-sm font-medium text-slate-500">認証アプリの登録を準備しています…</p>
+        <LoginSignOutButton onSignOut={onCancel} />
+      </div>
+    )
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-8">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       <div>
-        <h2 className="text-lg font-bold text-slate-900">{MFA_ENROLL_TITLE}</h2>
-        <p className="mt-2 text-sm font-medium leading-relaxed text-slate-500">{MFA_ENROLL_LEAD}</p>
-        <ol className="mt-4 list-decimal space-y-2 pl-5 text-sm font-medium leading-relaxed text-slate-500">
+        <div className="flex items-center gap-3">
+          <img
+            src={MFA_AUTHENTICATOR_ICON_SRC}
+            alt=""
+            width={40}
+            height={40}
+            className="h-10 w-10 shrink-0 rounded-[10px] object-cover"
+            draggable={false}
+          />
+          <h2 className="text-lg font-bold text-slate-900">{MFA_ENROLL_TITLE}</h2>
+        </div>
+        <p className="mt-1 text-sm font-medium leading-relaxed text-slate-500">{MFA_ENROLL_LEAD}</p>
+        <ol className="mt-2 list-decimal space-y-1 pl-5 text-sm font-medium leading-relaxed text-slate-500">
           {MFA_ENROLL_STEPS.map((step, index) => (
             <li key={step}>
               {step}
-              {index === 0 ? (
-                <span className="mt-1 block text-xs font-medium text-slate-400">
-                  {MFA_AUTHENTICATOR_STORE_LINKS.filter((link) =>
-                    isAllowedAuthenticatorStoreHref(link.href),
-                  ).map((link, linkIndex) => (
-                    <span key={link.href}>
-                      {linkIndex > 0 ? ' ／ ' : null}
-                      <a
-                        href={link.href}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="font-bold text-[#008C01] underline decoration-dotted underline-offset-4"
-                      >
-                        {link.label}
-                      </a>
-                    </span>
-                  ))}
-                </span>
-              ) : null}
+              {index === 0 ? <MfaStoreLinks /> : null}
             </li>
           ))}
         </ol>
       </div>
 
       {qrCode && isSafeMfaQrSrc(qrCode) ? (
-        <div className="flex justify-center rounded-2xl border border-slate-100 bg-slate-50 p-6">
-          <img src={qrCode} alt="認証アプリ登録用QRコード" className="h-44 w-44" />
+        <div className="flex justify-center rounded-2xl border border-slate-100 bg-slate-50 p-3">
+          <img src={qrCode} alt="認証アプリ登録用QRコード" className="h-32 w-32" />
         </div>
       ) : qrCode ? (
         <p className="text-sm font-medium text-slate-500">
@@ -140,35 +131,21 @@ export function MfaEnrollPanel({ onVerified, onCancel }: Props) {
         </p>
       ) : null}
 
-      <OtpCodeInput
-        id="mfa-enroll-code"
-        value={code}
-        onChange={setCode}
-        disabled={submitting}
-      />
+      <div className="space-y-3">
+        <OtpCodeInput
+          id="mfa-enroll-code"
+          value={code}
+          onChange={setCode}
+          disabled={submitting}
+        />
+        {errorMessage ? <LoginErrorText>{errorMessage}</LoginErrorText> : null}
+      </div>
 
-      {errorMessage ? (
-        <div
-          role="alert"
-          className="rounded-xl border border-rose-200 bg-rose-50 px-5 py-4 text-sm font-medium text-rose-700"
-        >
-          {errorMessage}
-        </div>
-      ) : null}
-
-      <div className="flex flex-col gap-3 pt-1">
-        <Button type="submit" size="lg" className="!h-14 w-full !rounded-xl" loading={submitting}>
+      <div className="flex flex-col gap-1">
+        <Button type="submit" size="lg" className="!h-12 w-full !rounded-xl" loading={submitting}>
           登録して入る
         </Button>
-        <Button
-          type="button"
-          variant="outline"
-          className="!h-12 w-full !rounded-xl"
-          onClick={onCancel}
-          disabled={submitting}
-        >
-          ログアウト
-        </Button>
+        <LoginSignOutButton onSignOut={onCancel} />
       </div>
     </form>
   )

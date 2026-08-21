@@ -18,12 +18,17 @@ export const MFA_AUTHENTICATOR_STORE_LINKS = [
   {
     label: 'App Store',
     href: 'https://apps.apple.com/jp/app/google-authenticator/id388497605',
+    iconSrc: '/icon/apple-store.svg',
   },
   {
     label: 'Google Play',
     href: 'https://play.google.com/store/apps/details?id=com.google.android.apps.authenticator2&hl=ja',
+    iconSrc: '/icon/google-play.svg',
   },
 ] as const
+
+/** 認証アプリの例示アイコン。パスに空白を入れない。 */
+export const MFA_AUTHENTICATOR_ICON_SRC = '/icon/google-authenticator.png'
 
 const ALLOWED_STORE_HOSTS = new Set(['apps.apple.com', 'play.google.com'])
 

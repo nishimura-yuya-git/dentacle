@@ -93,7 +93,7 @@ export function OtpCodeInput({
       <label htmlFor={`${id}-0`} className="block text-sm font-bold text-slate-800">
         {label}
       </label>
-      <div className="flex items-center justify-between gap-2 sm:gap-2.5" role="group" aria-label={label}>
+      <div className="flex items-center justify-center gap-2 sm:gap-2.5" role="group" aria-label={label}>
         {digits.map((digit, index) => (
           <input
             key={`${id}-${index}`}
@@ -113,7 +113,7 @@ export function OtpCodeInput({
             onKeyDown={(event) => handleKeyDown(index, event)}
             onChange={(event) => handleChange(index, event.target.value)}
             onFocus={(event) => event.currentTarget.select()}
-            className="h-14 w-11 rounded-xl border border-slate-200 bg-white text-center text-xl font-bold text-slate-900 outline-none transition focus:border-[#008C01] focus:ring-4 focus:ring-[#008C01]/20 disabled:bg-slate-50 sm:h-[3.75rem] sm:w-12"
+            className="size-12 shrink-0 rounded-xl border border-slate-200 bg-white text-center text-lg font-bold text-slate-900 outline-none transition focus:border-[#008C01] focus:ring-4 focus:ring-[#008C01]/20 disabled:bg-slate-50 sm:size-14 sm:text-xl"
           />
         ))}
       </div>

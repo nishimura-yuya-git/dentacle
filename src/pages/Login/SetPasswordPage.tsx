@@ -4,6 +4,8 @@ import { Button } from '@/components/ui/Button'
 import { useAuth } from '@/features/auth/useAuth'
 import { supabase } from '@/lib/supabase'
 import { EyeIcon, EyeOffIcon } from '@/pages/Login/LoginIcons'
+import { AuthCardBrand } from '@/pages/Login/AuthCardBrand'
+import { LoginErrorText } from '@/pages/Login/LoginErrorText'
 import { validateNewPassword } from '@/pages/Login/setPasswordPolicy'
 
 export function SetPasswordPage() {
@@ -91,14 +93,7 @@ export function SetPasswordPage() {
             onToggle={() => setShowPassword((current) => !current)}
             onChange={setConfirm}
           />
-          {errorMessage ? (
-            <div
-              role="alert"
-              className="rounded-xl border border-rose-200 bg-rose-50 px-5 py-4 text-sm font-medium text-rose-700"
-            >
-              {errorMessage}
-            </div>
-          ) : null}
+          {errorMessage ? <LoginErrorText>{errorMessage}</LoginErrorText> : null}
           <div className="pt-2">
             <Button type="submit" size="lg" className="!h-14 w-full !rounded-xl" loading={submitting}>
               登録する
@@ -113,6 +108,7 @@ export function SetPasswordPage() {
     <div className="flex min-h-screen items-center justify-center bg-white px-6 py-16">
       <div className="w-full max-w-[440px]">
         <div className="rounded-[28px] border border-slate-200 bg-white px-10 py-12 shadow-[0_8px_30px_rgba(15,23,42,0.06)] sm:px-12 sm:py-14">
+          <AuthCardBrand />
           {cardBody}
         </div>
       </div>

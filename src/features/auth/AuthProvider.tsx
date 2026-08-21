@@ -17,6 +17,7 @@ import {
   assertAuthIpAllowed,
   recordAuthAuditEvent,
 } from '@/features/auth/recordAuthAudit'
+import { signOutSession } from '@/features/auth/signOutSession'
 import { useAuthPresenceHeartbeat } from '@/features/auth/useAuthPresenceHeartbeat'
 
 async function fetchMemberships(userId: string): Promise<ClinicMember[]> {
@@ -124,9 +125,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const ipGate = await assertAuthIpAllowed()
     if (!ipGate.allowed) {
-      await supabase.auth.signOut()
+      await signOutSession(supabase)
+      setSession(null)
+      setUser(null)
       setMemberships([])
       setMfaGate({ status: 'ok' })
+      setMfaGateLoading(false)
       return { errorMessage: ipGate.errorMessage }
     }
 
@@ -144,12 +148,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = useCallback(async () => {
     if (user) {
-      await recordAuthAuditEvent('logout')
-      await clearAuthPresence()
+      void recordAuthAuditEvent('logout')
+      void clearAuthPresence()
     }
-    await supabase.auth.signOut()
+    await signOutSession(supabase)
+    setSession(null)
+    setUser(null)
     setMemberships([])
     setMfaGate({ status: 'ok' })
+    setMfaGateLoading(false)
   }, [user])
 
   const value = useMemo<AuthContextValue>(

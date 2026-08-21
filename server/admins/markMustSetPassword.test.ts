@@ -77,6 +77,9 @@ describe('AAL2 / パスワード強制マイグレーション', () => {
     assert.match(vercel, /ipwho\.is/)
     assert.match(vercel, /api\/schedule\/propose/)
     assert.match(vercel, /api\/schedule\/gap-fill/)
+    assert.match(vercel, /"rewrites"/)
+    assert.match(vercel, /\/index\.html/)
+    assert.match(vercel, /\(\(\?!api\/\)\.\*\)/)
   })
 
   it('パスワード変更トリガは app_metadata を下ろす', () => {

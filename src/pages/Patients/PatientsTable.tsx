@@ -1,5 +1,13 @@
 import { Link } from 'react-router-dom'
 import { formatListDate, formatNextVisit } from '@/pages/Patients/formatPatientList'
+import {
+  INFECTIOUS_DISEASE_LABEL,
+  listCellClassName,
+  listKanaClassName,
+  listMetaClassName,
+  listNameClassName,
+  listRowClassName,
+} from '@/pages/Patients/infectiousDiseasePolicy'
 import { PatientIcon } from '@/pages/Patients/PatientIcon'
 import type { PatientListRow } from '@/pages/Patients/patientListTypes'
 
@@ -9,8 +17,6 @@ type Props = {
 
 const TH =
   'whitespace-nowrap border-b border-slate-200 bg-slate-50 px-3 py-2.5 text-left text-xs font-bold text-slate-600'
-
-const TD = 'border-b border-slate-100 px-3 py-3 align-middle text-sm text-slate-700'
 
 /** お名前 / 来院 / 前回 / 次回 / 主担当。空列とチェックは置かない。 */
 export function PatientsTable({ patients }: Props) {
@@ -27,10 +33,11 @@ export function PatientsTable({ patients }: Props) {
       </thead>
       <tbody>
         {patients.map((patient, index) => {
-          const rowBg = index % 2 === 0 ? 'bg-white' : 'bg-slate-50/80'
+          const infectious = patient.has_infectious_disease
+          const td = listCellClassName(infectious)
           return (
-            <tr key={patient.id} className={`group ${rowBg} hover:bg-emerald-50/40`}>
-              <td className={TD}>
+            <tr key={patient.id} className={listRowClassName(infectious, index)}>
+              <td className={td}>
                 <Link
                   to={`/patients/${patient.id}`}
                   className="flex min-w-[220px] items-start gap-3"
@@ -39,28 +46,33 @@ export function PatientsTable({ patients }: Props) {
                     <PatientIcon iconId={patient.icon_id} name={patient.name_kanji} />
                   </span>
                   <span className="min-w-0">
-                    <span className="block truncate font-bold text-slate-900">
+                    <span className={`block truncate font-bold ${listNameClassName(infectious)}`}>
                       <span className="underline-offset-[3px] decoration-slate-400 group-hover:underline group-hover:decoration-dotted">
                         {patient.name_kanji}
                         {patient.name_kana ? (
-                          <span className="ml-2 font-medium text-slate-500">
+                          <span className={`ml-2 font-medium ${listKanaClassName(infectious)}`}>
                             {patient.name_kana}
+                          </span>
+                        ) : null}
+                        {infectious ? (
+                          <span className="ml-2 inline-flex items-center rounded-md bg-slate-950/50 px-1.5 py-0.5 text-[10px] font-bold text-slate-50">
+                            {INFECTIOUS_DISEASE_LABEL}
                           </span>
                         ) : null}
                       </span>
                     </span>
-                    <span className="mt-0.5 block truncate text-xs font-medium text-slate-400">
+                    <span className={`mt-0.5 block truncate text-xs font-medium ${listMetaClassName(infectious)}`}>
                       {patient.chart_number ? `- - ${patient.chart_number}` : '—'}
                       {patient.phone ? ` ${patient.phone}` : ''}
                     </span>
                   </span>
                 </Link>
               </td>
-              <td className={TD}>
+              <td className={td}>
                 {patient.visit_count != null ? `${patient.visit_count}回` : '—'}
               </td>
-              <td className={TD}>{formatListDate(patient.last_visit_date)}</td>
-              <td className={TD}>
+              <td className={td}>{formatListDate(patient.last_visit_date)}</td>
+              <td className={td}>
                 <span className="inline-flex flex-wrap items-center gap-1">
                   <span>
                     {formatNextVisit(patient.next_visit_date, patient.next_visit_time)}
@@ -70,7 +82,7 @@ export function PatientsTable({ patients }: Props) {
                   ) : null}
                 </span>
               </td>
-              <td className={TD}>{patient.primary_doctor_name || '—'}</td>
+              <td className={td}>{patient.primary_doctor_name || '—'}</td>
             </tr>
           )
         })}

@@ -190,6 +190,7 @@ export function CalendarPage() {
           patchVisitLocal: data.patchVisitLocal,
           patchVisitsLocal: data.patchVisitsLocal,
           removeVisitsLocal: data.removeVisitsLocal,
+          visitMenuCatalog: data.visitMenuCatalog,
         }
       : null
 
@@ -464,6 +465,7 @@ export function CalendarPage() {
         menus={detailMenus}
         cellColor={detailCellColor}
         menuEnabled={data.visitMenuEnabled}
+        menuCatalog={data.visitMenuCatalog}
         patientOptions={patientOptions}
         teamOptions={teamOptions}
         staffOptions={staffOptions}

@@ -39,6 +39,33 @@ assert.match(
   visitBlockClassName({ status: 'tentative', source: 'auto_proposal', cell_color: 'sky' }),
   /bg-sky-50/,
 )
+assert.match(
+  visitBlockClassName({
+    status: 'confirmed',
+    source: 'manual',
+    cell_color: 'orange',
+    has_infectious_disease: true,
+  }),
+  /bg-slate-800/,
+)
+assert.doesNotMatch(
+  visitBlockClassName({
+    status: 'confirmed',
+    source: 'manual',
+    cell_color: 'orange',
+    has_infectious_disease: true,
+  }),
+  /bg-orange-50/,
+)
+assert.match(
+  visitBlockClassName({
+    status: 'tentative',
+    source: 'auto_proposal',
+    cell_color: 'sky',
+    patients: { has_infectious_disease: true },
+  }),
+  /bg-slate-800/,
+)
 
 assert.equal(provisionalBlockHeightPx(54), 64)
 assert.equal(provisionalStatusLabel(64), '仮（クリックで詳細）')

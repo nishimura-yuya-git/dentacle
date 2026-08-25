@@ -532,6 +532,68 @@ export type Database = {
           },
         ]
       }
+      clinic_visit_menus: {
+        Row: {
+          clinic_id: string
+          code: string
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          deleted_by: string | null
+          duration_minutes: number
+          id: string
+          is_enabled: boolean
+          metadata: Json
+          name: string
+          sort_order: number
+          updated_at: string
+          updated_by: string | null
+          version: number
+        }
+        Insert: {
+          clinic_id: string
+          code: string
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          deleted_by?: string | null
+          duration_minutes: number
+          id?: string
+          is_enabled?: boolean
+          metadata?: Json
+          name: string
+          sort_order?: number
+          updated_at?: string
+          updated_by?: string | null
+          version?: number
+        }
+        Update: {
+          clinic_id?: string
+          code?: string
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          deleted_by?: string | null
+          duration_minutes?: number
+          id?: string
+          is_enabled?: boolean
+          metadata?: Json
+          name?: string
+          sort_order?: number
+          updated_at?: string
+          updated_by?: string | null
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clinic_visit_menus_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clinics: {
         Row: {
           code: string | null
@@ -1055,6 +1117,7 @@ export type Database = {
           deleted_by: string | null
           external_id: string | null
           facility_id: string | null
+          has_infectious_disease: boolean
           id: string
           is_active: boolean
           latitude: number | null
@@ -1080,6 +1143,7 @@ export type Database = {
           deleted_by?: string | null
           external_id?: string | null
           facility_id?: string | null
+          has_infectious_disease?: boolean
           id?: string
           is_active?: boolean
           latitude?: number | null
@@ -1105,6 +1169,7 @@ export type Database = {
           deleted_by?: string | null
           external_id?: string | null
           facility_id?: string | null
+          has_infectious_disease?: boolean
           id?: string
           is_active?: boolean
           latitude?: number | null

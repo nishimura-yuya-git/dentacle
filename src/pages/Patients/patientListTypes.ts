@@ -14,6 +14,7 @@ export type PatientListRow = {
   next_visit_provisional: boolean
   visit_count: number | null
   icon_id: PatientIconId
+  has_infectious_disease: boolean
 }
 
 export type StaffOption = {

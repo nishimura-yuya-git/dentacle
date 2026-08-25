@@ -3,13 +3,35 @@
  * Claim Grounding 単体テスト。
  * 期待値根拠: 薄い知識Graph層（評価器の主張↔根拠照合）。宣言なしは skip。
  */
+import { existsSync, writeFileSync } from 'node:fs';
+
 import {
+  claimsFix,
   evaluateClaimGrounding,
+  hasSymptomMeasurement,
   hasUnresolvedObserveProblems,
   isObserveBlockersCleared,
   parseCompletionDeclaration,
   resolveEvidencePaths,
 } from './lib/claim-grounding.mjs';
+
+// 証拠パスの実在チェックが本物になったため、宣言例で使うキャプチャを実際に作る。
+// 「実在しない画像を根拠として貼る」ことを検知させるのが目的。
+for (const fixture of [
+  '/tmp/inner-panel.png',
+  '/tmp/reference-full.png',
+  '/tmp/impl-full.png',
+  '/tmp/full.png',
+  '/tmp/nani-full.png',
+  '/tmp/account-menu-open.png',
+  '/tmp/security-full.png',
+  '/tmp/feedback.png',
+  '/tmp/feedback-full.png',
+  '/tmp/auto-propose-composing.png',
+  '/tmp/home-full.png',
+]) {
+  if (!existsSync(fixture)) writeFileSync(fixture, '');
+}
 
 let failed = 0;
 
@@ -64,6 +86,9 @@ function assertTrue(value, message) {
   const result = evaluateClaimGrounding({
     declarationText: `
 ## 完成宣言（Bug Fix Loop）
+- 症状: 一覧の件数が実データと合わない
+- 症状測定: 表示件数 12 → 15（DB実データ 15件）
+- 確認環境: http://localhost:5173/patients
 - Evaluation:
   - コマンド: pnpm run loop:bugfix
   - 結果: warn
@@ -131,7 +156,7 @@ function assertTrue(value, message) {
 - 借りない: 専用レール、max-w-4xl、導入文、Cursor Cloud 枠
 - ページ枠照合:
   - 見本: なし（指示のみ）
-  - 実装: \`/opt/cursor/artifacts/screenshots/home-full.png\`
+  - 実装: \`/tmp/home-full.png\`
   - 差分: 対象は業務ハブのためサイドバー・FABを残した。見本の文書シェル枠は移植していない
   - Read済み: はい
 - 操作観察:
@@ -349,6 +374,9 @@ function assertTrue(value, message) {
     declarationText: `
 ## 完成宣言（Bug Fix Loop）
 - iteration: 1 / 3
+- 症状: 完成宣言が根拠なしでも通ってしまう
+- 症状測定: 根拠なし宣言の stop 件数 0 → 4
+- 確認環境: node scripts/claim-grounding.test.mjs
 - Evaluation:
   - コマンド: pnpm run loop:evaluator
   - 結果: pass
@@ -608,6 +636,114 @@ function assertTrue(value, message) {
     changedFiles: ['src/components/ui/ComposingOrb.tsx'],
   });
   assertEqual(result.status, 'pass', '実行中の AI処理観察ありは pass');
+}
+
+// --- Symptom Gate（症状ゲート）---
+// 期待値根拠: 2026-08-25 の実失敗。「終日いけないで配置がガクガクする」に対し、
+// console エラーなしと tsc pass を根拠に「解消」と報告し、差分ゼロのまま3回出戻った。
+
+{
+  const result = evaluateClaimGrounding({
+    declarationText: `
+## 完成宣言（Bug Fix Loop）
+- Evaluation:
+  - コマンド: pnpm run loop:bugfix
+  - 結果: pass
+- Regression Guard: pass
+- Stop非該当の根拠: \`scripts/loop-evaluator.mjs\`
+`,
+    goal: 'bug-fix',
+    changedFiles: ['src/pages/Patients/PreferredWeekdayDayPanel.tsx'],
+  });
+  assertEqual(result.status, 'stop', '症状・測定なしの Bug Fix 完成は stop');
+  assertTrue(result.missing.includes('symptom-restated'), '症状の再掲不足を検知');
+  assertTrue(result.missing.includes('symptom-measured'), '症状測定の不足を検知');
+}
+
+{
+  const result = evaluateClaimGrounding({
+    declarationText: `
+## 完成宣言（Bug Fix Loop）
+- 症状: チェックボックスを押すと配置がガクガク動く
+- 症状測定: コンソールエラーなし。tsc も通った
+- 確認環境: http://localhost:5173/patients/xxx
+- Evaluation:
+  - コマンド: pnpm run loop:bugfix
+  - 結果: pass
+- Stop非該当の根拠: \`scripts/loop-evaluator.mjs\`
+`,
+    goal: 'bug-fix',
+    changedFiles: ['src/pages/Patients/PreferredWeekdayDayPanel.tsx'],
+  });
+  assertEqual(result.status, 'stop', '「エラーなし」だけの不在証明は測定として stop');
+  assertTrue(result.missing.includes('symptom-measured'), '数値なしの測定を拒否');
+}
+
+{
+  const result = evaluateClaimGrounding({
+    declarationText: `
+## 完成宣言（Bug Fix Loop）
+- 症状: チェックボックスを押すと配置がガクガク動く
+- 症状測定: 終日いけないラベルY 407 → 417（修正後は前後どちらも 417 で差分0）
+- 確認環境: http://localhost:5173/patients/xxx
+- Evaluation:
+  - コマンド: pnpm run loop:bugfix
+  - 結果: pass
+- 原因を特定した。修正した内容は行の最小高さ固定。
+- Stop非該当の根拠: \`scripts/loop-evaluator.mjs\`
+`,
+    goal: 'bug-fix',
+    changedFiles: [],
+  });
+  assertEqual(result.status, 'stop', '「修正した」と書いて差分ゼロは stop');
+  assertTrue(result.missing.includes('fix-has-diff'), '差分ゼロの修正主張を検知');
+}
+
+{
+  const result = evaluateClaimGrounding({
+    declarationText: `
+## 完成宣言（Bug Fix Loop）
+- 症状: チェックボックスを押すと配置がガクガク動く
+- 症状測定: ラベルY 417 → 417（修正前は 417 → 407 で10px上昇）
+- 確認環境: http://localhost:5173/patients/xxx
+- Evaluation:
+  - コマンド: pnpm run loop:bugfix
+  - 結果: pass
+- Regression Guard: pass
+- 修正した: 行に min-h-10 を付与
+- Stop非該当の根拠: \`scripts/loop-evaluator.mjs\`
+`,
+    goal: 'bug-fix',
+    changedFiles: ['src/pages/Patients/PreferredWeekdayDayPanel.tsx'],
+  });
+  assertEqual(result.status, 'pass', '症状・数値測定・環境・差分が揃えば pass');
+}
+
+{
+  const result = evaluateClaimGrounding({
+    declarationText: `
+## 完成宣言（Bug Fix Loop）
+- 症状: チェックボックスを押すと配置がガクガク動く
+- 症状測定: ラベルY 417 → 417
+- 確認環境: http://localhost:5173/patients/xxx
+- Evaluation:
+  - コマンド: pnpm run loop:bugfix
+  - 結果: pass
+- 修正した: 行の高さを固定
+- Stop非該当の根拠: PROJECT_MEMORY.md §3.1 と \`tmp-shots/存在しない画像.png\`
+`,
+    goal: 'bug-fix',
+    changedFiles: ['src/pages/Patients/PreferredWeekdayDayPanel.tsx'],
+  });
+  assertEqual(result.status, 'warn', '実在しない証拠パスは MEMORY 参照でも打ち消さない');
+  assertTrue(result.missing.includes('evidence-path-unresolved'), '架空パスを検知');
+}
+
+{
+  assertEqual(hasSymptomMeasurement('コンソールエラーなし'), false, '不在証明は測定でない');
+  assertEqual(hasSymptomMeasurement('scrollY 485 → 0'), true, '前後の数値は測定として有効');
+  assertEqual(claimsFix('原因を調査しました'), false, '調査報告は修正主張でない');
+  assertEqual(claimsFix('min-h-10 を付けて修正しました'), true, '修正主張を検知');
 }
 
 if (failed > 0) {

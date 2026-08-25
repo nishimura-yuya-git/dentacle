@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/Button'
 import { DatePicker } from '@/components/ui/DatePicker'
 import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
+import { Checkbox } from '@/components/ui/Checkbox'
 import { Modal } from '@/components/ui/Modal'
 import { useToast } from '@/components/ui/Toast'
 import { ClinicAccessPlaceholder } from '@/features/clinic/ClinicAccessPlaceholder'
@@ -55,6 +56,7 @@ const EMPTY_FORM = {
   primary_doctor_id: '',
   last_visit_date: '',
   icon_id: '1' as PatientIconId,
+  has_infectious_disease: false,
 }
 
 function readVisitCount(metadata: unknown): number | null {
@@ -91,7 +93,7 @@ export function PatientsPage() {
       supabase
         .from('patients')
         .select(
-          'id, name_kanji, name_kana, chart_number, phone, primary_doctor_id, metadata, created_at, patient_visit_conditions(last_visit_date), staff_members!patients_primary_doctor_id_fkey(display_name)',
+          'id, name_kanji, name_kana, chart_number, phone, primary_doctor_id, has_infectious_disease, metadata, created_at, patient_visit_conditions(last_visit_date), staff_members!patients_primary_doctor_id_fkey(display_name)',
         )
         .eq('clinic_id', clinic.id)
         .is('deleted_at', null)
@@ -157,6 +159,7 @@ export function PatientsPage() {
         next_visit_provisional: next?.provisional ?? false,
         visit_count: readVisitCount(row.metadata),
         icon_id: resolvePatientIconId(row.metadata, row.id),
+        has_infectious_disease: row.has_infectious_disease === true,
       }
     })
 
@@ -205,6 +208,7 @@ export function PatientsPage() {
         area_label: form.area_label.trim() || null,
         address: form.address.trim() || null,
         primary_doctor_id: form.primary_doctor_id || null,
+        has_infectious_disease: form.has_infectious_disease,
         metadata: withPatientIcon({}, form.icon_id) as Json,
       })
       .select('id')
@@ -386,6 +390,18 @@ export function PatientsPage() {
             clearable
             onChange={(next) => setForm((f) => ({ ...f, last_visit_date: next }))}
           />
+          <div className="md:col-span-2">
+            <Checkbox
+              label="感染症"
+              checked={form.has_infectious_disease}
+              onChange={(next) =>
+                setForm((current) => ({ ...current, has_infectious_disease: next }))
+              }
+            />
+            <p className="mt-1 text-xs font-medium text-slate-400">
+              器具・接触に注意。他の患者へうつさない
+            </p>
+          </div>
           <p className="md:col-span-2 text-xs font-medium text-slate-400">
             訪問頻度は未設定の仮条件で登録します。電話確認で育成してください。
           </p>

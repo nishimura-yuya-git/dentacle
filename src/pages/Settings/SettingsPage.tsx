@@ -12,10 +12,9 @@ import { supabase } from '@/lib/supabase'
 import type { Json } from '@/types/database.types'
 import {
   readIntroductionLane,
-  readVisitMenuEnabled,
   withIntroductionLane,
-  withVisitMenuEnabled,
 } from '@/utils/clinic/clinicMetadata'
+import { useVisitMenuSettings } from '@/pages/Settings/hooks/useVisitMenuSettings'
 import { VisitMenuSection } from '@/pages/Settings/sections/VisitMenuSection'
 import {
   SETTINGS_TD,
@@ -72,9 +71,12 @@ export function SettingsPage() {
   const [slots, setSlots] = useState<Slot[]>([])
   const [lane, setLane] = useState<IntroductionLane>(DEFAULT_INTRODUCTION_LANE)
   const [laneSaving, setLaneSaving] = useState(false)
-  const [menuEnabled, setMenuEnabled] = useState<Record<string, boolean>>({})
-  const [menuSaving, setMenuSaving] = useState(false)
   const [section, setSection] = useState<SettingsSection>('lane')
+  const menus = useVisitMenuSettings({
+    clinicId: clinic?.id,
+    userId: user?.id,
+    canEdit: canWriteOperations,
+  })
 
   const [teamName, setTeamName] = useState('')
   const [staffName, setStaffName] = useState('')
@@ -132,7 +134,6 @@ export function SettingsPage() {
     setStaff(staffRes.data ?? [])
     setSlots(slotsRes.data ?? [])
     setLane(readIntroductionLane(clinicRes.data?.metadata ?? null))
-    setMenuEnabled(readVisitMenuEnabled(clinicRes.data?.metadata ?? null))
     if (!slotTeamId && teamsRes.data?.[0]) setSlotTeamId(teamsRes.data[0].id)
   }, [clinic, slotTeamId, toast])
 
@@ -233,35 +234,6 @@ export function SettingsPage() {
     }
   }
 
-  async function handleMenuToggle(code: string, next: boolean) {
-    if (!clinic || !canWriteOperations) return
-    const nextEnabled = { ...menuEnabled, [code]: next }
-    setMenuEnabled(nextEnabled)
-    setMenuSaving(true)
-    try {
-      const { data: current, error: readError } = await supabase
-        .from('clinics')
-        .select('metadata')
-        .eq('id', clinic.id)
-        .maybeSingle()
-      if (readError) throw new Error(readError.message)
-
-      const { error: updateError } = await supabase
-        .from('clinics')
-        .update({
-          metadata: withVisitMenuEnabled(current?.metadata ?? null, nextEnabled) as Json,
-          updated_by: user?.id ?? null,
-        })
-        .eq('id', clinic.id)
-      if (updateError) throw new Error(updateError.message)
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'メニュー設定の保存に失敗しました')
-      await reload()
-    } finally {
-      setMenuSaving(false)
-    }
-  }
-
   return (
     <DashboardLayout
       title="設定"
@@ -278,14 +250,7 @@ export function SettingsPage() {
           />
         ) : null}
 
-        {section === 'menus' ? (
-          <VisitMenuSection
-            enabled={menuEnabled}
-            canEdit={canWriteOperations}
-            saving={menuSaving}
-            onToggle={(code, next) => void handleMenuToggle(code, next)}
-          />
-        ) : null}
+        {section === 'menus' ? <VisitMenuSection menus={menus} /> : null}
 
         {section === 'teams' ? (
           <SettingsMasterPanel

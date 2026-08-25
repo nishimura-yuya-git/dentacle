@@ -4,6 +4,10 @@ import { writeOperationTrace } from '@/features/calendar/writeOperationTrace'
 import { supabase } from '@/lib/supabase'
 import type { Json } from '@/types/database.types'
 import type { VisitCreateForm } from '@/pages/Calendar/components/VisitCreateModal'
+import {
+  createVisitRegisteredMessage,
+  resolveCreateVisitStatus,
+} from '@/pages/Calendar/utils/visitCreateBooking'
 import type { CalendarBlock } from '@/pages/Calendar/components/dayVisitGrid.types'
 import { minutesToLabel } from '@/pages/Calendar/utils/calendarGrid'
 import {
@@ -11,6 +15,7 @@ import {
   withVisitCellColor,
   type VisitCellColor,
 } from '@/utils/visitMenus/visitCellColor'
+import { VISIT_MENU_CATALOG, type VisitMenuItem } from '@/utils/visitMenus/visitMenuCatalog'
 import {
   buildVisitMenuSnapshots,
   resolveManualVisitEndTime,
@@ -35,6 +40,7 @@ export type VisitActionCtx = {
   patchVisitLocal?: (visitId: string, patch: VisitLocalPatch) => void
   patchVisitsLocal?: (visitIds: string[], patch: VisitLocalPatch) => void
   removeVisitsLocal?: (visitIds: string[]) => void
+  visitMenuCatalog?: readonly VisitMenuItem[]
 }
 
 export async function createVisitOrBlock(
@@ -83,7 +89,11 @@ export async function createVisitOrBlock(
 
   let endTime = form.end_time
   if (form.menu_1) {
-    endTime = resolveManualVisitEndTime(form, form.end_time)
+    endTime = resolveManualVisitEndTime(
+      form,
+      form.end_time,
+      ctx.visitMenuCatalog ?? VISIT_MENU_CATALOG,
+    )
   } else {
     const { data: condition } = await supabase
       .from('patient_visit_conditions')
@@ -103,6 +113,8 @@ export async function createVisitOrBlock(
     }
   }
 
+  const bookingStatus = resolveCreateVisitStatus(form.booking_status)
+
   const { data: visit, error } = await supabase
     .from('visits')
     .insert({
@@ -113,10 +125,13 @@ export async function createVisitOrBlock(
       scheduled_date: ctx.date,
       start_time: form.start_time,
       end_time: endTime,
-      status: 'tentative',
+      status: bookingStatus,
       source: 'manual',
       metadata: withVisitCellColor(
-        withVisitMenus(null, buildVisitMenuSnapshots(form)),
+        withVisitMenus(
+          null,
+          buildVisitMenuSnapshots(form, ctx.visitMenuCatalog ?? VISIT_MENU_CATALOG),
+        ),
         form.cell_color,
       ) as Json,
       created_by: ctx.userId,
@@ -138,6 +153,23 @@ export async function createVisitOrBlock(
       patientId: form.patient_id,
       userId: ctx.userId,
     })
+    if (bookingStatus === 'confirmed') {
+      const now = new Date().toISOString()
+      const { error: phoneError } = await supabase
+        .from('visit_phone_confirmations')
+        .update({
+          status: 'ok',
+          contacted_at: now,
+          contacted_by: ctx.userId,
+          updated_by: ctx.userId,
+          updated_at: now,
+        })
+        .eq('visit_id', visit.id)
+        .eq('clinic_id', ctx.clinicId)
+        .eq('status', 'pending')
+        .is('deleted_at', null)
+      if (phoneError) throw new Error(phoneError.message)
+    }
   } catch (err) {
     ctx.setBusy(false)
     ctx.setError(err instanceof Error ? err.message : '電話確認の作成に失敗しました')
@@ -150,10 +182,10 @@ export async function createVisitOrBlock(
     action: 'visit.create_manual',
     entityType: 'visit',
     entityId: visit.id,
-    payload: { date: ctx.date, teamId: form.team_id },
+    payload: { date: ctx.date, teamId: form.team_id, status: bookingStatus },
   })
   ctx.setBusy(false)
-  ctx.setMessage('仮予約を登録し、電話確認キューに追加しました')
+  ctx.setMessage(createVisitRegisteredMessage(bookingStatus))
   await ctx.reload()
   return true
 }
@@ -331,7 +363,10 @@ export async function updateVisitDetail(
       metadata: withVisitCellColor(
         withVisitMenus(
           patch.currentMetadata ?? null,
-          buildVisitMenuSnapshots(patch.menus),
+          buildVisitMenuSnapshots(
+            patch.menus,
+            ctx.visitMenuCatalog ?? VISIT_MENU_CATALOG,
+          ),
         ),
         patch.cellColor ?? DEFAULT_VISIT_CELL_COLOR,
       ) as Json,

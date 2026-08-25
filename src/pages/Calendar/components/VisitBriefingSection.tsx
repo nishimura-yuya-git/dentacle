@@ -1,4 +1,8 @@
 import { Select } from '@/components/ui/Select'
+import {
+  INFECTIOUS_DISEASE_HINT,
+  INFECTIOUS_DISEASE_LABEL,
+} from '@/pages/Patients/infectiousDiseasePolicy'
 import { visitStatusLabel } from '@/utils/roleLabels'
 
 type Option = { value: string; label: string }
@@ -14,6 +18,7 @@ type Props = {
   weekdayLabel: string
   timeRangeLabel: string | null
   constraintLines: string[]
+  hasInfectiousDisease: boolean
   onChangeStaff: (value: string) => void
 }
 
@@ -37,10 +42,17 @@ export function VisitBriefingSection({
   weekdayLabel,
   timeRangeLabel,
   constraintLines,
+  hasInfectiousDisease,
   onChangeStaff,
 }: Props) {
   return (
     <section className="space-y-4 rounded-2xl border border-slate-100 bg-slate-50 p-5">
+      {hasInfectiousDisease ? (
+        <div className="rounded-2xl bg-slate-800 px-4 py-3 text-slate-50">
+          <p className="text-sm font-bold">{INFECTIOUS_DISEASE_LABEL}</p>
+          <p className="mt-1 text-xs font-medium text-slate-300">{INFECTIOUS_DISEASE_HINT}</p>
+        </div>
+      ) : null}
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h3 className="text-sm font-bold text-slate-900">今日の訪問</h3>

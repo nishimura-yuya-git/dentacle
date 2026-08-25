@@ -31,6 +31,7 @@ export function buildProposePrompt(
     '- priority は数値が小さいほど優先（due の次）',
     '- patientId はスナップショットに存在する ID のみ',
     '- teamIndex は teams[].index の範囲内',
+    '- occupiedVisits は当日の既存枠。同じ teamIndex で時間が重なる提案は禁止。既存枠は動かさない',
     '',
     '出力は次の JSON オブジェクトだけ（前後に説明文やコードフェンスを付けない）:',
     '{"slots":[{"patientId":"<uuid>","proposedStart":"HH:mm:ss","proposedEnd":"HH:mm:ss","teamIndex":0,"reason":"短い日本語（距離・期限・エリアに触れてよい）"}]}',

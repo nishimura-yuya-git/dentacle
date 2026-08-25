@@ -2,7 +2,13 @@ import { useCallback, useEffect, useRef, useState, type Dispatch, type SetStateA
 import { supabase } from '@/lib/supabase'
 import type { Json } from '@/types/database.types'
 import { readVisitMenuEnabled } from '@/utils/clinic/clinicMetadata'
+import { readHasInfectiousDisease } from '@/pages/Patients/infectiousDiseasePolicy'
 import { readVisitCellColor } from '@/utils/visitMenus/visitCellColor'
+import { VISIT_MENU_CATALOG, type VisitMenuItem } from '@/utils/visitMenus/visitMenuCatalog'
+import {
+  enabledMapFromMenus,
+  ensureClinicVisitMenus,
+} from '@/utils/visitMenus/clinicVisitMenus'
 import type { CalendarBlock, CalendarVisit } from '@/pages/Calendar/components/DayVisitGrid'
 import {
   ensureVehicleTeams,
@@ -49,6 +55,9 @@ export function useCalendarDayData(clinicId: string | undefined, date: string) {
   const [cancelledCount, setCancelledCount] = useState(0)
   const [dayMemo, setDayMemo] = useState('')
   const [visitMenuEnabled, setVisitMenuEnabled] = useState<Record<string, boolean>>({})
+  const [visitMenuCatalog, setVisitMenuCatalog] = useState<VisitMenuItem[]>([
+    ...VISIT_MENU_CATALOG,
+  ])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const loadSeqRef = useRef(0)
@@ -100,7 +109,7 @@ export function useCalendarDayData(clinicId: string | undefined, date: string) {
     const visitsQuery = supabase
       .from('visits')
       .select(
-        'id, patient_id, team_id, staff_id, start_time, end_time, status, source, metadata, patients(name_kanji)',
+        'id, patient_id, team_id, staff_id, start_time, end_time, status, source, metadata, patients(name_kanji, has_infectious_disease)',
       )
       .eq('clinic_id', clinicId)
       .eq('scheduled_date', date)
@@ -237,7 +246,20 @@ export function useCalendarDayData(clinicId: string | undefined, date: string) {
       setCancelledCount,
       setVisibleColumns,
     })
-    setVisitMenuEnabled(readVisitMenuEnabled(clinicRes.data?.metadata ?? null))
+    const metadata = clinicRes.data?.metadata ?? null
+    const menus = await ensureClinicVisitMenus({
+      clinicId,
+      metadata,
+      userId: null,
+    })
+    if (!isLatestCalendarDayLoad(seq, loadSeqRef.current)) return
+    if (menus.items.length > 0) {
+      setVisitMenuCatalog(menus.items)
+      setVisitMenuEnabled(enabledMapFromMenus(menus.items))
+    } else {
+      setVisitMenuCatalog([...VISIT_MENU_CATALOG])
+      setVisitMenuEnabled(readVisitMenuEnabled(metadata))
+    }
     setError(null)
   }, [clinicId, date])
 
@@ -283,6 +305,7 @@ export function useCalendarDayData(clinicId: string | undefined, date: string) {
     blocks,
     cancelledCount,
     visitMenuEnabled,
+    visitMenuCatalog,
     dayMemo,
     setDayMemo,
     loading,
@@ -313,6 +336,14 @@ function applyCalendarDaySurface(input: {
     input.visits.map((row) => ({
       ...row,
       cell_color: readVisitCellColor(row.metadata),
+      patients: row.patients
+        ? {
+            name_kanji: row.patients.name_kanji,
+            has_infectious_disease: readHasInfectiousDisease(
+              row.patients.has_infectious_disease,
+            ),
+          }
+        : null,
     })),
   )
   input.setBlocks(input.blocks)

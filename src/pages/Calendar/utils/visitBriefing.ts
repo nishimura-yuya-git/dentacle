@@ -15,6 +15,8 @@ export type BriefingConstraint = {
   day_of_week: number | null
   specific_date: string | null
   note: string | null
+  start_time?: string | null
+  end_time?: string | null
 }
 
 export function formatBriefingText(value: string | null | undefined, empty: string): string {
@@ -48,8 +50,45 @@ export function formatConstraintLine(row: BriefingConstraint): string {
       : null
   const date = row.specific_date ? row.specific_date.replace(/-/g, '/') : null
   const when = [weekday, date].filter(Boolean).join(' ')
+  const time = formatPreferredTimeRange(row.start_time, row.end_time)
   const note = row.note?.trim() || ''
-  return [typeLabel, when, note].filter(Boolean).join(' / ')
+  return [typeLabel, when, time, note].filter(Boolean).join(' / ')
+}
+
+export function formatPreferredHopeParts(
+  weekdays: number[] | null | undefined,
+  constraints: BriefingConstraint[],
+  fallbackStart: string | null | undefined,
+  fallbackEnd: string | null | undefined,
+): { weekdayLabel: string; timeRangeLabel: string | null } {
+  const days = (weekdays ?? []).filter((day) => Number.isInteger(day) && day >= 0 && day <= 6)
+  const weekdayLabel = formatPreferredWeekdays(days)
+  const fallback = formatPreferredTimeRange(fallbackStart, fallbackEnd)
+  const perDay = days.map((day) => {
+    const ranges = constraints
+      .filter(
+        (row) =>
+          row.constraint_type === 'available' &&
+          row.day_of_week === day &&
+          formatPreferredTimeRange(row.start_time, row.end_time),
+      )
+      .map((row) => formatPreferredTimeRange(row.start_time, row.end_time) as string)
+    return { day, ranges }
+  })
+  if (!perDay.some((item) => item.ranges.length > 0)) {
+    return { weekdayLabel, timeRangeLabel: fallback }
+  }
+  return {
+    weekdayLabel: perDay
+      .map((item) => {
+        const name = WEEKDAY_LABELS[item.day]
+        if (item.ranges.length > 0) return `${name} ${item.ranges.join('・')}`
+        if (fallback) return `${name} ${fallback}`
+        return name
+      })
+      .join('・'),
+    timeRangeLabel: null,
+  }
 }
 
 export function formatPreviousVisitLabel(

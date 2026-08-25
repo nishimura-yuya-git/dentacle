@@ -3,24 +3,33 @@ import { Link, useParams } from 'react-router-dom'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { Button } from '@/components/ui/Button'
 import { useToast } from '@/components/ui/Toast'
+import { useAuth } from '@/features/auth/useAuth'
 import { ClinicAccessPlaceholder } from '@/features/clinic/ClinicAccessPlaceholder'
 import { useClinic } from '@/features/clinic/useClinic'
 import { supabase } from '@/lib/supabase'
 import { WEEKDAY_LABELS } from '@/utils/roleLabels'
 import { AddConstraintModal } from '@/pages/Patients/AddConstraintModal'
+import { PatientConfirmedVisitSection } from '@/pages/Patients/PatientConfirmedVisitSection'
 import {
   PatientDay0Form,
   type Day0Condition,
   type Day0Patient,
 } from '@/pages/Patients/PatientDay0Form'
 import { resolvePatientIconId, withPatientIcon } from '@/pages/Patients/patientIconPolicy'
+import {
+  constraintTypeFromKind,
+  isExceptionConstraintRow,
+  leftoverAllDayUnavailableIds,
+  planWeekdayTimeSaves,
+  sliceTimeHm,
+  validateWeekdayWindows,
+  windowsFromConstraintRows,
+  type ConstraintTimeRow,
+  type WeekdayTimeWindow,
+} from '@/pages/Patients/weekdayUnavailable'
 import type { Json } from '@/types/database.types'
 
-type Constraint = {
-  id: string
-  constraint_type: string
-  day_of_week: number | null
-  specific_date: string | null
+type Constraint = ConstraintTimeRow & {
   note: string | null
 }
 
@@ -35,13 +44,18 @@ const CONSTRAINT_TYPE_LABEL: Record<string, string> = {
 const CONDITION_SELECT =
   'id, visit_frequency, preferred_weekdays, last_visit_date, next_due_date, standard_duration_minutes, requires_doctor, phone_confirmation_required, is_provisional, preferred_time_start, preferred_time_end'
 
+const CONSTRAINT_SELECT =
+  'id, constraint_type, day_of_week, specific_date, note, start_time, end_time'
+
 export function PatientDetailPage() {
   const { id } = useParams<{ id: string }>()
   const { clinic, clinicReady } = useClinic()
+  const { user } = useAuth()
   const toast = useToast()
   const [patient, setPatient] = useState<Day0Patient | null>(null)
   const [condition, setCondition] = useState<Day0Condition | null>(null)
   const [constraints, setConstraints] = useState<Constraint[]>([])
+  const [weekdayWindows, setWeekdayWindows] = useState<WeekdayTimeWindow[]>([])
   const [staff, setStaff] = useState<StaffOption[]>([])
   const [loading, setLoading] = useState(false)
   const [busy, setBusy] = useState(false)
@@ -54,7 +68,7 @@ export function PatientDetailPage() {
       supabase
         .from('patients')
         .select(
-          'id, name_kanji, name_kana, chart_number, area_label, address, primary_doctor_id, metadata'
+          'id, name_kanji, name_kana, chart_number, area_label, address, primary_doctor_id, has_infectious_disease, metadata'
         )
         .eq('clinic_id', clinic.id)
         .eq('id', id)
@@ -69,7 +83,7 @@ export function PatientDetailPage() {
         .maybeSingle(),
       supabase
         .from('patient_constraints')
-        .select('id, constraint_type, day_of_week, specific_date, note')
+        .select(CONSTRAINT_SELECT)
         .eq('clinic_id', clinic.id)
         .eq('patient_id', id)
         .is('deleted_at', null)
@@ -109,10 +123,13 @@ export function PatientDetailPage() {
       address: row.address,
       primary_doctor_id: row.primary_doctor_id,
       icon_id: resolvePatientIconId(row.metadata, row.id),
+      has_infectious_disease: row.has_infectious_disease === true,
       metadata: row.metadata,
     })
     setCondition(condRes.data)
-    setConstraints(constRes.data ?? [])
+    const loadedConstraints = constRes.data ?? []
+    setConstraints(loadedConstraints)
+    setWeekdayWindows(windowsFromConstraintRows(loadedConstraints))
     setStaff(staffRes.data ?? [])
   }, [clinic, id])
 
@@ -130,9 +147,19 @@ export function PatientDetailPage() {
     [staff]
   )
 
+  const otherConstraints = useMemo(
+    () => constraints.filter((row) => isExceptionConstraintRow(row)),
+    [constraints],
+  )
+
   async function handleSave(event: FormEvent) {
     event.preventDefault()
     if (!clinic || !patient) return
+    const check = validateWeekdayWindows(weekdayWindows)
+    if (!check.ok) {
+      toast.error(check.message)
+      return
+    }
     setBusy(true)
 
     const { error: patientError } = await supabase
@@ -144,6 +171,7 @@ export function PatientDetailPage() {
         area_label: patient.area_label?.trim() || null,
         address: patient.address?.trim() || null,
         primary_doctor_id: patient.primary_doctor_id || null,
+        has_infectious_disease: patient.has_infectious_disease,
         metadata: withPatientIcon(patient.metadata, patient.icon_id) as Json,
       })
       .eq('id', patient.id)
@@ -200,6 +228,18 @@ export function PatientDetailPage() {
       setCondition(created)
     }
 
+    const windowError = await persistWeekdayWindows(
+      clinic.id,
+      patient.id,
+      constraints,
+      weekdayWindows,
+    )
+    if (windowError) {
+      setBusy(false)
+      toast.error(windowError)
+      return
+    }
+
     setBusy(false)
     toast.success('保存しました')
     await load()
@@ -233,7 +273,7 @@ export function PatientDetailPage() {
       return
     }
     setConstraintOpen(false)
-    toast.success('制約を追加しました')
+    toast.success('例外を追加しました')
     await load()
   }
 
@@ -273,30 +313,38 @@ export function PatientDetailPage() {
             <PatientDay0Form
               patient={patient}
               condition={condition}
+              weekdayWindows={weekdayWindows}
               doctorOptions={doctorOptions}
               busy={busy}
               onPatientChange={setPatient}
               onConditionChange={setCondition}
+              onWeekdayWindowsChange={setWeekdayWindows}
+              onAddException={() => setConstraintOpen(true)}
               onSubmit={handleSave}
             />
 
+            <PatientConfirmedVisitSection
+              clinicId={clinic.id}
+              patientId={patient.id}
+              userId={user?.id ?? null}
+              preferredStart={condition?.preferred_time_start ?? null}
+              durationMinutes={condition?.standard_duration_minutes ?? null}
+            />
+
             <section className="rounded-[28px] border border-slate-100 bg-white p-6 shadow-sm md:p-8">
-              <div className="flex items-center justify-between gap-4">
-                <div>
-                  <h2 className="text-sm font-bold text-slate-900">構造化制約</h2>
-                  <p className="mt-1 text-xs font-medium text-slate-400">
-                    NG / 不可 / 可 を曜日または日付で登録します
-                  </p>
-                </div>
-                <Button variant="secondary" onClick={() => setConstraintOpen(true)}>
-                  制約を追加
-                </Button>
+              <div>
+                <h2 className="text-sm font-bold text-slate-900">例外・NG</h2>
+                <p className="mt-1 text-xs font-medium text-slate-400">
+                  追加は上の希望曜日から。この日だけ行けない場合や NG が一覧になります
+                </p>
               </div>
-              {constraints.length === 0 ? (
-                <p className="mt-4 text-sm text-slate-400">制約はまだありません</p>
+              {otherConstraints.length === 0 ? (
+                <p className="mt-4 text-sm text-slate-400">
+                  例外はまだありません。希望曜日の「例外を追加」から登録できます
+                </p>
               ) : (
                 <ul className="mt-4 divide-y divide-slate-100">
-                  {constraints.map((c) => (
+                  {otherConstraints.map((c) => (
                     <li key={c.id} className="py-3">
                       <p className="text-sm font-bold text-slate-900">
                         {CONSTRAINT_TYPE_LABEL[c.constraint_type] ?? c.constraint_type}
@@ -306,6 +354,9 @@ export function PatientDetailPage() {
                           : c.day_of_week != null
                             ? WEEKDAY_LABELS[c.day_of_week]
                             : '—'}
+                        {sliceTimeHm(c.start_time) && sliceTimeHm(c.end_time)
+                          ? ` · ${sliceTimeHm(c.start_time)}〜${sliceTimeHm(c.end_time)}`
+                          : ''}
                       </p>
                       {c.note ? (
                         <p className="mt-1 text-xs font-medium text-slate-400">{c.note}</p>
@@ -327,4 +378,62 @@ export function PatientDetailPage() {
       />
     </DashboardLayout>
   )
+}
+
+async function persistWeekdayWindows(
+  clinicId: string,
+  patientId: string,
+  existing: Constraint[],
+  draft: WeekdayTimeWindow[],
+): Promise<string | null> {
+  const existingWindows = windowsFromConstraintRows(existing)
+  const plan = planWeekdayTimeSaves(existingWindows, draft)
+  const deleteIds = [
+    ...plan.deleteIds,
+    ...leftoverAllDayUnavailableIds(existing, existingWindows),
+  ]
+
+  if (plan.insert.length > 0) {
+    const { error } = await supabase.from('patient_constraints').insert(
+      plan.insert.map((row) => ({
+        clinic_id: clinicId,
+        patient_id: patientId,
+        constraint_type: constraintTypeFromKind(row.kind),
+        day_of_week: row.dayOfWeek,
+        start_time: row.allDay ? null : row.start,
+        end_time: row.allDay ? null : row.end,
+        source: 'manual',
+        is_hard: true,
+      })),
+    )
+    if (error) return error.message
+  }
+
+  for (const row of plan.update) {
+    if (!row.id) continue
+    const { error } = await supabase
+      .from('patient_constraints')
+      .update({
+        constraint_type: constraintTypeFromKind(row.kind),
+        day_of_week: row.dayOfWeek,
+        start_time: row.allDay ? null : row.start,
+        end_time: row.allDay ? null : row.end,
+      })
+      .eq('id', row.id)
+      .eq('clinic_id', clinicId)
+      .is('deleted_at', null)
+    if (error) return error.message
+  }
+
+  if (deleteIds.length > 0) {
+    const { error } = await supabase
+      .from('patient_constraints')
+      .update({ deleted_at: new Date().toISOString() })
+      .in('id', deleteIds)
+      .eq('clinic_id', clinicId)
+      .is('deleted_at', null)
+    if (error) return error.message
+  }
+
+  return null
 }

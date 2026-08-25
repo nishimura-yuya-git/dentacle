@@ -1,4 +1,5 @@
 import type { ContactRow } from './contactListTypes'
+import { readHasInfectiousDisease } from '../Patients/infectiousDiseasePolicy.ts'
 import { resolvePatientIconId } from '../Patients/patientIconPolicy.ts'
 
 export type ContactRowSource = Omit<ContactRow, 'icon_id' | 'patients'> & {
@@ -8,6 +9,7 @@ export type ContactRowSource = Omit<ContactRow, 'icon_id' | 'patients'> & {
     chart_number: string | null
     phone: string | null
     area_label: string | null
+    has_infectious_disease?: boolean
     metadata?: unknown
   } | null
 }
@@ -25,6 +27,7 @@ export function toContactRow(row: ContactRowSource): ContactRow {
           chart_number: patients.chart_number,
           phone: patients.phone,
           area_label: patients.area_label,
+          has_infectious_disease: readHasInfectiousDisease(patients.has_infectious_disease),
         }
       : null,
   }

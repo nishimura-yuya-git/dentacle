@@ -23,11 +23,13 @@ describe('toContactRow', () => {
         chart_number: '1',
         phone: null,
         area_label: null,
+        has_infectious_disease: true,
         metadata: { user_icon: '4', visit_count: 3 },
       },
     })
     assert.equal(row.icon_id, '4')
     assert.equal(row.patients?.name_kanji, '山田')
+    assert.equal(row.patients?.has_infectious_disease, true)
   })
 
   it('未設定は患者IDの安定ハッシュ', () => {
@@ -43,5 +45,6 @@ describe('toContactRow', () => {
       },
     })
     assert.equal(row.icon_id, fallbackPatientIconId('patient-abc'))
+    assert.equal(row.patients?.has_infectious_disease, false)
   })
 })

@@ -7,8 +7,10 @@ import { NumberStepper } from '@/components/ui/NumberStepper'
 import { Select } from '@/components/ui/Select'
 import { TimePicker } from '@/components/ui/TimePicker'
 import { PatientIconPicker } from '@/pages/Patients/PatientIconPicker'
+import { PreferredWeekdaysField } from '@/pages/Patients/PreferredWeekdaysField'
 import type { PatientIconId } from '@/pages/Patients/patientIconPolicy'
-import { WEEKDAY_LABELS, frequencyLabel } from '@/utils/roleLabels'
+import type { WeekdayTimeWindow } from '@/pages/Patients/weekdayUnavailable'
+import { frequencyLabel } from '@/utils/roleLabels'
 
 export type Day0Patient = {
   id: string
@@ -19,6 +21,7 @@ export type Day0Patient = {
   address: string | null
   primary_doctor_id: string | null
   icon_id: PatientIconId
+  has_infectious_disease: boolean
   metadata: unknown
 }
 
@@ -47,33 +50,46 @@ const FREQUENCY_OPTIONS = [
 type Props = {
   patient: Day0Patient
   condition: Day0Condition | null
+  weekdayWindows: WeekdayTimeWindow[]
   doctorOptions: Array<{ value: string; label: string }>
   busy: boolean
   onPatientChange: (next: Day0Patient) => void
   onConditionChange: (next: Day0Condition) => void
+  onWeekdayWindowsChange: (next: WeekdayTimeWindow[]) => void
+  onAddException?: () => void
   onSubmit: (event: FormEvent) => void
 }
 
 export function PatientDay0Form({
   patient,
   condition,
+  weekdayWindows,
   doctorOptions,
   busy,
   onPatientChange,
   onConditionChange,
+  onWeekdayWindowsChange,
+  onAddException,
   onSubmit,
 }: Props) {
   const weekdays = condition?.preferred_weekdays ?? []
 
-  function toggleWeekday(day: number) {
+  function setWeekdays(next: number[]) {
     if (!condition) return
-    const set = new Set(weekdays)
-    if (set.has(day)) set.delete(day)
-    else set.add(day)
     onConditionChange({
       ...condition,
-      preferred_weekdays: Array.from(set).sort((a, b) => a - b),
+      preferred_weekdays: [...new Set(next)]
+        .filter((day) => day >= 0 && day <= 6)
+        .sort((a, b) => a - b),
     })
+  }
+
+  function toggleWeekday(day: number) {
+    setWeekdays(
+      weekdays.includes(day)
+        ? weekdays.filter((item) => item !== day)
+        : [...weekdays, day],
+    )
   }
 
   return (
@@ -219,33 +235,15 @@ export function PatientDay0Form({
                 />
               </FieldCell>
             </div>
-            <div>
-              <p className="mb-2 text-sm font-bold text-slate-800">希望曜日</p>
-              <div className="flex flex-wrap gap-2">
-                {WEEKDAY_LABELS.map((label, day) => {
-                  const checked = weekdays.includes(day)
-                  return (
-                    <label
-                      key={day}
-                      className={[
-                        'inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-full text-sm font-bold transition-colors',
-                        checked
-                          ? 'border-2 border-solid border-[#008C01] bg-[#008C01]/10 text-[#008C01]'
-                          : 'border-2 border-dotted border-slate-300 bg-white text-slate-600',
-                      ].join(' ')}
-                    >
-                      <input
-                        type="checkbox"
-                        className="sr-only"
-                        checked={checked}
-                        onChange={() => toggleWeekday(day)}
-                      />
-                      {label}
-                    </label>
-                  )
-                })}
-              </div>
-            </div>
+            <PreferredWeekdaysField
+              weekdays={weekdays}
+              windows={weekdayWindows}
+              disabled={busy}
+              onWeekdaysChange={setWeekdays}
+              onToggleWeekday={toggleWeekday}
+              onWindowsChange={onWeekdayWindowsChange}
+              onAddException={onAddException}
+            />
             <div className="flex flex-wrap gap-x-8 gap-y-3">
               <Checkbox
                 label="医師同行が必要"
@@ -278,6 +276,18 @@ export function PatientDay0Form({
             訪問条件が未作成です。保存すると自動作成します。
           </p>
         )}
+        <div>
+          <Checkbox
+            label="感染症"
+            checked={patient.has_infectious_disease}
+            onChange={(next) =>
+              onPatientChange({ ...patient, has_infectious_disease: next })
+            }
+          />
+          <p className="mt-1 text-xs font-medium text-slate-400">
+            器具・接触に注意。他の患者へうつさない
+          </p>
+        </div>
         <div>
           <Button type="submit" loading={busy}>
             保存する

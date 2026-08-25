@@ -1,6 +1,14 @@
 import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/Button'
 import type { ContactRow, PhoneStatus } from '@/pages/Contacts/contactListTypes'
+import {
+  INFECTIOUS_DISEASE_LABEL,
+  listCellClassName,
+  listKanaClassName,
+  listMetaClassName,
+  listNameClassName,
+  listRowClassName,
+} from '@/pages/Patients/infectiousDiseasePolicy'
 import { formatListDate } from '@/pages/Patients/formatPatientList'
 import { PatientIcon } from '@/pages/Patients/PatientIcon'
 import { formatTime } from '@/utils/dates'
@@ -19,8 +27,6 @@ type Props = {
 
 const TH =
   'whitespace-nowrap border-b border-slate-200 bg-slate-50 px-3 py-2.5 text-left text-xs font-bold text-slate-600'
-
-const TD = 'border-b border-slate-100 px-3 py-3 align-middle text-sm text-slate-700'
 
 const ACTION_STATUSES_SHORT: PhoneStatus[] = [
   'ok',
@@ -97,11 +103,12 @@ export function ContactsTable({
         <tbody>
           {rows.map((row, index) => {
             const selected = selectedIds.has(row.id)
-            const rowBg = index % 2 === 0 ? 'bg-white' : 'bg-slate-50/80'
+            const infectious = row.patients?.has_infectious_disease === true
+            const td = listCellClassName(infectious)
             const name = row.patients?.name_kanji ?? '患者不明'
             return (
-              <tr key={row.id} className={`group ${rowBg} hover:bg-emerald-50/40`}>
-                <td className={TD}>
+              <tr key={row.id} className={listRowClassName(infectious, index)}>
+                <td className={td}>
                   <input
                     type="checkbox"
                     checked={selected}
@@ -110,7 +117,7 @@ export function ContactsTable({
                     className="h-4 w-4 rounded border-slate-300"
                   />
                 </td>
-                <td className={TD}>
+                <td className={td}>
                   <Link
                     to={`/patients/${row.patient_id}`}
                     className="flex min-w-[220px] items-start gap-3"
@@ -119,17 +126,22 @@ export function ContactsTable({
                       <PatientIcon iconId={row.icon_id} name={name} />
                     </span>
                     <span className="min-w-0">
-                      <span className="block truncate font-bold text-slate-900">
+                      <span className={`block truncate font-bold ${listNameClassName(infectious)}`}>
                         <span className="underline-offset-[3px] decoration-slate-400 group-hover:underline group-hover:decoration-dotted">
                           {name}
                           {row.patients?.name_kana ? (
-                            <span className="ml-2 font-medium text-slate-500">
+                            <span className={`ml-2 font-medium ${listKanaClassName(infectious)}`}>
                               {row.patients.name_kana}
+                            </span>
+                          ) : null}
+                          {infectious ? (
+                            <span className="ml-2 inline-flex items-center rounded-md bg-slate-950/50 px-1.5 py-0.5 text-[10px] font-bold text-slate-50">
+                              {INFECTIOUS_DISEASE_LABEL}
                             </span>
                           ) : null}
                         </span>
                       </span>
-                      <span className="mt-0.5 block truncate text-xs font-medium text-slate-400">
+                      <span className={`mt-0.5 block truncate text-xs font-medium ${listMetaClassName(infectious)}`}>
                         {row.patients?.chart_number
                           ? `- - ${row.patients.chart_number}`
                           : '—'}
@@ -138,7 +150,7 @@ export function ContactsTable({
                     </span>
                   </Link>
                 </td>
-                <td className={`${TD} whitespace-nowrap`}>
+                <td className={`${td} whitespace-nowrap`}>
                   {canWrite ? (
                     <div className="flex max-w-[18rem] flex-wrap gap-1.5">
                       {actionStatuses.map((status) => (
@@ -160,29 +172,29 @@ export function ContactsTable({
                     </span>
                   )}
                 </td>
-                <td className={`${TD} whitespace-nowrap tabular-nums`}>
+                <td className={`${td} whitespace-nowrap tabular-nums`}>
                   {row.patients?.phone || '未登録'}
                 </td>
-                <td className={`${TD} whitespace-nowrap`}>
+                <td className={`${td} whitespace-nowrap`}>
                   {formatListDate(row.visits?.scheduled_date)}
                 </td>
-                <td className={`${TD} whitespace-nowrap tabular-nums`}>
+                <td className={`${td} whitespace-nowrap tabular-nums`}>
                   {formatTime(row.visits?.start_time)}〜{formatTime(row.visits?.end_time)}
                 </td>
-                <td className={`${TD} whitespace-nowrap`}>
+                <td className={`${td} whitespace-nowrap`}>
                   <span
                     className={`inline-flex items-center whitespace-nowrap rounded-md border px-2 py-1 text-xs font-bold ${statusBadgeClass(row.status)}`}
                   >
                     {phoneStatusLabel(row.status)}
                   </span>
                 </td>
-                <td className={`${TD} min-w-[10rem] text-xs font-medium text-slate-700`}>
+                <td className={`${td} min-w-[10rem] text-xs font-medium ${infectious ? 'text-slate-200' : 'text-slate-700'}`}>
                   {reservationLabel(row)}
                 </td>
-                <td className={`${TD} max-w-[12rem] truncate text-xs text-slate-500`}>
+                <td className={`${td} max-w-[12rem] truncate text-xs ${infectious ? 'text-slate-300' : 'text-slate-500'}`}>
                   {row.result_note?.trim() || '—'}
                 </td>
-                <td className={TD}>{row.patients?.area_label || '—'}</td>
+                <td className={td}>{row.patients?.area_label || '—'}</td>
               </tr>
             )
           })}

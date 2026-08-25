@@ -44,5 +44,6 @@ assert.match(prompt, /### 6\.48 /)
 assert.match(prompt, /===SNAP===/)
 assert.ok(!prompt.includes('## 1. プロジェクト概要'), 'MEMORY 冒頭の全文は載せない')
 assert.ok(!prompt.includes('### 6.21 '), '無関係UI節は載せない')
+assert.match(prompt, /occupiedVisits は当日の既存枠/)
 
 console.log('buildProposePrompt.test.ts: ok')

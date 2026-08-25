@@ -28,5 +28,6 @@ export type ContactRow = {
     chart_number: string | null
     phone: string | null
     area_label: string | null
+    has_infectious_disease: boolean
   } | null
 }

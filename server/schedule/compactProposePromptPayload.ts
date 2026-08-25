@@ -45,5 +45,11 @@ export function compactProposePromptPayload(
       visitFrequency: patient.visitFrequency,
     })),
     travelMinutesMatrix: buildSparseTravelMinutesMatrix(locations, SPARSE_TOP_K),
+    occupiedVisits: (snapshot.occupiedVisits ?? []).map((row) => ({
+      patientId: row.patientId,
+      start: row.start,
+      end: row.end,
+      teamIndex: row.teamIndex,
+    })),
   }
 }

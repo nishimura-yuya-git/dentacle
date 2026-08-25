@@ -37,6 +37,11 @@ const AI_SKIP_RE = /AI処理なし/;
 const AI_PROCESSING_FILE_RE =
   /ComposingOrb|AiComposingOverlay|thinking-orbs|GapFillPanel|GenerateProposalSection/;
 const OBSERVE_BLOCKER_LINE_RE = /観察で残した阻害\s*[:：]\s*(.+)/i;
+const SYMPTOM_LINE_RE = /症状(?:（[^）]*）)?\s*[:：]\s*(.+)/i;
+const MEASURE_LINE_RE = /(?:症状測定|測定)\s*[:：]\s*(.+)/i;
+const ENVIRONMENT_LINE_RE = /(?:確認環境|検証環境)\s*[:：]\s*(.+)/i;
+const NUMBER_TOKEN_RE = /-?\d+(?:\.\d+)?/g;
+const FIX_CLAIM_RE = /修正した|修正しました|修正済|直した|直しました|解消した|解消しました|fixed/i;
 const CLEAR_BLOCKER_RE = /^(なし|none|n\/a|-|無し)([。．.]*)?$/i;
 const UNRESOLVED_PROBLEM_RE = /重複|重なり|重なる|隠蔽|見切れ|二重|衝突/;
 const PROBLEM_RESOLVED_RE =
@@ -114,6 +119,38 @@ export function touchesAiProcessingUi(changedFiles = []) {
 }
 
 /**
+ * キャプチャ成果物のパスか（スクショ・snapshot）。
+ * 「撮って読んだ」と主張する成果物は実在しなければ根拠にならない。
+ * @param {string} filePath
+ */
+export function isCaptureArtifact(filePath) {
+  return /\.(png|jpe?g|webp|gif|snapshot|ya?ml)$/i.test(String(filePath ?? '').trim());
+}
+
+/**
+ * 症状測定として使えるか。
+ *
+ * 「エラーが出ない」「正常」のような不在証明は測定にしない。
+ * ユーザーが言った症状を数値で前後比較したときだけ充足する。
+ * @param {string | null} raw
+ */
+export function hasSymptomMeasurement(raw) {
+  const text = String(raw ?? '').trim();
+  if (!isMeaningful(text)) return false;
+  const numbers = text.match(NUMBER_TOKEN_RE) ?? [];
+  return numbers.length >= 2;
+}
+
+/**
+ * 完成宣言が修正を主張しているか。
+ * 主張しているのに差分が無ければ、調査だけで完成にしている。
+ * @param {string} text
+ */
+export function claimsFix(text) {
+  return FIX_CLAIM_RE.test(String(text ?? ''));
+}
+
+/**
  * 差分ノートとして使えるか（未確認は不可）。
  * @param {string} value
  */
@@ -170,8 +207,26 @@ export function parseCompletionDeclaration(text) {
   let borrowAllow = null;
   let borrowDeny = null;
   let observeBlockersRaw = null;
+  let symptomRaw = null;
+  let symptomMeasureRaw = null;
+  let symptomEnvironmentRaw = null;
 
   for (const line of lines) {
+    const symptomMatch = line.match(SYMPTOM_LINE_RE);
+    if (symptomMatch && !MEASURE_LINE_RE.test(line)) {
+      symptomRaw = symptomRaw ?? symptomMatch[1].trim();
+    }
+
+    const measureMatch = line.match(MEASURE_LINE_RE);
+    if (measureMatch) {
+      symptomMeasureRaw = symptomMeasureRaw ?? measureMatch[1].trim();
+    }
+
+    const environmentMatch = line.match(ENVIRONMENT_LINE_RE);
+    if (environmentMatch) {
+      symptomEnvironmentRaw = symptomEnvironmentRaw ?? environmentMatch[1].trim();
+    }
+
     if (/AI処理観察|ai\s*processing\s*observe/i.test(line)) {
       inAiSection = true;
       inEdgeSection = false;
@@ -440,6 +495,13 @@ export function parseCompletionDeclaration(text) {
   );
 
   return {
+    symptomRaw,
+    symptomMeasureRaw,
+    symptomEnvironmentRaw,
+    hasSymptomRestated: isMeaningful(symptomRaw),
+    hasSymptomMeasured: hasSymptomMeasurement(symptomMeasureRaw),
+    hasSymptomEnvironment: isMeaningful(symptomEnvironmentRaw),
+    claimsFix: claimsFix(source),
     evaluationCommand,
     evaluationResult,
     evidencePaths: [...new Set(evidencePaths)],
@@ -513,6 +575,21 @@ export function requiresObserveEvidence({ goal = null, declarationText = '' } = 
     .toLowerCase();
   if (normalizedGoal === 'ui-polish') return true;
   return /UI Polish Loop/i.test(String(declarationText ?? ''));
+}
+
+/**
+ * Symptom Gate（症状ゲート）を要求するか。
+ *
+ * 不具合修正では、テストやコンソールの「エラーなし」を完成根拠にしてはならない。
+ * ユーザーが言った症状そのものを、前後の数値で測る。
+ * @param {{ goal?: string | null, declarationText?: string }} input
+ */
+export function requiresSymptomEvidence({ goal = null, declarationText = '' } = {}) {
+  const normalizedGoal = String(goal ?? '')
+    .trim()
+    .toLowerCase();
+  if (normalizedGoal === 'bug-fix') return true;
+  return /Bug Fix Loop/i.test(String(declarationText ?? ''));
 }
 
 /**
@@ -620,6 +697,22 @@ export function evaluateClaimGrounding({
     missing.push('evidence-link');
   }
 
+  const needsSymptom = requiresSymptomEvidence({ goal, declarationText: text });
+  if (needsSymptom) {
+    if (!parsed.hasSymptomRestated) {
+      missing.push('symptom-restated');
+    }
+    if (!parsed.hasSymptomMeasured) {
+      missing.push('symptom-measured');
+    }
+    if (!parsed.hasSymptomEnvironment) {
+      missing.push('symptom-environment');
+    }
+  }
+  if (parsed.claimsFix && (changedFiles ?? []).length === 0) {
+    missing.push('fix-has-diff');
+  }
+
   const needsObserve = requiresObserveEvidence({ goal, declarationText: text });
   const needsChrome = requiresChromeCompare({ goal, declarationText: text });
   const needsBorrow = requiresBorrowContract({ goal, declarationText: text });
@@ -650,8 +743,16 @@ export function evaluateClaimGrounding({
   const badPaths = evidenceResolution.filter((item) => !item.ok);
   if (requireEvidencePathOnDisk && badPaths.length > 0) {
     missing.push('evidence-path-missing');
-  } else if (badPaths.length > 0 && parsed.evidencePaths.length > 0 && !parsed.hasMemoryRef && !parsed.hasPnpmCommand) {
-    // パスを書いたのにどれも解決できない場合は警告
+  } else if (badPaths.some((item) => isCaptureArtifact(item.path))) {
+    // キャプチャは「自分が撮って読んだ」と主張している成果物。
+    // 実在しないものは MEMORY 参照や pnpm コマンドでは打ち消せない（架空スクショの温床だった）
+    missing.push('evidence-path-unresolved');
+  } else if (
+    badPaths.length > 0 &&
+    parsed.evidencePaths.length > 0 &&
+    !parsed.hasMemoryRef &&
+    !parsed.hasPnpmCommand
+  ) {
     missing.push('evidence-path-unresolved');
   }
 
@@ -660,6 +761,42 @@ export function evaluateClaimGrounding({
       status: 'stop',
       reason: '完成宣言に Evaluation のコマンドまたは結果がありません（Claim Grounding）。',
       nextAction: 'Evaluation に実行コマンドと pass/warn/stop を明記してください。',
+      parsed,
+      missing,
+      evidenceResolution,
+    };
+  }
+
+  if (missing.includes('fix-has-diff')) {
+    return {
+      status: 'stop',
+      reason: '「修正した」と書いているのに変更ファイルがありません（調査だけで完成にしています）。',
+      nextAction:
+        '実際にコードを直してから完成宣言してください。原因特定だけの場合は「修正した」と書かず、次に入れる差分を提示してください。',
+      parsed,
+      missing,
+      evidenceResolution,
+    };
+  }
+
+  if (missing.includes('symptom-restated') || missing.includes('symptom-measured')) {
+    return {
+      status: 'stop',
+      reason:
+        '症状ゲート不足: ユーザーが言った症状と、その前後の数値測定がありません（「エラーなし」は測定になりません）。',
+      nextAction:
+        '症状: にユーザーの言葉のまま書き、症状測定: に前後の数値（例 ラベルY 417 → 417 / scrollY 485 → 0）を書いてください。技術的な代理症状に言い換えないでください。',
+      parsed,
+      missing,
+      evidenceResolution,
+    };
+  }
+
+  if (missing.includes('symptom-environment')) {
+    return {
+      status: 'stop',
+      reason: '症状ゲート不足: 確認環境（URL・ポート）がありません。ユーザーと別環境の検証は根拠になりません。',
+      nextAction: '確認環境: にユーザーが見ている URL とポートを書いてください。',
       parsed,
       missing,
       evidenceResolution,

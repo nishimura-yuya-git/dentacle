@@ -1,4 +1,5 @@
 import { timeToSeconds } from '../../src/utils/schedule/proposalLanePresets.ts'
+import { slotOverlapsOccupied } from './occupiedProposeSlots.ts'
 import type {
   ProposeAgentResult,
   ProposeJobSnapshot,
@@ -9,6 +10,7 @@ export type AccuracyIssueCode =
   | 'outside_day_window'
   | 'duration_mismatch'
   | 'team_overlap'
+  | 'occupied_overlap'
   | 'travel_gap'
   | 'travel_jump'
   | 'preferred_weekday'
@@ -62,7 +64,7 @@ function durationMinutesOf(start: string, end: string): number {
 
 /**
  * パース後・apply 前の決定論精度ゲート。
- * hard: 稼働帯 / 所要時間 / 同一号車重複 → スロット除外
+ * hard: 稼働帯 / 所要時間 / 同一号車重複 / 既存枠重複 → スロット除外
  * warn: 移動ギャップ / 距離ジャンプ / 希望曜日 → 記録のみ（初版は採用継続）
  */
 export function validateProposeResult(
@@ -134,9 +136,27 @@ export function validateProposeResult(
       })
     }
 
+    const teamIndex = resolveTeamIndex(slot, index, snapshot.teams.length)
+    if (
+      slotOverlapsOccupied({
+        teamIndex,
+        start: slot.proposedStart,
+        end: slot.proposedEnd,
+        occupied: snapshot.occupiedVisits,
+      })
+    ) {
+      issues.push({
+        code: 'occupied_overlap',
+        severity: 'hard',
+        patientId: slot.patientId,
+        message: `既存の確定枠と時間重複（teamIndex ${teamIndex}）`,
+      })
+      return
+    }
+
     candidates.push({
       slot,
-      teamIndex: resolveTeamIndex(slot, index, snapshot.teams.length),
+      teamIndex,
       startSec,
       endSec,
     })

@@ -13,8 +13,7 @@ import { useVisitBriefing } from '@/pages/Calendar/hooks/useVisitBriefing'
 import {
   formatBriefingText,
   formatConstraintLine,
-  formatPreferredTimeRange,
-  formatPreferredWeekdays,
+  formatPreferredHopeParts,
   formatPreviousVisitLabel,
 } from '@/pages/Calendar/utils/visitBriefing'
 import { canConfirmTentativeFromDetail } from '@/pages/Calendar/utils/visitClickAction'
@@ -23,6 +22,10 @@ import {
   type PatientVisitReservation,
 } from '@/pages/Calendar/utils/visitReservationRows'
 import type { VisitCellColor } from '@/utils/visitMenus/visitCellColor'
+import {
+  VISIT_MENU_CATALOG,
+  type VisitMenuItem,
+} from '@/utils/visitMenus/visitMenuCatalog'
 import { applyMenu1EndTime, type VisitMenuForm } from '@/utils/visitMenus/visitMenuState'
 
 type Option = { value: string; label: string }
@@ -42,6 +45,7 @@ type Props = {
   menus: VisitMenuForm
   cellColor: VisitCellColor
   menuEnabled: Record<string, boolean>
+  menuCatalog?: readonly VisitMenuItem[]
   teamOptions: Option[]
   staffOptions: Option[]
   onClose: () => void
@@ -72,6 +76,7 @@ export function VisitDetailModal({
   menus,
   cellColor,
   menuEnabled,
+  menuCatalog = VISIT_MENU_CATALOG,
   teamOptions,
   staffOptions,
   onClose,
@@ -105,6 +110,21 @@ export function VisitDetailModal({
       : null
     return formatPreviousVisitLabel(previous, briefing.lastVisitDate)
   }, [briefing.lastVisitDate, currentReservation, reservations.rows])
+  const preferredHope = useMemo(
+    () =>
+      formatPreferredHopeParts(
+        briefing.preferredWeekdays,
+        briefing.constraints,
+        briefing.preferredTimeStart,
+        briefing.preferredTimeEnd,
+      ),
+    [
+      briefing.constraints,
+      briefing.preferredTimeEnd,
+      briefing.preferredTimeStart,
+      briefing.preferredWeekdays,
+    ],
+  )
 
   const requestCancel = (visitId: string) => {
     setCancelVisitId(visitId)
@@ -170,12 +190,12 @@ export function VisitDetailModal({
           address={formatBriefingText(briefing.address, '住所未登録')}
           phone={formatBriefingText(briefing.phone, '電話未登録')}
           previousLabel={previousLabel}
-          weekdayLabel={formatPreferredWeekdays(briefing.preferredWeekdays)}
-          timeRangeLabel={formatPreferredTimeRange(
-            briefing.preferredTimeStart,
-            briefing.preferredTimeEnd,
-          )}
-          constraintLines={briefing.constraints.map(formatConstraintLine)}
+          weekdayLabel={preferredHope.weekdayLabel}
+          timeRangeLabel={preferredHope.timeRangeLabel}
+          constraintLines={briefing.constraints
+            .filter((row) => row.constraint_type !== 'available')
+            .map(formatConstraintLine)}
+          hasInfectiousDisease={briefing.hasInfectiousDisease}
           onChangeStaff={onChangeStaff}
         />
 
@@ -223,6 +243,7 @@ export function VisitDetailModal({
               const applied = applyMenu1EndTime(
                 { start_time: next, end_time: endTime, menu_1: menus.menu_1 },
                 menus.menu_1,
+                menuCatalog,
               )
               onChangeEnd(applied.end_time)
             }}
@@ -240,12 +261,14 @@ export function VisitDetailModal({
             <VisitMenuFields
               value={menus}
               enabled={menuEnabled}
+              catalog={menuCatalog}
               onChange={(next) => {
                 onChangeMenus(next)
                 if (next.menu_1 === menus.menu_1) return
                 const applied = applyMenu1EndTime(
                   { start_time: startTime, end_time: endTime, menu_1: next.menu_1 },
                   next.menu_1,
+                  menuCatalog,
                 )
                 onChangeEnd(applied.end_time)
               }}

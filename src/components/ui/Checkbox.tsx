@@ -17,7 +17,11 @@ export function Checkbox({
   return (
     <label
       className={[
-        'inline-flex items-center gap-2.5 text-sm font-bold text-slate-700',
+        // sr-only の input は absolute。基準が body になると、
+        // フォーカス時にスクロール領域ごと画面が飛ぶ
+        'relative inline-flex items-center gap-2.5 text-sm font-bold text-slate-700',
+        // 連打するとラベル文字が範囲選択されてしまうため選択させない
+        'select-none',
         disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer',
       ].join(' ')}
     >

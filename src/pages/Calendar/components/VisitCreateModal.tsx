@@ -2,14 +2,20 @@ import type { FormEvent } from 'react'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Modal } from '@/components/ui/Modal'
+import { SegmentedControl } from '@/components/ui/SegmentedControl'
 import { Select } from '@/components/ui/Select'
 import { TimePicker } from '@/components/ui/TimePicker'
 import { VisitCellColorField } from '@/pages/Calendar/components/VisitCellColorField'
 import { VisitMenuFields } from '@/pages/Calendar/components/VisitMenuFields'
+import type { VisitBookingStatus } from '@/pages/Calendar/utils/visitCreateBooking'
 import {
   DEFAULT_VISIT_CELL_COLOR,
   type VisitCellColor,
 } from '@/utils/visitMenus/visitCellColor'
+import {
+  VISIT_MENU_CATALOG,
+  type VisitMenuItem,
+} from '@/utils/visitMenus/visitMenuCatalog'
 import {
   applyMenu1EndTime,
   EMPTY_VISIT_MENU_FORM,
@@ -23,6 +29,7 @@ export type VisitCreateForm = {
   start_time: string
   end_time: string
   mode: 'visit' | 'block'
+  booking_status: VisitBookingStatus
   block_type: string
   block_title: string
   cell_color: VisitCellColor
@@ -35,6 +42,7 @@ export const EMPTY_VISIT_CREATE_FORM: VisitCreateForm = {
   start_time: '09:00',
   end_time: '09:30',
   mode: 'visit',
+  booking_status: 'tentative',
   block_type: 'break',
   block_title: '',
   cell_color: DEFAULT_VISIT_CELL_COLOR,
@@ -52,6 +60,7 @@ type Props = {
   teamOptions: Option[]
   staffOptions: Option[]
   menuEnabled: Record<string, boolean>
+  menuCatalog?: readonly VisitMenuItem[]
   onClose: () => void
   onChange: (next: VisitCreateForm) => void
   onSubmit: (event: FormEvent) => void
@@ -66,6 +75,7 @@ export function VisitCreateModal({
   teamOptions,
   staffOptions,
   menuEnabled,
+  menuCatalog = VISIT_MENU_CATALOG,
   onClose,
   onChange,
   onSubmit,
@@ -102,7 +112,7 @@ export function VisitCreateModal({
           />
         </div>
         {form.mode === 'visit' ? (
-          <div className="md:col-span-2">
+          <div className="md:col-span-2 space-y-4">
             <Select
               label="患者"
               value={form.patient_id}
@@ -110,6 +120,19 @@ export function VisitCreateModal({
               options={patientOptions}
               required
             />
+            <div>
+              <p className="mb-2 text-sm font-bold text-slate-800">予約の状態</p>
+              <SegmentedControl
+                ariaLabel="予約の状態"
+                tone="choice"
+                value={form.booking_status}
+                onChange={(booking_status) => onChange({ ...form, booking_status })}
+                options={[
+                  { value: 'tentative', label: '仮予約' },
+                  { value: 'confirmed', label: '本予約（確定）' },
+                ]}
+              />
+            </div>
           </div>
         ) : (
           <>
@@ -164,7 +187,9 @@ export function VisitCreateModal({
           onChange={(next) => {
             const patched = { ...form, start_time: next }
             onChange(
-              form.menu_1 ? applyMenu1EndTime(patched, form.menu_1) : patched,
+              form.menu_1
+                ? applyMenu1EndTime(patched, form.menu_1, menuCatalog)
+                : patched,
             )
           }}
           required
@@ -182,11 +207,12 @@ export function VisitCreateModal({
             <VisitMenuFields
               value={form}
               enabled={menuEnabled}
+              catalog={menuCatalog}
               onChange={(menus) => {
                 const patched = { ...form, ...menus }
                 onChange(
                   menus.menu_1 !== form.menu_1
-                    ? applyMenu1EndTime(patched, menus.menu_1)
+                    ? applyMenu1EndTime(patched, menus.menu_1, menuCatalog)
                     : patched,
                 )
               }}
@@ -201,7 +227,9 @@ export function VisitCreateModal({
         ) : null}
         <p className="md:col-span-2 text-xs font-medium text-slate-400">
           {form.mode === 'visit'
-            ? `仮予約で登録し、電話確認が必要な場合はキューに載せます（日付: ${date}）`
+            ? form.booking_status === 'confirmed'
+              ? `この時間で本予約として残します。自動提案はこの時間を空けて他の人で埋めます（日付: ${date}）`
+              : `仮予約で登録し、電話確認が必要な場合はキューに載せます（日付: ${date}）`
             : `斜線の空きブロックとして登録します（日付: ${date}）`}
         </p>
       </form>

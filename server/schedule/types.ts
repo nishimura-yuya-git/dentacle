@@ -55,15 +55,23 @@ export type ProposeJobSnapshot = {
   travelMinutesMatrix: Record<string, Record<string, number>>
   /** 住所なし等で除外した件数（監視用） */
   excludedWithoutAddress: number
+  /**
+   * 当日の既存枠。同じ号車のこの時間は新規割付で上書きしない。
+   * 未指定は空き（既存テスト互換）。
+   */
+  occupiedVisits?: OccupiedVisit[]
 }
 
-/** 空き枠埋め用: 当日既存枠（隣接ルート判定用・PIIなし） */
-export type GapFillExistingVisit = {
+/** 当日の既存枠（自動提案の occupied / 空き枠埋めの existing）。PIIなし */
+export type OccupiedVisit = {
   patientId: string
   start: string
   end: string
   teamIndex: number
 }
+
+/** 空き枠埋め用: 当日既存枠（隣接ルート判定用・PIIなし） */
+export type GapFillExistingVisit = OccupiedVisit
 
 /** 空き枠埋め候補患者（近接分付き） */
 export type GapFillPatientSnapshot = ProposePatientSnapshot & {

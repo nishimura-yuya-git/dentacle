@@ -250,17 +250,19 @@
 | 領域 | SSoT | 役割 | 参照する画面・処理 |
 |---|---|---|---|
 | 訪問スケジュール自動提案 | `server/schedule/*`（snapshot / prompt / parse / validate / apply） | 対象抽出・制約適用・仮配置（SDK Adapter） | カレンダー自動提案、割付ジョブ |
+| 既存枠との重なり・空き帯 | `server/schedule/occupiedProposeSlots.ts` | 同一号車の重なり判定と空き帯。pack / validate はここを import する（§6.70） | 自動提案、精度ゲート |
 | 割付方針（実行時） | `loadProposeMemorySections.ts` + `proposePolicy.ts` | MEMORY 割付関連節を実行時抽出して SDK へ。全文/.cursor全ルールは渡さない | `buildProposePrompt`、Cursor SDK |
 | ルート最適化 | Cursor SDK + `travelMinutesMatrix`（§6.16 / §6.39 / §6.8 / §6.48） | **エリア束→号車並行ルート→号車内密連続**。距離はアプリ算出行列を読む。シリアル1号車詰めは正ではない | 自動提案、日別訪問表 |
 | 電話確認→本予約 | 要確認（関数・ファイル未確定） | 仮予約/本予約/再提案の判定 | 連絡者リスト、カレンダー |
 | 患者訪問条件 | `patient_visit_conditions` + `visitDueUrgency.ts` | 頻度・曜日・期限緊急度の正（§6.39） | 患者カルテ、自動提案 |
 | 構造化制約（NG/不在/可能枠） | 要確認（テーブル・ファイル未確定） | 割付精度の正。自由記述Wikiではない（§6.13） | 制約マスタ、電話確認昇格、割付ジョブ |
+| 希望曜日の希望時間・いけない時間 | `patient_constraints`（曜日の available / unavailable。終日は時刻なし）+ `weekdayUnavailable.ts` | 毎週の希望／いけない／終日いけないの正。例外・NGは別UI（§6.72 / §10.67 / §10.69） | 患者詳細、訪問詳細の希望 |
 | 距離行列（住所→移動根拠） | `src/utils/schedule/travelDistance.ts` | 座標/距離の算出。エージェントは結果を読むだけ（§6.16） | 割付ジョブ、ルート最適化 |
 | ログインIP・認証監査 | `auth_audit_logs` + `log_auth_audit_event` + `auth_ip_blocks` + `auth_presence` | 誰がいつどこから認証したか。clinic/memberships・地図・IPブロック・在席心拍。閲覧UIは運営のみ `/auth-audit`（§6.15） | ログイン監査画面 |
 | お知らせ公開判定 | `productUpdatePolicy.ts` + RPC（`propose_product_update` / `publish_product_update` / `reject_product_update` / `update_product_update_copy` / `delete_product_update` / `set_product_update_in_progress_badge` / `set_product_update_timeline_mark`） | 院に見えるのは `published` のみ。提案中・入れないは出さない。デプロイでは自動掲載しない（§6.55） | お知らせ画面 |
 | 公開通し番号 | `formatProductUpdateNumber` | `update #N`。日本語の「更新 N」は使わない（§6.55） | 更新情報タイムライン |
 | 進捗→お知らせ文面 | `improvementAnnouncement.ts` + SQL `improvement_page_to_surfaces` | 反映済みのときだけ院向け見出し・本文・対象画面を決める。GitHub / Issue は出さない（§6.55 / §6.57） | 改善の進捗、お知らせ |
-| 訪問メニュー | `visitMenuCatalog.ts` + `visitMenuState.ts` | カタログ29件。4枠。終了時刻はメニュー1だけ。院OFFは選択肢から外す（§6.60） | 訪問作成・詳細、設定 |
+| 訪問メニュー | `clinic_visit_menus` + `clinicVisitMenus.ts` + `visitMenuState.ts` | 院ごとCRUD。4枠。終了時刻はメニュー1。OFFは選択肢から外す。コードカタログは初回種（§6.60） | 訪問作成・詳細、設定 |
 | 訪問枠クリック | `visitClickAction.ts` | 枠クリックは常に詳細。本予約確定は詳細または一括（§6.35） | 診療カレンダー |
 | 空きブロック見た目 | `calendarBlockAppearance.ts` | 斜線は `calendar_blocks` の塗り。訪問5色に足さない（§6.32） | 診療カレンダー |
 | レセコンCSV取込監査 | `src/features/patientImport/receconImportPolicy.ts` | 件数・成否だけ残す。PII・ファイル名・例外文は禁止。監視SaaSは置かない（§6.58） | `/import`、`/operations`、`/security#rececon` |
@@ -274,6 +276,7 @@
 | 製品版番号 | `APP_VERSION` + `package.json` version + Git タグ `vX.Y.Z` | 開発者向け SemVer。院向け `update #N` と混ぜない（§6.64） | `/release`、CHANGELOG、GitHub Release |
 | 診療カレンダー他端末の操作中表示 | `calendarLivePeers.ts` + `clinic_calendar_peers` | PC丸・ゴースト・元枠非表示。氏名は持たない（§6.65） | 診療カレンダー |
 | 診療カレンダー silent 再取得 | `shouldUseCalendarDayOnlyReload` + `calendarRealtimeSync.ts` | 号車済み silent は当日分だけ。先頭ティックは即時、連打は静穏 400ms（§6.65） | 診療カレンダー |
+| 感染症注意 | `infectiousDiseasePolicy.ts` + `patients.has_infectious_disease` | 判定・黒寄り灰色・ラベル「感染症」。割付には使わない（§6.71） | 患者詳細・一覧、カレンダー、電話確認、訪問詳細 |
 
 ### 禁止
 
@@ -335,6 +338,7 @@ DB上の確定・集計テーブル
 | 院向けご意見返答 | `product_updates`（`published`） | GitHub Issue コメントは開発用。院画面には出さない | 運営が「入れる」したあと | 入れない限り院に届かない。エージェントは提案まで。§6.54 / §6.55 |
 | 改善の進捗→お知らせ | `improvement_items`（反映済み） | `product_updates`（提案してから入れる） | 運営が `/progress` で反映済みにしたとき | お知らせ作成失敗時は状態更新も失敗。再掲載しない。送信時・見送りでは載せない。§6.55 / §6.57 |
 | 診療カレンダー保存ティック | `visits` / `calendar_blocks` / `clinic_day_memos` | `clinic_calendar_sync.last_change_at` | AFTER INSERT/UPDATE/DELETE | 同一トランザクション。ティック失敗は本体も戻る。画面は先頭即時の silent reload（当日分）。連打は静穏 400ms（§6.32 / §6.65） |
+| 訪問メニュー表示 | `clinic_visit_menus`（現行） | `visits.metadata.visit_menus`（スナップショット） | 訪問保存時 | マスタ変更・削除で過去スナップショットは塗らない。§6.60 |
 
 ### 禁止例
 
@@ -390,19 +394,21 @@ DB上の確定・集計テーブル
 - 主UXは「AIボタンを押す → 1日の訪問スケジュール案が出る」。空き枠を1件ずつ探すUIを主導線にしない。
 - 関連: スケジュール自動提案画面、訪問カレンダー、§6.18〜6.20
 
-### 6.6 仮予約 → 電話確認 → 本予約（2026-08-06 決定 / 2026-08-09 追記 / 2026-08-11 改定）
+### 6.6 仮予約 → 電話確認 → 本予約（2026-08-06 決定 / 2026-08-09 追記 / 2026-08-11 改定 / 2026-08-25 追記）
 
 - 自動提案で作る予約は原則「仮予約」。
 - 電話確認が必要な患者は連絡リスト化し、結果を OK / NG / 不在 / 折返し待ち / 施設確認待ち 等で記録する。
-- **本予約への昇格経路（2026-08-11 / 2026-08-14 改定）**:
+- **本予約への昇格経路（2026-08-11 / 2026-08-14 改定 / 2026-08-25 追記）**:
   1. 連絡者リストで電話確認 OK → `confirmed`（従来）
   2. 詳細の「本予約に確定する」または一括確定 → `confirmed`（`confirmTentativeVisit`）。pending の電話確認があれば `ok` に同期する
+  3. カレンダー新規登録で「本予約」を選ぶ → `confirmed`（`resolveCreateVisitStatus`）。電話確認は `ok` に同期する（§6.70）
+  4. 患者詳細の「確定済みの訪問」から登録 → `confirmed`。電話確認は `ok` に同期する（§6.70 主入口）
 - **枠クリック（2026-08-14 改定）**: 仮予約・本予約とも枠クリックは詳細を開く。クリック即確定には戻さない（§6.35）。
 - NG時は次候補を再提案する。
 - 連絡者リストとカレンダーを連動させる。
 - **手動仮予約も電話確認キューへ載せる**（`ensurePhoneConfirmationForVisit`。患者条件で電話確認不要ならスキップ）。
 - **電話確認NGの最小ループ**: 対象訪問を `cancelled` にし、同患者のみ（`onlyPatientIds`）で同日 Day0 再提案を生成・採用する。仮予約のまま残さない。
-- 関連: 連絡者リスト（電話確認）、訪問予約ステータス、電話確認ステータス、§6.32, §6.35
+- 関連: 連絡者リスト（電話確認）、訪問予約ステータス、電話確認ステータス、§6.32, §6.35, §6.70
 
 ### 6.7 自動提案の考慮変数（2026-08-06 決定）
 
@@ -622,7 +628,7 @@ DB上の確定・集計テーブル
 - 2026-08-16 追記: CSVはいま開いている経路。ノーザ導入は今から備える。`patients.external_id` にカルテ番号をコピーしない。接続情報を受け取るまでライブAPIクライアントは開かない。
 - 関連: `doc/患者データ.csv`, §6.12, §6.13, §6.18, §6.58, §8.3, §10.3
 
-### 6.21 ログイン画面UI（2026-08-09 決定 / 2026-08-11 改定 / 2026-08-12 追記 / 2026-08-13 追記）
+### 6.21 ログイン画面UI（2026-08-09 決定 / 2026-08-11 改定 / 2026-08-12 追記 / 2026-08-13 追記 / 2026-08-21 追記 / 2026-08-22 追記）
 
 - パスワード入力には表示/非表示トグルを付ける。Lucide等の禁止アイコンは使わずインラインSVG。`aria-label` は日本語（例: 「パスワードを表示」「パスワードを隠す」）。
 - 見出し下の説明文は置かない。補足コピーを増やさない。
@@ -634,7 +640,15 @@ DB上の確定・集計テーブル
 - **MFA確認コードUI（2026-08-12）**: 運営 TOTP の確認／登録コードは横長1欄にしない。**6マス分割**（`OtpCodeInput`）。コピペした6桁は各マスへ展開する（数字以外は除去）。enroll / challenge とも同じコンポーネントを使う（§6.29）。
 - **MFA中の画面切替（2026-08-12）**: セッションがあるあいだはメール・パスワード画面へ戻さない（§10.26）。ゲート解決中は待ち表示。
 - **お知らせ・更新内容（2026-08-13）**: ログイン画面には出さない。正本はログイン後のお知らせ（§6.55）。
-- 関連: `src/pages/Login/LoginPage.tsx`, `OtpCodeInput.tsx`, `MfaChallengePanel.tsx`, `MfaEnrollPanel.tsx`, §6.17, §6.24, §6.29, §6.55, §10.26, `ui-language.mdc`
+- **カード幅（2026-08-21）**: メール・パスワードのログインは440px。認証アプリ登録は640px。案内・6マス・ログアウトが440pxでは窮屈なため、ログイン済みの認証確認だけ幅を広げる。
+- **エラー表示（2026-08-21）**: ログイン系のエラーは薄い赤の囲み箱にしない。赤テキストだけで出す（`LoginErrorText`）。白カード上で塗り箱は浮いて見える。
+- **認証アプリ登録の高さ（2026-08-21）**: カードを画面中央に小さく浮かせない。縦幅いっぱいに見えるよう余白を圧縮する。ただし枠を伸ばして `mt-auto` でボタンを下に寄せない。確認コードと「登録して入る」の間を空けない（§10.87）。
+- **認証アプリ登録の案内（2026-08-21）**: スーパー権限の追加者は Google Authenticator 未導入・iPhone 非所持がありうる。端末を特定せず、認証アプリ入手（App Store / Google Play）→ QR または手動キー → 6桁 の最短3手順にする。店頭用QRは並べない（§6.29）。
+- **アイコン（2026-08-21 / 2026-08-22）**: 認証アプリ登録の見出し左に Google Authenticator アイコンを置く。入手リンクは `apple-store.svg` / `google-play.svg` をラベル左に付ける。文字リンクだけにしない。Lucide 等の禁止アイコンは使わない。`public/icon` のファイル名は空白を使わず kebab-case。
+- **ロゴ配置（2026-08-22）**: 未ログインのメール・パスワード画面は公式ロゴをカード内中央。MFA登録／確認は一段小さくして右端。パスワード設定は左配置を維持する（`AuthCardBrand`）。
+- **確認コードの6マス（2026-08-22）**: マスは正方形にする。カードを広げたときに `flex-1` で横長の長方形にしない。
+- **確認コードの自動送信（2026-08-22）**: MFA登録・確認とも、6桁目の入力または6桁貼り付け完了で自動確認する。送信中の二重実行と失敗コードの無限再送を防ぐ。手動の確認ボタンは予備導線として残す。
+- 関連: `src/pages/Login/LoginPage.tsx`, `OtpCodeInput.tsx`, `MfaChallengePanel.tsx`, `MfaEnrollPanel.tsx`, `LoginErrorText.tsx`, `AuthCardBrand.tsx`, `MfaStoreLinks.tsx`, `mfaEnrollCopy.ts`, `SetPasswordPage.tsx`, `BrandLogo.tsx`, `public/icon/google-authenticator.png`, `public/icon/apple-store.svg`, `public/icon/google-play.svg`, §6.17, §6.24, §6.29, §6.55, §10.26, §10.85, §10.86, §10.87, `ui-language.mdc`
 
 ### 6.22 開発用Auth運用（2026-08-09 決定）
 
@@ -743,13 +757,14 @@ DB上の確定・集計テーブル
 - **ドラッグ移動・リサイズ**: 訪問ブロックをドラッグで号車・時刻を変更し、下端ハンドルで終了時刻を変更する（`DayVisitGrid` / `visitTimeMath`）。詳細モーダルの「更新」なしでも即反映する。
 - **楽観更新 + silent reload（2026-08-11 / 2026-08-16 追記）**: 移動・リサイズ後はローカルパッチし、`load({ silent: true })` で再取得する。`setVisits([])` で枠を空にしない。最新リクエストなら silent でも `loading` を下ろす（§10.16 / §10.54）。号車済み silent は当日分だけ取る（§6.65）。他端末への自動反映は §6.65。
 - **手動仮予約 → 電話確認**: 手動登録でも `ensurePhoneConfirmationForVisit` により電話確認キューへ載せる（§6.6）。
+- **手動本予約（2026-08-25）**: 新規作成で本予約を選べる。正は `visits.status = confirmed`。対象は患者。自動提案はその枠を空けて他の人で埋める（§6.70）。
 - **電話確認NG → 取消＋同日再提案**: NG時は訪問を取消し、同患者のみの Day0 再提案を自動採用する最小ループ（§6.6）。
 - **運用補助**: 日別メモ（`clinic_day_memos`）、空きブロック（`calendar_blocks`: 休憩・移動・会議等）、電話未確認／当日取消の見える化、簡易週ストリップ、患者絞り込み、標準所要時間の手動登録時適用、操作ログ簡易UI（`/operations`・§6.50）、稼働枠サマリー表示。
 - **斜線ブロック（2026-08-14）**: Apotool風の斜線は訪問色ではなく空きブロックの見た目（`calendarBlockAppearance.ts`）。訪問の5色に足さない。未設定の訪問は緑のまま。新規テーブルは作らない。登録種別で斜線ブロックを選び、空き枠パネルからは「斜線でブロック」で作成モーダルを `block` で開く。クリックは従来どおり削除確認。
 - **日別CSV（2026-08-11 改定）**: カレンダー見出し操作からは外す（主導線ではない）。患者一覧の「データ出力」・CSV取込は別導線として維持。
 - **カレンダーからの自動提案実行**: §6.34。空き枠埋め副導線は §6.47。
 - 操作の裏書きは `operation_traces` に残す（失敗しても業務処理は止めない）。
-- 関連: `CalendarPage.tsx`, `DayVisitGrid.tsx`, `useCalendarDayData.ts`, `useCalendarVisitActions.ts`, `ContactsPage.tsx`, `proposalActions.ts`, `OperationsTracesPage.tsx`, `supabase/migrations/20260809140000_calendar_ops_extensions.sql`, §6.6, §6.19, §6.30, §6.34, §6.47, §6.50, §6.65
+- 関連: `CalendarPage.tsx`, `DayVisitGrid.tsx`, `useCalendarDayData.ts`, `useCalendarVisitActions.ts`, `ContactsPage.tsx`, `proposalActions.ts`, `OperationsTracesPage.tsx`, `supabase/migrations/20260809140000_calendar_ops_extensions.sql`, §6.6, §6.19, §6.30, §6.34, §6.47, §6.50, §6.65, §6.70
 
 ### 6.33 左サイドバー業務ナビ（表示切替・ドロワー・アイコン）（2026-08-10 決定 / 2026-08-11 改定 / 2026-08-12 追記 / 2026-08-14 改定）
 
@@ -766,15 +781,16 @@ DB上の確定・集計テーブル
 - `NavDropdown.tsx` は上部ナビ廃止により未参照。`safety.mdc` に従い承認なしでは削除しない（削除はユーザー明示時のみ）。
 - 関連: `DashboardLayout.tsx`, `AppSidebar.tsx`, `SidebarNav.tsx`, `navConfig.ts`, `CalendarPage.tsx`, `public/icon/layouting.png`, `public/icon/grid.png`, `public/icon/ai.png`, `public/icon/calendar.png`, `public/icon/gears.png`, `public/icon/patient.png`, `public/icon/windows.png`, `public/icon/audit.png`, §6.15, §6.24, §6.29, §6.31, §6.34, §6.35, §6.62, §10.9
 
-### 6.34 カレンダー自動提案は遷移せずその日を一括実行（2026-08-10 決定 / 同日改定 / 2026-08-11 改定 / 2026-08-14 追記 / 2026-08-16 追記）
+### 6.34 カレンダー自動提案は遷移せずその日を一括実行（2026-08-10 決定 / 同日改定 / 2026-08-11 改定 / 2026-08-14 追記 / 2026-08-16 追記 / 2026-08-25 追記）
 
 - カレンダー右上の **「自動提案」** は `/proposals` や設定画面へ遷移しない。**確認モーダルは出さず、押下ですぐ実行**する。
 - **カレンダー主導線の実行経路（2026-08-11 / 同日改定）**: `runCalendarAutoPropose` → `POST /api/schedule/propose` → スナップショット作成 → **Cursor SDK（既定）** → `packProposeSlots`（号車内密正規化）→ 精度ゲート（§6.37）→ 仮予約書き戻し。フロントで割付本体を再実装しない（§6.11）。
 - **割付エンジン `PROPOSE_ENGINE`（2026-08-11 再改定）**: 既定 **`cursor`**＝Cursor SDK。`auto`＝SDK 優先・失敗/0件時のみローカル決定論。`local`＝速度検証用の決定論のみ。
 - **方針の渡し方（2026-08-11 再改定・精度重視）**: 実行時に **`PROJECT_MEMORY.md` の割付関連節を自動抽出**して Cursor プロンプトへ埋め込む（`loadProposeMemorySections.ts`。節リストは `PROPOSE_MEMORY_SECTION_IDS`）。MEMORY 全文や UI/権限など無関係節は載せない（§6.13 と両立）。読めない環境だけ `proposePolicy` の要約フォールバック。**.cursor/rules 全文は渡さない**（開発用ルールが混ざると割付精度が落ちる。割付の記憶は MEMORY に集約する）。データは圧縮スナップショット（疎距離行列・生住所なし）。
-- **節の追加**: 自動提案の改善を MEMORY に書いたら、必要なら `PROPOSE_MEMORY_SECTION_IDS` に節番号を足す（例: 新設 `6.49`）。
+- **節の追加**: 自動提案の改善を MEMORY に書いたら、必要なら `PROPOSE_MEMORY_SECTION_IDS` に節番号を足す（例: 新設 `6.49` / `6.70`）。
 - **Day0 ローカル**（`generateAndAdoptDay0ForDate` / `model: day0-local`）は、電話確認 NG 後の同日再提案など**補助経路で当面残す**。カレンダー主導線の正は SDK Adapter 経路。
-- **号車への載せ方（2026-08-11 改定）**: ラウンドロビンで薄く横展開しない。エージェントが作った**号車別ルート**を尊重し、各号車内を密に正規化する（§6.8 / §6.48）。同時刻の複数号車スタートは禁止しない。登録される予約は仮予約（§6.6）。本予約にはしない（確定は §6.35）。
+- **号車への載せ方（2026-08-11 改定）**: ラウンドロビンで薄く横展開しない。エージェントが作った**号車別ルート**を尊重し、各号車内を密に正規化する（§6.8 / §6.48）。同時刻の複数号車スタートは禁止しない。登録される予約は仮予約（§6.6）。本予約にはしない（確定は §6.35 / §6.70）。
+- **既存枠は空けて埋める（2026-08-25）**: 当日の既存枠（`occupiedVisits`）は上書きしない。同じ号車の空き帯だけに他患者を置く。当日既枠の患者は候補から外す（§6.70）。
 - 実行中のUI: ヘッダー・日付ナビなど外枠はそのまま。**`DayVisitGrid` の中身だけスケルトン**（`loading`）は維持。処理中表示は `ComposingOrb`（ボタン内 20px、「提案中… N%」、グリッド上オーバーレイ 64px・日本語）。デモの暗い面・英語ラベルは出さない（§2.16 / §6.47）。連打を防ぐ。
 - 実行権限: オーナー / 管理者 / コーディネーター（および運営）。権限不足時はトーストで案内。
 - **提案をクリア（2026-08-11）**: 当日の `auto_proposal` × `tentative` を一括 `cancelled`（キャンセルリストに残る）。**本予約（`confirmed`）は対象外**。確認は `window.confirm` ではなく近傍ポップオーバー（`ClearAutoProposalsConfirm` + `useAnchoredPopover`）。
@@ -789,7 +805,7 @@ DB上の確定・集計テーブル
 - **※注釈（2026-08-16）**: カレンダー本文に「※ 他の画面に移っても、自動提案の処理はそのまま進みます。」を1箇所。オーバーレイと二重にしない。
 - **他ページの面（2026-08-16）**: グリッド上 Composing オーバーレイは対象日のカレンダーだけ。他画面は右上ピルと完了トースト。固定オーバーレイや FAB は足さない（§2.16）。
 - **完了後の再読込（2026-08-16）**: 同じ院・同じ日は `load({ silent: true })`。枠は消さない。最新なら silent でも `loading` を下ろす。非silent と競合してスケルトンが固まるのを防ぐ（§10.54）。クリア／一括確定の件数は `visits`、グリッドのスケルトンは `loading`。件数が付いて枠だけ空なら loading 固着を疑う（§10.55）。
-- 関連: `CalendarPage.tsx`, `AutoProposeJobProvider.tsx`, `autoProposeJob.ts`, `AutoProposeJobStatus.tsx`, `runCalendarAutoPropose.ts`, `ClearAutoProposalsConfirm.tsx`, `ConfirmAutoProposalsConfirm.tsx`, `DashboardLayout.tsx`, `ComposingOrb.tsx`, `AiComposingOverlay.tsx`, `server/schedule/runProposeJob.ts`, `api/schedule/propose.ts`, `DayVisitGrid.tsx`, `useCalendarDayData.ts`, `calendarDayLoadState.ts`, `proposalActions.ts`, `PlatformAdminRoute.tsx`, §6.6, §6.8, §6.10, §6.29, §6.32, §6.33, §6.35, §6.36, §6.37, §6.47, §6.48, §10.20〜10.22, §10.54, §10.55
+- 関連: `CalendarPage.tsx`, `AutoProposeJobProvider.tsx`, `autoProposeJob.ts`, `AutoProposeJobStatus.tsx`, `runCalendarAutoPropose.ts`, `ClearAutoProposalsConfirm.tsx`, `ConfirmAutoProposalsConfirm.tsx`, `DashboardLayout.tsx`, `ComposingOrb.tsx`, `AiComposingOverlay.tsx`, `server/schedule/runProposeJob.ts`, `api/schedule/propose.ts`, `DayVisitGrid.tsx`, `useCalendarDayData.ts`, `calendarDayLoadState.ts`, `proposalActions.ts`, `PlatformAdminRoute.tsx`, §6.6, §6.8, §6.10, §6.29, §6.32, §6.33, §6.35, §6.36, §6.37, §6.47, §6.48, §6.70, §10.20〜10.22, §10.54, §10.55, §10.65
 
 ### 6.35 自動提案の仮枠UIとクリック確定（2026-08-11 決定 / 同日追記 / 2026-08-14 改定）
 
@@ -820,11 +836,11 @@ DB上の確定・集計テーブル
 ### 6.37 自動提案の決定論精度ゲート（2026-08-11 決定 / 同日追記）
 
 - Cursor SDK の構造化結果は **apply 前**に決定論バリデーションする（`validateProposeResult`）。LLM-as-judge は使わない。
-- **hard（スロット除外）**: 稼働帯外、所要時間不一致、同一号車の時間重複。
+- **hard（スロット除外）**: 稼働帯外、所要時間不一致、同一号車の時間重複、**既存枠との重なり（`occupied_overlap`。§6.70）**。
 - **warn（記録のみ・初版は採用継続）**: 移動ギャップ不足、希望曜日外、**距離ジャンプ（`travel_jump`。行列上の連続移動が目安 45 分超）**。
 - **停止（DB に書かない）**: 採用可能スロット 0、または hard 棄却率 > 70%。
 - 結果は `schedule_jobs.result_snapshot.accuracy` に保存する（運営画面への精度モニタ表示はしない。§6.38）。
-- 関連: `server/schedule/validateProposeResult.ts`, `runProposeJob.ts`, `pnpm run schedule:test-accuracy`, §6.11, §6.13, §6.34, §6.39
+- 関連: `server/schedule/validateProposeResult.ts`, `runProposeJob.ts`, `pnpm run schedule:test-accuracy`, §6.11, §6.13, §6.34, §6.39, §6.70
 
 ### 6.38 運営向け AI 利用状況（2026-08-11 決定 / 同日改定）
 
@@ -845,7 +861,8 @@ DB上の確定・集計テーブル
 - **頻度・期限**: `visitDueUrgency.ts` が `dueStatus` / `dueUrgencyDays` の SSoT。候補は overdue → due_soon 優先で並べ、プロンプトでも優先指示する。
 - プロンプトは距離最小化と期限優先を明示する（`buildProposePrompt`）。エリア/施設連続は併用。
 - **号車割付の文言**は §6.8 / §6.48 に合わせる（並行ルート＋号車内密詰め）。「同時刻横並び禁止」「1号車シリアル詰め」は書かない。
-- 関連: `buildProposeSnapshot.ts`, `buildProposePrompt.ts`, `travelDistance.ts`, `visitDueUrgency.ts`, §3, §6.8, §6.16, §6.34, §6.37, §6.48
+- **既存枠（2026-08-25）**: `occupiedVisits` を載せる。同じ `teamIndex` の重なり禁止。当日既枠の患者は候補に入れない（§6.70）。
+- 関連: `buildProposeSnapshot.ts`, `buildProposePrompt.ts`, `travelDistance.ts`, `visitDueUrgency.ts`, §3, §6.8, §6.16, §6.34, §6.37, §6.48, §6.70
 
 ### 6.40 セキュリティ是正: clinic_members RLS / propose 制限 / 公開エラー（2026-08-11 決定）
 
@@ -864,7 +881,7 @@ DB上の確定・集計テーブル
 
 ### 6.41 カレンダー操作UIの補足（2026-08-09 決定 / 2026-08-11 改定）
 
-- 空枠クリック／縦ドラッグは、権限がある場合 **空き枠埋めパネル**（§6.47）を開く（時刻・号車を seed）。手動登録はパネル内「手動で登録」。権限不足時は従来どおり登録モーダル。既存訪問ブロック上では空枠ドラッグを開始しない（`gridTimeDrag.ts`）。
+- 空枠クリック／縦ドラッグは、権限がある場合 **空き枠埋めパネル**（§6.47）を開く（時刻・号車を seed）。手動登録はパネル内「手動で登録」。権限不足時は従来どおり登録モーダル。既存訪問ブロック上では空枠ドラッグを開始しない（`gridTimeDrag.ts`）。空マスを本予約登録の主入口にしない。確定枠の主入口は患者詳細（§6.70）。
 - 表示日が今日かつ 9:00〜18:00 の場合、グリッド全体を横断する現在時刻線を約30秒ごとに更新する（`nowLine.ts`）。
 - 連絡者=`/icon/telephone.png`、キャンセル=`/icon/block-user.png`、日別メモ=`/icon/note.png`。白枠ボタンと日本語ツールチップを使う。ツールチップは absolute ではなく **body portal + fixed + z-[100]**（見出し帯の `overflow-x-auto` でクリップされない。§10.25）。
 - 連絡者・キャンセル・日別メモは `useAnchoredPopover` によるアイコン近傍のポップオーバーとし、ESC・外側クリックで閉じる。連絡者とキャンセルは当日一覧表示を主とし、カレンダー上で電話確認の OK / NG 操作は行わない。
@@ -1174,19 +1191,24 @@ DB上の確定・集計テーブル
 - 開発確認は `/__preview__/help`（DEV のみ）。
 - 関連: `HelpPage.tsx`, `helpCopy.ts`, `HelpFaqSection.tsx`, `SecurityLayout.tsx`, `accountMenuLinks.ts`, §2.15, §6.24, §6.56, §10.45
 
-### 6.60 訪問メニュー（4枠・院ON/OFF・2026-08-14 決定）
+### 6.60 訪問メニュー（4枠・院ごとCRUD・2026-08-14 決定 / 2026-08-25 改定）
 
-- カタログ29件の正はコード（`visitMenuCatalog.ts`）。
-- 作成・編集はメニュー1 / 2 / 3 / サブの4枠。終了時刻はメニュー1の所要だけ使う。2 / 3 / サブは記録のみ。
-- 院の ON/OFF は `clinics.metadata.visit_menu_enabled`。無いキーは ON。OFF は作成・編集の選択肢から外す。
-- `visits.metadata.visit_menus` のスナップショットは消さない。マスタOFFでも過去予約の記録は残す。
+- 院ごとの正は `clinic_visit_menus`。A院の追加・改名・削除・ON/OFFはB院に効かない。
+- `visitMenuCatalog.ts` の29件は初回コピーの種だけ。実行時カタログの正ではない（2026-08-14 の「コードが正」は改定）。
+- 初回コピーは、削除済みを含む行が0件のときだけ。1件でもあれば再コピーしない（全削除しても29件は戻らない）。`clinics.metadata` に seeded フラグは書かない（coordinator が clinics を更新できない）。
+- シード時だけ、既存の `clinics.metadata.visit_menu_enabled` OFF を `is_enabled` に写す。その後の ON/OFF の正は `clinic_visit_menus.is_enabled`。metadata は消さないが正ではない。
+- 設定で名称・所要時間（1〜480分）を編集できる。終了時刻はメニュー1の所要だけ使う。2 / 3 / サブは記録のみ。
+- 作成・編集はメニュー1 / 2 / 3 / サブの4枠。
+- ON/OFF は残す。OFF は作成・編集の選択肢から外す。削除は一覧から消す（`deleted_at`）。物理 DELETE はしない。
+- `visits.metadata.visit_menus` のスナップショットは消さない。マスタOFF・削除後も過去予約の記録は残す。
 - 設定の見出し右に「メニュー」を置く（§6.51）。お知らせとは混ぜない。
-- 関連: `visitMenuCatalog.ts`, `visitMenuState.ts`, `VisitMenuFields.tsx`, `VisitMenuSection.tsx`, §6.32, §6.51, §6.61
+- 関連: `clinic_visit_menus`, `clinicVisitMenus.ts`, `visitMenuCatalog.ts`, `visitMenuState.ts`, `VisitMenuFields.tsx`, `VisitMenuSection.tsx`, `VisitMenuEditModal.tsx`, §6.32, §6.51, §6.61, §10.66
 
 ### 6.61 訪問詳細モーダル（2026-08-14 決定）
 
 - 幅は共通 Modal の `lg`（`max-w-4xl`）。連絡者リスト用 `xl` までは広げない（§6.43）。
 - 先頭は今日の訪問（状態・担当・住所・電話・前回・希望曜日時間・都合）。自費診療・治療費・今回/次回会計は入れない。請求SSoTが無い見た目だけを新設しない。
+- 希望の出し方: 曜日ごとの希望窓があれば `月 09:00〜11:00`。なければ曜日名＋全体の希望開始〜終了。都合に `available` を重ねない（§6.72）。
 - 同一患者の予約一覧を先に見せる。開いている行は薄い黄。状態ラベルは既存の仮予約 / 本予約 / 完了 / 取消。
 - 開始／終了は横2列。メニューとセル色は全幅（作成モーダルと同じ）。
 - 予約変更は `updateVisitDetail`。キャンセルは `cancelVisit`。新しいステータスや請求カラムは作らない。仮予約と本予約だけキャンセル可。確認は画面内（`VisitCancelConfirm`）。`window.confirm` に戻さない。
@@ -1287,7 +1309,81 @@ DB上の確定・集計テーブル
 - 希望曜日の日〜土は正円。未選択は点線枠、選択中は実線枠（点線にしない）。
 - 医師同行・電話確認・仮データは `Checkbox`。設定行のオンオフは `Switch`。
 - 標準所要（分）は `NumberStepper`。刻み5分、1〜240。ネイティブ number スピナーは出さない。
-- 関連: `PatientDay0Form.tsx`, `Checkbox.tsx`, `NumberStepper.tsx`, §6.43
+- 関連: `PatientDay0Form.tsx`, `Checkbox.tsx`, `NumberStepper.tsx`, §6.43, §6.72
+
+### 6.70 確定済み枠の登録と自動提案の空き埋め（2026-08-25 決定 / 同日改定）
+
+「この患者はこの時間で確定」を残し、自動提案はその時間を空けて他の人で埋める。
+
+- **対象は患者**。スタッフの不在枠ではない。
+- **正データは `visits.status = 'confirmed'`**。確定専用テーブルや恒久NG制約は作らない。希望曜日・希望時刻（§6.69 / §6.72）や `patient_constraints` には入れない。
+- **主入口（2026-08-25 改定）**: 患者詳細の「確定済みの訪問」。日付・開始・終了・号車を入れて本予約を1件作る。電話確認は `ok` に同期する（§6.6 経路4）。
+- **副入口**: 空き枠埋めの「手動で登録」→ 作成モーダルで「本予約（確定）」（§6.41 / §6.6 経路3）。空マスクリックは空き枠埋めであり、登録モーダル直開きではない。
+- **自動提案の出力は仮予約のまま**（§6.6 / §6.34）。既存の本予約を提案で上書きしない。
+- **occupiedVisits**: 当日のキャンセル以外の既存枠をスナップショットに載せる（`buildProposeSnapshot`）。同じ号車で時間が重なる提案は禁止。
+- **詰め方**: `packProposeSlots` は既存枠の前後に移動ギャップを残した空き帯だけに置く。既存枠自体は動かさない。
+- **精度ゲート**: 重なりは hard 棄却 `occupied_overlap`（§6.37）。
+- **患者の全日除外**: 当日に `visits` がある患者は候補から外す。同じ人を別時間に出さない。
+- **重なり判定の SSoT**: `occupiedProposeSlots.ts`。pack / validate / snapshot で再実装しない。
+- 関連: `visitCreateBooking.ts`, `occupiedProposeSlots.ts`, `packProposeSlots.ts`, `validateProposeResult.ts`, `buildProposeSnapshot.ts`, `PatientConfirmedVisitSection.tsx`, §6.6, §6.32, §6.34, §6.37, §6.39, §6.41, §10.65, §10.68
+
+### 6.71 感染症フラグ（2026-08-25 決定）
+
+患者の感染症注意。病名の自由記述ではない。
+
+- 正は `patients.has_infectious_disease`（boolean、default false）。metadata に入れない。
+- 画面ラベルは「感染症」。補足は「器具・接触に注意。他の患者へうつさない」。
+- 判定・色のSSoTは `infectiousDiseasePolicy.ts`。
+- チェック済みは `bg-slate-800`。一覧・カレンダー・電話確認で同じ。色だけで意味を伝えない。「感染症」ラベル必須。予約の `cell_color` より優先。ホバーも暗いまま。
+- 一覧に列は増やさない。お名前横のバッジにする（§6.44）。
+- 詳細・新規は `Checkbox`（§6.43 / §6.69）。
+- **割付には使わない**。自動提案で離す／最後に回すは未実装。`server/schedule` をこのフラグで変えない。
+- 関連: `infectiousDiseasePolicy.ts`, `PatientDay0Form.tsx`, `PatientsTable.tsx`, `visitBlockAppearance.ts`, `ContactsTable.tsx`, `20260825120000_patients_has_infectious_disease.sql`, §6.44, §6.61, §6.68
+
+### 6.72 希望曜日の希望時間・いけない時間（2026-08-25 決定 / 同日改定）
+
+曜日ごとに希望時間といけない時間を持つ。正円の希望曜日UIは残す（§6.69）。
+
+- **希望時間**は `patient_constraints` の `constraint_type = 'available'`（曜日＋開始＋終了）。
+- **いけない時間**は同じ表の `constraint_type = 'unavailable'`（曜日＋開始＋終了）。
+- 全体の `preferred_time_start` / `preferred_time_end` は残す。その曜日に希望窓が無いときだけフォールバックする。
+- 曜日の丸を外しても、その曜日の時間帯は消さない。消すのは行の「削除」だけ。
+- 時刻なしの曜日制約・NG・特定日は、希望曜日の保存で消さない・上書きしない（§10.67）。
+- 自動提案は今回も曜日不一致の warn まで。希望／いけない時刻を hard にはしない（§6.13）。
+- **毎週と例外の分け方（同日改定）**: 毎週の希望／いけない／終日いけないは希望曜日だけ。下段の見出しは「例外・NG」。例外追加は NG のみ（不可／可は出さない）。
+- **終日いけない**: 曜日＋時刻なし `unavailable`。付けたら希望の丸は外す。希望にしていない曜日にも、いけない時間と終日いけないを付けられる。
+- 希望曜日が同期するのは、曜日の希望時間・いけない時間・終日いけないだけ。時刻なし `available`・NG・特定日は触らない（§10.69）。
+- **レイアウト（同日決定）**: 曜日行は sm 以上で2列。曜日名・終日いけない・追加ボタンは左から横並び。時間入力がある行だけ全幅（`sm:col-span-2`）。7本の全幅カプセルは中央が空いて縦に長くなるため使わない。
+- **例外を追加**は希望曜日の見出し右に置く。下段だけだと毎週の設定と離れて見つからない。下段は一覧だけにする。
+- 操作行は `min-h-10` で高さを固定する。終日いけないで追加ボタンが消えても行が縮まないようにする（§10.70）。
+- 関連: `weekdayUnavailable.ts`, `PreferredWeekdaysField.tsx`, `PreferredWeekdayDayPanel.tsx`, `AddConstraintModal.tsx`, `PatientDetailPage.tsx`, `visitBriefing.ts`, §6.13, §6.39, §6.61, §6.69, §6.73, §10.67, §10.69, §10.70
+
+### 6.73 クリックで状態を変える文字は選択させない（2026-08-25 決定）
+
+`label`・トグル・チップなど、クリックで状態が変わる要素には `select-none` を付ける。
+
+- 連打・ダブルクリック・トリプルクリックがブラウザ標準の単語選択・行選択として働き、コピペ操作のような青いハイライトが出る（§10.71）。
+- 同じ操作行にある静的ラベル（曜日名など）も揃えて `select-none` にする。行のトリプルクリックで選択されるため。
+- 逆に、コピーされる想定のテキスト（患者名、患者ID、電話番号、住所）には付けない。
+- 共通 `Checkbox` に入れると全画面のチェックボックスに効く。個別画面で重ねて指定しない。
+- 関連: `Checkbox.tsx`, `PreferredWeekdaysField.tsx`, `PreferredWeekdayDayPanel.tsx`, §6.43, §6.69, §6.72, §10.71
+
+### 6.74 秘匿情報は Git・手順書・スクリプトに置かない（2026-08-21 決定）
+
+コード以外の場所からの漏洩を防ぐ。手元に残すこととGitに載せることを分ける。
+
+- **実患者CSV**: `doc/患者データ.csv`（レセコン個人別全集計）は gitignore する。氏名・カルテ番号・保険・請求が含まれ、公開すると漏洩する。手元ファイルは残してよい。**一度コミットした分は履歴に残る**ため、gitignore は再発防止であって既存履歴の解決ではない（§6.20）。
+- **他社調査メモ**: `doc/Apotool管理ツール調査結果_訪問歯科スケジュール自動化.md` は患者PIIを含まないが、顧客名と他社画面・項目・業務フローの調査結果であり公開に向かない。CSVと同様に gitignore し手元に残す（§6.5）。
+- **手順書・スキル**: anon key、DB ホスト、API キーの実値を書かない。プレースホルダにし、実値は環境変数必須にする。フォールバックで実キーを埋め込まない。
+- **スクリプト**: 実 clinic UUID などの実データ識別子を既定値にしない。`--clinic-id` のように必須引数にする。
+- 関連: `doc/患者データ.csv`, `doc/Apotool管理ツール調査結果_訪問歯科スケジュール自動化.md`, `.gitignore`, `.cursor/commands/supabase-cms.md`, `.cursor/skills/supabase-backup/SKILL.md`, `scripts/scrape-apotool-addresses.mjs`, `scripts/seed-patients-from-csv.mjs`, §6.5, §6.20, §8.3
+
+### 6.75 Vercel の SPA ルーティング（2026-08-21 決定）
+
+- `vercel.json` で `/api` 以外のパスを `index.html` に rewrite する。静的ファイルはそのまま配信する。
+- rewrite が無いと `/calendar` などの直アクセス・リロードが Vercel の `NOT_FOUND` になる（§10.88）。
+- 画面ルートを追加したときは、開発サーバーだけでなく本番の直アクセスも確認する。
+- 関連: `vercel.json`, §2.1, §10.88
 
 ---
 
@@ -1309,6 +1405,7 @@ DB上の確定・集計テーブル
 | 運営（`platform_admins`） | 運営のみ | `grant_platform_admin`（新規はサーバー招待） | `update_platform_admin` | `revoke_platform_admin` | 直書き禁止。自分と最後の1人は削除不可。クリニック所属者には付けない。Admin API はサーバーのみ（§6.63） |
 | `clinic_calendar_sync` | 所属院 | トリガーのみ | トリガーのみ | 原則不可 | 画面は購読して silent reload。`version` なし。`set_updated_at` 禁止（§6.65 / §10.59） |
 | `clinic_calendar_peers` | 所属院 | 本人行 | 本人行 | 本人（pagehide） | 氏名なし。`user_id = auth.uid()`。React cleanup で消さない（§6.65 / §10.57） |
+| 訪問メニュー（`clinic_visit_menus`） | 所属メンバー（削除済み行も可） | owner / admin / coordinator | 同左 | 論理削除のみ | 初回コピー判定は削除済み含む行の有無。物理DELETE禁止（§6.60 / §10.66） |
 | `[table_a]` | `[role]` | `[role]` | `[role]` | `[role]` | `[制約]` |
 | `[table_b]` | `[role]` | `[role]` | `[role]` | `[role]` | `[制約]` |
 
@@ -1436,6 +1533,20 @@ AIが自分の実装に合わせて期待値を作ることは禁止。
 | 2026-08-16 | 他端末の枠反映が約1.5秒遅れる | silent でも号車確保と全患者まで取り、先頭を400ms待っていた | 当日分だけ取り、先頭は即時（§6.65 / §10.60） |
 | 2026-08-21 | PatientIcon.tsx と patientIcon.ts で実行時エラー | macOS+Vite が大文字小文字を同一視し、tsc は通った | 同一フォルダで語幹が大文字小文字だけ違うファイルを置かない。tsc 通過を Vite 解決の証拠にしない（§6.68 / §10.63） |
 | 2026-08-21 | 患者アイコンを電話確認一覧に出さなかった | 患者一覧だけ直して同型画面を漏らした | お名前左の顔を変えるときは PatientsTable と ContactsTable をセットで見る（§6.68 / §10.64） |
+| 2026-08-25 | 自動提案が既存枠の上に別患者を置けた | 詰めが dayStart から始まり、重なり判定が分散していた | 重なりと空き帯は `occupiedProposeSlots` を import する（§6.70 / §10.65） |
+| 2026-08-25 | メニュー全削除後に29件が戻る恐れ | `clinics.metadata` フラグだと coordinator が書けない | 削除済みを含む行が1件でもあれば再コピーしない（§6.60 / §10.66） |
+| 2026-08-25 | 希望曜日保存で時刻なし制約が消える恐れ | 曜日キーだけ見て全件を差し替えると時刻なし行まで消える | 当初は時刻付きだけ管理。終日いけないは例外（§6.72 / §10.67 / §10.69） |
+| 2026-08-25 | 例外追加の不可／可が希望曜日と二重になる | 毎週用の種別を下段モーダルに残した | 例外追加は NG のみ。時刻なし available・NG・特定日は消さない（§6.72 / §10.69） |
+| 2026-08-25 | 空マスをクリックして本予約登録すると案内した | 空マスは空き枠埋め。登録は「手動で登録」または患者詳細 | 空マス＝登録モーダルと案内しない。確定枠の主入口は患者詳細（§6.70 / §10.68） |
+| 2026-08-25 | 終日いけないで文字が10px上へ動く | 追加ボタンが消えて行高が40px→20pxに縮んだ | 条件付きでボタンが消える操作行は `min-h-*` で高さを固定（§6.72 / §10.70） |
+| 2026-08-25 | ラベル連打で文字が範囲選択される | クリック対象の `label` に `user-select` 指定がなかった | クリックで状態を変える文字と同じ行の静的ラベルは `select-none`（§6.73 / §10.71） |
+| 2026-08-25 | 終日いけないで画面が485px飛ぶ | `sr-only` input の `offsetParent` が BODY だった | `sr-only` を包む `label` を `relative` にする（§6.73 / §10.72） |
+| 2026-08-25 | 同じUIバグを4回指摘されても直らなかった | 症状を `ReferenceError` に言い換え、エラーなしを解消の根拠にし、差分ゼロで報告した | 症状ゲートを必須化。症状の再掲・前後の数値・同一環境・実差分が揃うまで完成にしない（§10.75〜§10.82） |
+| 2026-08-21 | 実患者CSV・他社調査メモがGitに入っていた | 手元に置くこととGitに載せることを分けていなかった | 秘匿情報は gitignore。手順書は実キー禁止、スクリプトは実UUIDを既定値にしない（§6.74） |
+| 2026-08-21 | 本番の `/calendar` 直アクセスが NOT_FOUND | `vercel.json` に SPA rewrite が無かった | `/api` 以外を `index.html` に rewrite。ルート追加時は本番直アクセスも確認（§6.75 / §10.88） |
+| 2026-08-21 | 本番 `/login` でログアウトできない | 認証途中の状態に導線が無く、signOut が監査RPC完了を待っていた | セッションがある画面は全てログアウト可。監査完了を離脱の前提にしない（§10.85） |
+| 2026-08-21 | MFA登録でQRが出ない | StrictModeの二重enrollで名前衝突し未検証factorが残った | 単一実行にし、開始前に未検証factorを掃除（§10.86） |
+| 2026-08-22 | tsconfig の baseUrl 非推奨対応で paths が壊れた | baseUrl だけ削除し paths の相対化を漏らした | 非推奨は削除。paths は相対指定し、IDE診断とビルド両方で確認（§10.89 / §10.90） |
 
 ### 記録ルール
 
@@ -1882,6 +1993,189 @@ AIが自分の実装に合わせて期待値を作ることは禁止。
 - 再発防止: 顔アイコンを変えるときは `PatientsTable` と `ContactsTable` をセットで見る。判定は `resolvePatientIconId` のみ。カレンダーには出さない。
 - 関連: `ContactsTable.tsx`, `mapContactRow.ts`, §6.44, §6.68
 
+### 10.65 既存枠との重なり判定を pack / validate で再実装しない（2026-08-25）
+
+- 事象: 自動提案が既存枠の時刻を見ずに `dayStart` から詰めると、確定枠の上に別患者を置ける。
+- 原因: 重なり判定と空き帯計算が pack / validate に分散すると、片方が漏れる。
+- 再発防止: 同一号車の重なりと空き帯は `occupiedProposeSlots.ts` を import する。新しい詰め・精度チェックを足すときもここを使う。
+- 関連: `occupiedProposeSlots.ts`, `packProposeSlots.ts`, `validateProposeResult.ts`, §6.70
+
+### 10.66 訪問メニューの初回コピー判定は削除済み行の有無（2026-08-25）
+
+- 事象: `clinics.metadata` に seeded フラグを書くと coordinator が clinics を更新できず、判定が壊れる。active 行だけ見ると全削除後に29件が再コピーされる。
+- 原因: シード判定を clinics 書込や active 件数に寄せると、権限と削除の意味がずれる。
+- 再発防止: 削除済みを含む行が1件でもあれば再コピーしない。0件のときだけ `visitMenuCatalog.ts` から初回コピーする。
+- 関連: `clinicVisitMenus.ts`, `clinic_visit_menus` RLS, §6.60
+
+### 10.67 時刻なし制約を希望曜日保存で消さない（2026-08-25）
+
+- 事象: 希望曜日の希望／いけない時間を保存するとき、同じ曜日の制約を全部差し替えると、時刻なしの曜日制約・NG・特定日まで消える。
+- 原因: 管理対象を「その曜日の全制約」と広く取ると、別用途の行まで同期対象になる。
+- 再発防止: 差し替え・論理削除するのは曜日＋開始＋終了がある `available` / `unavailable` だけ。時刻なし・NG・特定日は触らない。
+- 関連: `weekdayUnavailable.ts`, `PatientDetailPage.tsx`, `patient_constraints`, §6.72
+- 追記（同日）: 終日いけない（曜日＋時刻なし `unavailable`）は希望曜日が管理する。触らない対象の絞り込みは §10.69。
+
+### 10.68 空マスクリックを本予約登録と誤案内しない（2026-08-25）
+
+- 事象: 確認手順で空マスをクリックして本予約を登録すると案内した。実際は空き枠埋めが開く。
+- 原因: §6.41 の空枠クリック契約を見ずに、作成モーダル直開きだと誤った。
+- 再発防止: 空マス／縦ドラッグは空き枠埋め。カレンダーからの手動本予約はパネル内「手動で登録」。確定枠の主入口は患者詳細（§6.70）。
+- 関連: `GapFillPanel.tsx`, `PatientConfirmedVisitSection.tsx`, §6.41, §6.47, §6.70
+
+### 10.69 例外追加に不可・可を出さず、時刻なし available は消さない（2026-08-25）
+
+- 事象: 下段に不可／可を残すと、希望曜日のいけない時間と二重に見える。終日いけないを同期するとき、時刻なし `available` や NG・特定日まで消す恐れがある。
+- 原因: 毎週用の種別と例外用の種別を同じ追加欄に置いた。管理対象を「曜日の制約全部」に広げると別用途の行まで消える。
+- 再発防止: 例外追加は NG のみ。希望曜日が同期するのは曜日の希望時間・いけない時間・終日いけないだけ。時刻なし `available`・NG・特定日は触らない。
+- 関連: `AddConstraintModal.tsx`, `weekdayUnavailable.ts`, `PatientDetailPage.tsx`, §6.72
+
+### 10.70 終日いけないで操作行が縮み文字が上へ動いた（2026-08-25）
+
+- 事象: 終日いけないを押すと「終日いけない」の文字が10px上へ動き、配置がガクガク変わった。
+- 原因: 行が `flex items-center` で、最も高い子要素（高さ40pxの追加ボタン）が条件付きレンダリングだった。ボタンが消えると行高が20pxに縮み、中央揃えのラベルが上へ移動した。
+- 再発防止: 条件付きでボタン・バッジが消える操作行には `min-h-*` を付け、消滅前の高さを維持する。トグルで行高が変わる実装をしない。
+- 関連: `PreferredWeekdayDayPanel.tsx`, §6.72
+
+### 10.71 クリック対象のラベル文字が範囲選択された（2026-08-25）
+
+- 事象: 終日いけないや曜日の丸を連打すると、ラベル文字が範囲選択され、コピペ時のような青いハイライトが出た。ダブルクリックで「い」、トリプルクリックで「終日いけない」、丸で「水」が選択された。
+- 原因: クリック対象の `label` に `user-select` の指定がなく、ブラウザ標準の単語選択・行選択が働いていた。
+- 再発防止: クリックで状態を変える要素と同じ操作行の静的ラベルに `select-none` を付ける（§6.73）。コピー想定のテキストには付けない。
+- 関連: `Checkbox.tsx`, `PreferredWeekdaysField.tsx`, `PreferredWeekdayDayPanel.tsx`, §6.73
+
+### 10.72 スクロール領域内の sr-only input で画面が485px飛んだ（2026-08-25）
+
+- 事象: 終日いけないをクリックすると、document が485pxスクロールして画面が飛んだ。
+- 原因: `sr-only` の input は `position: absolute`。`offsetParent` が BODY になり、スクロール領域内の表示ラベルと座標が分離した。クリック時の input フォーカスでブラウザが document ごとスクロールした。
+- 再発防止: `sr-only` input を包む `label` に `relative` を付け、配置基準を label にする。`window.scrollY` が0のままであることを実測で確認する。
+- 関連: `Checkbox.tsx`, `PreferredWeekdaysField.tsx`, §6.73
+
+### 10.73 終日いけないで行構造を差し替えた（2026-08-25）
+
+- 事象: 終日いけないを押すとコンパクト行から別ツリーのカードに切り替わり、チェックが付け外しされて画面が崩れた。
+- 原因: 状態によって別のJSXツリーを返し、React が再マウントした。
+- 再発防止: トグルで行の構造を差し替えない。同じツリーのまま class と表示要素だけ変える。
+- 関連: `PreferredWeekdayDayPanel.tsx`, §6.72
+
+### 10.74 終日いけないで希望曜日をトグルした（2026-08-25）
+
+- 事象: `onToggleWeekday` 経由だと二重実行や順序ズレで、曜日の丸の状態が壊れた。
+- 原因: 「外す」という結果を、状態反転（トグル）で表現した。同じ日に複数回呼ばれると結果が変わる。
+- 再発防止: 終日いけないは `applyAllDayUnavailable` で希望曜日からその日を外すだけにする。トグルではなく集合演算で書く。
+- 関連: `weekdayUnavailable.ts`, §6.72
+
+### 10.75 症状を技術的な代理症状に言い換えた（2026-08-25）
+
+- 事象: 「配置がガクガクする」という報告を `ReferenceError` の問題として扱い、例外を消して「解消」と報告した。症状は残っており、同じ指摘が4回繰り返された。
+- 原因: 原因候補と症状を同一視した。原因を直したあとに症状そのものを再測定していない。
+- 再発防止: 症状はユーザーの言葉のまま宣言に残す。原因名を症状欄に書かない。原因を直したら必ず症状を再測定する。`loops/goals/symptom-gate.md` の `symptom-restated` が機械検知する。
+- 関連: `loops/goals/symptom-gate.md`, `loops/goals/bug-fix.md`, `scripts/lib/claim-grounding.mjs`
+
+### 10.76 「エラーが出ない」を解消の根拠にした（2026-08-25）
+
+- 事象: コンソールエラー0件と `tsc` pass を根拠に「解消しました」と報告した。実際の症状は残っていた。
+- 原因: 不在証明を測定として扱った。症状の前後比較をしていない。
+- 再発防止: 症状が数値化できるなら修正前と修正後の2つの数値を出す。数値化できない場合は前後キャプチャ2枚を Read して差分を1行で書く。`symptom-measured` が数値2つを要求する。
+- 関連: `scripts/lib/claim-grounding.mjs`, `loops/goals/symptom-gate.md`
+
+### 10.77 調査だけで直したと読める報告をした（2026-08-25）
+
+- 事象: UIバグを3ターン調査し続け、コードを1行も変えないまま原因と候補だけ報告した。ユーザーには何も進んでいないと受け取られた。
+- 原因: 調査報告と修正報告を同じ文体で出した。差分の有無を自分で確認していない。
+- 再発防止: 原因特定の段階では「修正した」「解消した」と書かない。その段階の報告は「原因の仮説」と「次に入れる差分」に限る。`fix-has-diff` が修正主張と差分ゼロの同時成立を止める。
+- 関連: `scripts/lib/claim-grounding.mjs`, `loops/goals/symptom-gate.md`
+
+### 10.78 UIバグを実クリックの前後比較なしに診断した（2026-08-25）
+
+- 事象: 終日いけないの不具合を実行時例外として調査し続けたが、実際の問題はクリック後に画面が485px飛ぶ視覚・操作バグだった。
+- 原因: ログとモジュール内容だけを見て、対象操作を実際に押していない。
+- 再発防止: UIバグは Playwright で対象操作を実クリックし、前後の座標・スクロール位置・選択状態を数値で比較する。ログだけで診断を確定しない。
+- 関連: `Checkbox.tsx`, `PreferredWeekdayDayPanel.tsx`, Playwright, §10.75
+
+### 10.79 5173使用中に Vite が5174へ回りユーザーと別画面を見た（2026-08-25）
+
+- 事象: 既存の5173が生きているため `pnpm run dev` が5174で起動した。ユーザーは5173、検証は5174。同じコードでも壊れた HMR タブは5173に残っていた。
+- 原因: 起動ポートを確認せず、自分が見ている画面をユーザーの画面と同一視した。
+- 再発防止: 検証前に起動ポートとユーザーが見ている URL を突き合わせる。完成宣言に「確認環境」として URL とポートを書く（`symptom-environment`）。
+- 関連: localhost:5173, localhost:5174, `loops/goals/symptom-gate.md`
+
+### 10.80 別セッションの再現失敗でユーザーの未解消を否定した（2026-08-25）
+
+- 事象: 5174と新規5173タブで再現しなかったため、ユーザーの表示を「古いオーバーレイ」と断定した。
+- 原因: ユーザーの既存タブの HMR 受信状況は未観測で、断定の根拠がなかった。
+- 再発防止: 自分の環境で再現しないことを、ユーザー側で起きていないことの証明にしない。再現しない場合は環境差を先に潰し、ユーザーの報告を一次情報として扱い続ける。
+- 関連: localhost:5173, Playwright, §10.79
+
+### 10.81 実行時クラッシュをクリック確認せず解消と報告した（2026-08-25）
+
+- 事象: `toggleWeekday` 未定義を直したあと、モジュールに関数が存在することだけを根拠に「解消」と報告した。ユーザーは壊れたタブを見ており、解消できていないと指摘した。
+- 原因: 静的な存在確認を実行時の動作確認の代わりにした。
+- 再発防止: 実行時クラッシュは、ユーザーと同じポートで対象要素を実クリックし、例外が出ないことを画面で確認してから報告する。
+- 関連: `PatientDay0Form.tsx`, §10.79, §10.80
+
+### 10.82 実在しないスクショパスを回答に貼った（2026-08-25）
+
+- 事象: Playwright の相対パス保存がワークスペース外の出力先になり、Read できない画像を根拠として貼った。
+- 原因: 保存先を絶対パスで指定せず、保存後の実在確認もしていない。
+- 再発防止: キャプチャは絶対パスで保存し、貼る前に Read して実在と内容を確認する。`evidence-path-unresolved` が画像・snapshot の不在を検知し、`PROJECT_MEMORY.md` 参照では打ち消せない。
+- 関連: Playwright, `tmp-shots`, `scripts/lib/claim-grounding.mjs`
+
+### 10.83 関数リネームで呼び出し側の識別子が残った（2026-08-25）
+
+- 事象: `toggleWeekday` を `setWeekdays` に変えたとき、HMR途中で呼び出し側に識別子だけ残り、終日いけないで画面が落ちた。
+- 原因: 定義側だけ変え、参照側を同一変更に含めなかった。
+- 再発防止: 関数をリネームする前に参照箇所を Grep で列挙し、定義と全呼び出し元を同じ変更で反映する。互換が必要なら旧名を薄いラッパーとして残す。
+- 関連: `PatientDay0Form.tsx`, `PreferredWeekdaysField.tsx`
+
+### 10.84 Vite の赤いオーバーレイが HMR 後も残る（2026-08-25）
+
+- 事象: `ReferenceError` 後の `vite-error-overlay` は関数を戻しても同じタブに残ることがあり、修正後も落ちたままに見えた。
+- 原因: オーバーレイの消去が HMR 更新と連動しない場合がある。
+- 再発防止: 実行時例外を直したあとの確認は、ハードリロード（Cmd+Shift+R）を挟む。オーバーレイの残存を「未修正」の証拠にも、修正済みの反証にもしない。
+- 関連: `PatientDay0Form.tsx`, §10.79
+
+### 10.85 待ち表示とMFA準備中にログアウトできなかった（2026-08-21）
+
+- 事象: 本番 `/login` でログアウトできなかった。セッションがある待ち表示と認証アプリ登録の準備中に導線が無く、`signOut` が監査RPCの完了を待って止まっていた。
+- 原因: ログアウトを「ログイン後の画面の機能」として扱い、認証途中の状態を対象外にした。監査ログの送信を離脱処理の前提条件にした。
+- 再発防止: セッションがある画面にはすべてログアウト導線を置く。認証途中の待ち・MFA準備中も対象。`signOut` は監査RPCの完了を待たずに実行する（監査は失敗しても離脱を止めない）。
+- 関連: `signOutSession.ts`, `AuthProvider.tsx`, `LoginPage.tsx`, `MfaEnrollPanel.tsx`, §6.21, §6.29
+
+### 10.86 StrictModeの二重enrollでQRが出なかった（2026-08-21）
+
+- 事象: 運営TOTP登録でQRが出ず「登録を開始できませんでした」になった。
+- 原因: StrictMode の二重実行で `enroll` が2回走り、factor 名が衝突した。未検証 factor が残ると次回も失敗し続けた。
+- 再発防止: TOTP登録は単一実行にし、開始前に未検証 factor を掃除する。外部副作用のある処理を effect で無防備に呼ばない。
+- 関連: `startPlatformAdminTotpEnroll.ts`, `MfaEnrollPanel.tsx`, §6.21, §6.29
+
+### 10.87 高さを埋めるために確認コードとボタンの間を空けた（2026-08-21）
+
+- 事象: 画面高さいっぱいに枠を伸ばし `mt-auto` でボタンを下へ寄せたため、確認コードと「登録して入る」の間に大きな空きができた。赤枠で「いらない」と指摘された。
+- 原因: 「縦幅を使う」という指示を、要素間を引き離すことで満たそうとした。余白の圧縮ではなく空白の挿入になった。
+- 再発防止: 縦幅を使う指示は、外側余白の圧縮で満たす。関連する入力と主ボタンの間隔を広げない。`mt-auto` で主ボタンを画面下端へ飛ばさない。
+- 関連: `MfaEnrollPanel.tsx`, `LoginPage.tsx`, §6.21
+
+### 10.88 本番の直アクセスが NOT_FOUND になった（2026-08-21）
+
+- 事象: 本番の `/calendar` 直アクセスが Vercel の `NOT_FOUND` になった。
+- 原因: `vercel.json` に SPA rewrite が無く、静的ファイル以外のパスを `index.html` に渡していなかった。開発サーバーでは再現しない。
+- 再発防止: 画面ルートを追加したら、本番の直アクセスとリロードを確認する。開発サーバーの動作を本番配信の証拠にしない（§6.75）。
+- 関連: `vercel.json`, §6.75, §2.1
+
+### 10.89 baseUrl を消して paths が解決できなくなった（2026-08-22）
+
+- 事象: TypeScript 6系で `tsconfig.app.json` の `baseUrl` が非推奨エラーになった。`baseUrl` だけを削除すると、今度は Cursor の TypeScript 診断で `paths` の非相対パスがエラーになった。
+- 原因: `paths` の解決に `baseUrl` は不要だが、`baseUrl` を消すと `paths` の置換先を相対指定に直す必要がある。片方だけ変えた。
+- 再発防止: 非推奨は警告抑制で隠さず削除する。`baseUrl` を使わない構成では `paths` を `./src/*` のように相対指定し、IDE診断とビルドの両方で確認する。Vite の alias と `paths` は揃えて維持する。
+- 関連: `tsconfig.app.json`, `vite.config.ts`, §10.90
+
+### 10.90 設定エラーを変更契約の説明だけで終わらせた（2026-08-22）
+
+- 事象: `baseUrl` エラーの修正依頼に対し、変更契約の説明で止まり、ファイル上のエラーが残った。
+- 原因: 契約の提示を作業の完了と混同した。設定変更は連鎖して別のエラーを生むことを見込んでいなかった。
+- 再発防止: 設定修正は実編集まで行い、編集後にIDE診断を読み直す。連鎖して出た移行エラーも解消してから完了報告する（§10.77 と同じ「差分なしの完了報告」）。
+- 関連: `tsconfig.app.json`, §10.77, §10.89
+
 ---
 
 ## 11. 🔗 重要ドキュメント・参照先
@@ -1999,7 +2293,7 @@ AIは作業開始時に以下を確認する。
 □ 左サイドバーなら §6.33 / §10.9 / §6.62（縦ナビ・layouting.png 開閉・Security モバイルは grid.png・calendar/gears/patient/windows/ai・ログイン監査は運営のみ・自動提案ナビは運営のみ・お知らせは置かない・fillViewport 右カラム min-h-0/min-w-0・業務枠に min-h-screen 禁止・スクロールバーは見せず overflow は残す）を守った
 □ カレンダー自動提案なら §6.34 / §10.20〜10.22 / §10.54 / §10.55（右上は遷移せず即実行・操作は titleAside 1行・nowrap・アイコンと文言密着・クリア／一括確定は近傍ポップオーバー・SDK Adapter・仮予約・グリッドのみスケルトン。完了後 silent 再読込は最新なら loading を下ろす。/proposals は運営専用）を守った
 □ 仮枠UI・枠クリックなら §6.35（点線仮枠・クリックは詳細・確定は詳細または一括・楽観更新・moved 時のみ移動プレビュー・左緑バー／常時緑リサイズ禁止・電話確認 pending→ok）を守った
-□ 訪問メニューなら §6.60（4枠・時間はメニュー1・院OFFは選択肢から外す・スナップショットは消さない）を守った
+□ 訪問メニューなら §6.60 / §10.66（正は clinic_visit_menus・院ごとCRUD・所要も編集・4枠・時間はメニュー1・ON/OFFは残す・削除は論理削除・スナップショットは消さない・初回コピーは削除済み含む0件のときだけ）を守った
 □ 訪問詳細なら §6.61 / §6.43 / §10.50 / §10.51（lg・先頭は今日の訪問・会計なし・予約一覧先・時刻2列・キャンセルは画面内・staffId 未指定で担当を消さない）を守った
 □ 空き枠埋めなら §6.47（副導線のみ・近接分最優先・住所必須明示・レート秒カウントダウン・決定論フォールバック・採用はクライアント・warnings 可・生住所非渡与。主導線を空き枠探しにしない）を守った
 □ 操作ログなら §6.50 / §10.42（表形式日本語・fillViewport・白 article・浮いたカードなし・操作/対象/クリニックSelect・ページネーション・全院時のみクリニック列・右下はFABと重ねない）を守った
@@ -2016,8 +2310,9 @@ AIは作業開始時に以下を確認する。
 □ セキュリティ是正なら §6.40 / §10.11（clinic_members RLS 分割・運営除外・propose 60秒クールダウン・待機時間明示のレート制限文言・公開エラーは固定文言）を守った
 □ ご意見チャットなら §6.54 / §6.20 / §6.33 / §6.55 / §10.30（入口は FAB・アカウントメニュー・`/feedback`。業務ナビ禁止。FABは chat.png＋淡い緑。送信は入力内右下の円＋ paper-plane.png（h-7）。Enter送信はオプトイン。右下は外側クリックでも閉じる（暗い背景なし・`/feedback`対象外）。Nani設定行は入力欄上だけ。正の記録は GitHub Issue。院向け返答の正本はお知らせ提案（`/issues`）。院向け文言に Issue と書かない。受付番号・GitHubリンク非表示。トークンはサーバ専用。`VITE_` 禁止。患者PIIは載せない。公開エラーは固定文言。新規送信後に進捗行1件）を守った
 □ 改善の進捗なら §6.57 / §6.29 / §6.55（運営のみ。院に出さない。業務ナビ禁止。入口はアカウントメニュー。送信時はお知らせに載せない。反映済みのときだけ入れる。件数は見出し右端。一覧を狭めない）を守った
-□ 患者一覧・電話確認なら §6.44 / §6.68 / §10.41 / §10.63 / §10.64（fillViewport＋白 article・静かな件数行・未実装列は隠す・氏名リンクのみ・チェック列は一括操作まで置かない・短いラベルは nowrap・検索は actions（電話確認は状態の左／一覧はデータ出力の左）・高さは py-2.5・titleAside に検索を置かない・アイコンは metadata.user_icon・電話確認のお名前も同じ PatientIcon・未設定は表示のみ割当・metadata はマージ・同一フォルダの大文字小文字衝突禁止）を守った
-□ 患者詳細フォームなら §6.69（短い項目は内容幅。住所だけ全幅。希望曜日は正円・未選択点線／選択中実線。フラグは Checkbox。所要は NumberStepper）を守った
+□ 患者一覧・電話確認なら §6.44 / §6.68 / §6.71 / §10.41 / §10.63 / §10.64（fillViewport＋白 article・静かな件数行・未実装列は隠す・氏名リンクのみ・チェック列は一括操作まで置かない・短いラベルは nowrap・検索は actions（電話確認は状態の左／一覧はデータ出力の左）・高さは py-2.5・titleAside に検索を置かない・アイコンは metadata.user_icon・電話確認のお名前も同じ PatientIcon・未設定は表示のみ割当・metadata はマージ・同一フォルダの大文字小文字衝突禁止・感染症は列を増やさずお名前横＋行を slate-800）を守った
+□ 患者詳細フォームなら §6.69 / §6.71 / §6.72（短い項目は内容幅。住所だけ全幅。希望曜日は正円・未選択点線／選択中実線。毎週の希望／いけない／終日いけないは希望曜日。下段は例外・NG。例外追加は NG のみ。時刻なし available・NG・特定日は消さない。フラグは Checkbox。所要は NumberStepper。感染症は専用カラム＋Checkbox。割付に使わない）を守った
+□ 感染症表示なら §6.71（正は `has_infectious_disease`。ラベルは「感染症」。色は slate-800。予約色より優先。色だけにしない。`server/schedule` は触らない）を守った
 □ 安全性ページ枠なら §6.56 / §10.31 / §10.38（入口はアカウントメニューのお知らせの次。サイドバー・ログイン非掲載。左レール w-56・本文スクロールでも固定・本文 max-w-4xl・アカウントメニューは上に開く。左レールにヘルプを含む。Nani の 298px・下開き・max-w-5xl・氷青・Inter・3D・OAuth/Stripe/翻訳非保存は使わない。事実はデンタクル。正本は securityCopy.ts。枠幅を変えたら本文幅も見る）を守った
 □ ヘルプなら §6.59 / §10.45（入口はアカウントメニューの安全性の次・レール・フッター。サイドバー非掲載。文書シェルは SecurityLayout。本文は surface=plain。FAQ見出しは井戸の内側。左右ふちは細い。正本は helpCopy.ts。Nani の FAQ 本文は借りない）を守った
 □ Cloud 送信のコンプライアンスなら §6.12（UUID・制約中心。氏名・電話・生住所非渡与。DPA/同意を文書化）を守った
@@ -2124,4 +2419,10 @@ AIは作業開始時に以下を確認する。
 - `2026-08-21`: マイページ本人編集は表示名のみ（§6.67）。患者アイコンは metadata.user_icon（§6.68）。同一フォルダの大文字小文字衝突を §10.63 / §12 に追記（`/project-memory-learn`）
 - `2026-08-21`: 電話確認の検索は titleAside（§6.44）。お名前も PatientIcon（§6.68 / §10.64）。患者詳細フォームUI（§6.69）。Checkbox / NumberStepper を §6.43 / §12 に追記（`/project-memory-learn`）
 - `2026-08-21`: 検索位置を再改定。電話確認は状態の左、患者一覧はデータ出力の左。高さは py-2.5。部品は NameChartSearchInput（§6.44 / §12）（`/project-memory-learn`）
+- `2026-08-25`: 感染症フラグを §6.71 / §3 / §12 に追記。正は `patients.has_infectious_disease`。表示は slate-800＋「感染症」。割付には使わない（`/project-memory-learn`）
+- `2026-08-25`: 確定済み枠の登録と自動提案の空き埋めを §6.70 に追記。本予約経路3・occupiedVisits・全日除外。SSoT と再発防止を §3 / §6.6 / §6.32 / §6.34 / §6.37 / §6.39 / §10.65 / §12 に追記（`/project-memory-learn`）
+- `2026-08-25`: 希望曜日の希望時間・いけない時間を §6.72 に追記。正は曜日＋時刻付き available / unavailable。全体希望時刻はフォールバック。丸を外しても窓は残す。自動提案は warn まで。時刻なし行は消さない（§3 / §6.61 / §6.69 / §10.67 / §12）（`/project-memory-learn`）
+- `2026-08-25`: 訪問メニューを院ごと `clinic_visit_menus` に改定（§6.60 / §3 / §5 / §7 / §10.66 / §12）。コードカタログは初回種。ON/OFFは `is_enabled`。削除済み行があれば再コピーしない（`/project-memory-learn`）
+- `2026-08-25`: 確定枠の主入口を患者詳細に改定（§6.70 / §6.6 経路4）。空マスは空き枠埋め（§6.41 / §10.68）。希望時間・制約とは別欄（`/project-memory-learn`）
+- `2026-08-25`: 希望曜日と例外・NGの統一を §6.72 に追記。毎週は希望曜日。終日いけないは時刻なし unavailable。例外追加は NG のみ。時刻なし available・NG・特定日は消さない（§3 / §10.67 / §10.69 / §12）（`/project-memory-learn`）
 

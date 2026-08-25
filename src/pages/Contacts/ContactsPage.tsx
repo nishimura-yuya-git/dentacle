@@ -71,7 +71,7 @@ export function ContactsPage() {
     let query = supabase
       .from('visit_phone_confirmations')
       .select(
-        'id, status, result_note, contacted_at, visit_id, patient_id, visits(scheduled_date, start_time, end_time, status), patients(name_kanji, name_kana, chart_number, phone, area_label, metadata)',
+        'id, status, result_note, contacted_at, visit_id, patient_id, visits(scheduled_date, start_time, end_time, status), patients(name_kanji, name_kana, chart_number, phone, area_label, has_infectious_disease, metadata)',
       )
       .eq('clinic_id', clinic.id)
       .is('deleted_at', null)

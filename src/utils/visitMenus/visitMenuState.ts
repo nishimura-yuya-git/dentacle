@@ -55,18 +55,19 @@ export function isVisitMenuEnabled(
 export function visitMenuSelectOptions(
   enabled: Record<string, boolean>,
   currentCode = '',
+  catalog: readonly VisitMenuItem[] = VISIT_MENU_CATALOG,
 ): Array<{ value: string; label: string }> {
   const options: Array<{ value: string; label: string }> = [
     { value: '', label: '指定なし' },
   ]
-  for (const item of VISIT_MENU_CATALOG) {
+  for (const item of catalog) {
     if (!isVisitMenuEnabled(enabled, item.code) && item.code !== currentCode) {
       continue
     }
     options.push({ value: item.code, label: formatVisitMenuLabel(item) })
   }
   if (currentCode && !options.some((option) => option.value === currentCode)) {
-    const item = findVisitMenu(currentCode)
+    const item = findVisitMenu(currentCode, catalog)
     options.push({
       value: currentCode,
       label: item ? formatVisitMenuLabel(item) : currentCode,
@@ -75,15 +76,19 @@ export function visitMenuSelectOptions(
   return options
 }
 
-export function enabledVisitMenus(enabled: Record<string, boolean>): VisitMenuItem[] {
-  return VISIT_MENU_CATALOG.filter((item) => isVisitMenuEnabled(enabled, item.code))
+export function enabledVisitMenus(
+  enabled: Record<string, boolean>,
+  catalog: readonly VisitMenuItem[] = VISIT_MENU_CATALOG,
+): VisitMenuItem[] {
+  return catalog.filter((item) => isVisitMenuEnabled(enabled, item.code))
 }
 
 export function endTimeFromStartAndMenu(
   startTime: string,
   menuCode: string,
+  catalog: readonly VisitMenuItem[] = VISIT_MENU_CATALOG,
 ): string | null {
-  const item = findVisitMenu(menuCode)
+  const item = findVisitMenu(menuCode, catalog)
   if (!item) return null
   return minutesToLabel(timeToMinutes(startTime) + item.durationMinutes)
 }
@@ -91,8 +96,9 @@ export function endTimeFromStartAndMenu(
 export function applyMenu1EndTime<T extends { start_time: string; end_time: string; menu_1: string }>(
   form: T,
   menuCode: string,
+  catalog: readonly VisitMenuItem[] = VISIT_MENU_CATALOG,
 ): T {
-  const endTime = endTimeFromStartAndMenu(form.start_time, menuCode)
+  const endTime = endTimeFromStartAndMenu(form.start_time, menuCode, catalog)
   return {
     ...form,
     menu_1: menuCode,
@@ -136,7 +142,10 @@ export function visitMenusToForm(menus: VisitMenuSnapshot[]): VisitMenuForm {
   return form
 }
 
-export function buildVisitMenuSnapshots(form: VisitMenuForm): VisitMenuSnapshot[] {
+export function buildVisitMenuSnapshots(
+  form: VisitMenuForm,
+  catalog: readonly VisitMenuItem[] = VISIT_MENU_CATALOG,
+): VisitMenuSnapshot[] {
   const pairs: Array<[VisitMenuSlot, string]> = [
     ['1', form.menu_1],
     ['2', form.menu_2],
@@ -146,7 +155,7 @@ export function buildVisitMenuSnapshots(form: VisitMenuForm): VisitMenuSnapshot[
   const menus: VisitMenuSnapshot[] = []
   for (const [slot, code] of pairs) {
     if (!code) continue
-    const item = findVisitMenu(code)
+    const item = findVisitMenu(code, catalog)
     if (!item) continue
     menus.push({
       slot,
@@ -171,8 +180,9 @@ export function withVisitMenus(
 export function resolveManualVisitEndTime(
   form: VisitMenuForm & { start_time: string; end_time: string },
   fallbackEndTime: string,
+  catalog: readonly VisitMenuItem[] = VISIT_MENU_CATALOG,
 ): string {
-  const fromMenu = endTimeFromStartAndMenu(form.start_time, form.menu_1)
+  const fromMenu = endTimeFromStartAndMenu(form.start_time, form.menu_1, catalog)
   if (fromMenu) return fromMenu
   return fallbackEndTime
 }

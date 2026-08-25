@@ -1,5 +1,11 @@
 import type { PointerEvent as ReactPointerEvent } from 'react'
 import { Skeleton } from '@/components/ui/Skeleton'
+import type { CalendarBlock, CalendarVisit } from '@/pages/Calendar/components/dayVisitGrid.types'
+import {
+  INFECTIOUS_DISEASE_LABEL,
+  readHasInfectiousDisease,
+  visitBlockTextClasses,
+} from '@/pages/Patients/infectiousDiseasePolicy'
 import {
   GRID_START_MINUTES,
   SLOT_HEIGHT_PX,
@@ -198,36 +204,49 @@ export function DayVisitColumnBody({
               ? provisionalStatusLabel(blockHeight)
               : visitStatusLabel(visit.status)
             const watching = focusPeersForVisit(livePeers, visit.id)
+            const infectious = readHasInfectiousDisease(
+              visit.patients?.has_infectious_disease,
+            )
+            const text = visitBlockTextClasses(infectious)
+            const patientName = visit.patients?.name_kanji ?? '患者不明'
             return (
               <div key={visit.id}>
               <button
                 type="button"
                 data-visit-block="true"
                 title={
-                  provisionalAuto ? 'クリックで詳細を開く' : undefined
+                  infectious
+                    ? `${INFECTIOUS_DISEASE_LABEL}。器具・接触に注意`
+                    : provisionalAuto
+                      ? 'クリックで詳細を開く'
+                      : undefined
                 }
                 aria-label={
-                  provisionalAuto
-                    ? `${visit.patients?.name_kanji ?? '患者'}の仮予約。クリックで詳細を開く`
-                    : undefined
+                  infectious
+                    ? `${patientName}（${INFECTIOUS_DISEASE_LABEL}）`
+                    : provisionalAuto
+                      ? `${visit.patients?.name_kanji ?? '患者'}の仮予約。クリックで詳細を開く`
+                      : undefined
                 }
                 onPointerDown={(event) => onVisitPointerDown(visit, event)}
                 className={visitBlockClassName(visit)}
                 style={{ top, height: blockHeight }}
               >
-                <p className="truncate text-[10px] font-bold leading-none text-slate-500">
+                <p className={text.time}>
                   {formatTime(displayStart)}-{formatTime(displayEnd)}
                 </p>
-                <p className="mt-0.5 truncate text-[11px] font-bold leading-none text-slate-900">
-                  {visit.patients?.name_kanji ?? '患者不明'}
-                </p>
+                <p className={text.name}>{patientName}</p>
                 <p
                   className={[
-                    'mt-0.5 shrink-0 truncate text-[10px] font-bold leading-none',
-                    provisionalAuto ? 'text-[#008C01]' : 'font-medium text-slate-500',
+                    text.status,
+                    infectious
+                      ? ''
+                      : provisionalAuto
+                        ? 'text-[#008C01]'
+                        : 'font-medium text-slate-500',
                   ].join(' ')}
                 >
-                  {statusText}
+                  {infectious ? `${INFECTIOUS_DISEASE_LABEL} · ${statusText}` : statusText}
                 </p>
                 {canResize && !provisionalAuto ? (
                   <span

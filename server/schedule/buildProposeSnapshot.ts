@@ -14,7 +14,12 @@ import {
   compareDueUrgency,
   computeVisitDueInfo,
 } from '../../src/utils/schedule/visitDueUrgency.ts'
-import type { ProposeJobSnapshot, ProposePatientSnapshot } from './types.ts'
+import { normalizeOccupiedHms } from './occupiedProposeSlots.ts'
+import type {
+  OccupiedVisit,
+  ProposeJobSnapshot,
+  ProposePatientSnapshot,
+} from './types.ts'
 
 function readIntroductionLane(metadata: unknown): IntroductionLane {
   if (!metadata || typeof metadata !== 'object' || Array.isArray(metadata)) {
@@ -68,7 +73,7 @@ export async function buildProposeSnapshot(input: {
         .maybeSingle(),
       input.supabase
         .from('visits')
-        .select('patient_id')
+        .select('patient_id, start_time, end_time, team_id')
         .eq('clinic_id', input.clinicId)
         .eq('scheduled_date', input.targetDate)
         .neq('status', 'cancelled')
@@ -100,6 +105,18 @@ export async function buildProposeSnapshot(input: {
       .map((row) => row.patient_id)
       .filter((id): id is string => Boolean(id)),
   )
+  const teamIndexById = new Map(teamIds.map((id, index) => [id, index]))
+  const occupiedVisits: OccupiedVisit[] = []
+  for (const row of visitsRes.data ?? []) {
+    if (!row.patient_id || !row.start_time || !row.end_time || !row.team_id) continue
+    if (!teamIndexById.has(row.team_id)) continue
+    occupiedVisits.push({
+      patientId: row.patient_id,
+      start: normalizeOccupiedHms(String(row.start_time)),
+      end: normalizeOccupiedHms(String(row.end_time)),
+      teamIndex: teamIndexById.get(row.team_id) as number,
+    })
+  }
 
   const conditionMap = new Map(
     (conditionsRes.data ?? []).map((row) => [row.patient_id, row]),
@@ -218,5 +235,6 @@ export async function buildProposeSnapshot(input: {
     patients,
     travelMinutesMatrix,
     excludedWithoutAddress,
+    occupiedVisits,
   }
 }

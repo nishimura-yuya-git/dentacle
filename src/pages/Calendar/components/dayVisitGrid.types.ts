@@ -9,7 +9,7 @@ export type CalendarVisit = {
   /** manual / auto_proposal / import */
   source: string
   cell_color?: VisitCellColor
-  patients: { name_kanji: string } | null
+  patients: { name_kanji: string; has_infectious_disease: boolean } | null
 }
 
 export type CalendarBlock = {

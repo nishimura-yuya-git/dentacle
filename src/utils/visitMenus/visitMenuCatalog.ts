@@ -46,6 +46,9 @@ export function formatVisitMenuLabel(item: VisitMenuItem): string {
   return `${item.name} (${item.durationMinutes}分)`
 }
 
-export function findVisitMenu(code: string): VisitMenuItem | undefined {
-  return VISIT_MENU_CATALOG.find((item) => item.code === code)
+export function findVisitMenu(
+  code: string,
+  catalog: readonly VisitMenuItem[] = VISIT_MENU_CATALOG,
+): VisitMenuItem | undefined {
+  return catalog.find((item) => item.code === code)
 }

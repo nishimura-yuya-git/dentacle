@@ -16,6 +16,7 @@ import {
 } from '@/pages/Calendar/hooks/useCalendarVisitActions'
 import { toPatientVisitReservation } from '@/pages/Calendar/utils/visitReservationRows'
 import type { VisitCellColor } from '@/utils/visitMenus/visitCellColor'
+import type { VisitMenuItem } from '@/utils/visitMenus/visitMenuCatalog'
 import type { VisitMenuForm } from '@/utils/visitMenus/visitMenuState'
 
 type Option = { value: string; label: string }
@@ -35,6 +36,7 @@ type Props = {
   menus: VisitMenuForm
   cellColor: VisitCellColor
   menuEnabled: Record<string, boolean>
+  menuCatalog: readonly VisitMenuItem[]
   patientOptions: Option[]
   teamOptions: Option[]
   staffOptions: Option[]
@@ -65,6 +67,7 @@ export function CalendarVisitModals({
   menus,
   cellColor,
   menuEnabled,
+  menuCatalog,
   patientOptions,
   teamOptions,
   staffOptions,
@@ -90,6 +93,7 @@ export function CalendarVisitModals({
         teamOptions={teamOptions}
         staffOptions={staffOptions}
         menuEnabled={menuEnabled}
+        menuCatalog={menuCatalog}
         onClose={onCloseCreate}
         onChange={onChangeCreate}
         onSubmit={asSubmit(async () => {
@@ -134,6 +138,7 @@ export function CalendarVisitModals({
         menus={menus}
         cellColor={cellColor}
         menuEnabled={menuEnabled}
+        menuCatalog={menuCatalog}
         teamOptions={teamOptions}
         staffOptions={staffOptions}
         onClose={onCloseDetail}

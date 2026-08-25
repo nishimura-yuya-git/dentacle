@@ -194,4 +194,27 @@ const snapshot: ProposeJobSnapshot = {
   assert.ok(report.issues.some((i) => i.code === 'travel_jump'))
 }
 
+{
+  const report = validateProposeResult(
+    {
+      slots: [
+        {
+          patientId: 'p2',
+          proposedStart: '10:00:00',
+          proposedEnd: '10:30:00',
+          teamIndex: 0,
+        },
+      ],
+    },
+    {
+      ...snapshot,
+      occupiedVisits: [
+        { patientId: 'locked', start: '10:00:00', end: '10:30:00', teamIndex: 0 },
+      ],
+    },
+  )
+  assert.equal(report.acceptedCount, 0)
+  assert.ok(report.issues.some((i) => i.code === 'occupied_overlap'))
+}
+
 console.log('validateProposeResult.test.ts: ok')

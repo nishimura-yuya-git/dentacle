@@ -1,4 +1,5 @@
 import { timeToSeconds } from '../../src/utils/schedule/proposalLanePresets.ts'
+import { freeWindowsForTeam } from './occupiedProposeSlots.ts'
 import type { ProposeJobSnapshot, ProposeSlotResult } from './types.ts'
 
 function secondsToTime(totalSec: number): string {
@@ -78,7 +79,17 @@ export function packProposeSlots(
       return a.patientId.localeCompare(b.patientId)
     })
 
-    let cursorSec = dayStartSec
+    const windows = freeWindowsForTeam({
+      dayStartSec,
+      dayEndSec,
+      occupied: snapshot.occupiedVisits,
+      teamIndex,
+      travelGapMinutes: snapshot.travelGapMinutes,
+    })
+    if (windows.length === 0) continue
+
+    let windowIndex = 0
+    let cursorSec = windows[0].startSec
     let lastPatientId: string | null = null
     const teamName =
       snapshot.teams[teamIndex]?.name ?? `${teamIndex + 1}号車`
@@ -87,30 +98,49 @@ export function packProposeSlots(
       const patient = patientById.get(slot.patientId)
       if (!patient) continue
       const durationSec = patient.durationMinutes * 60
-      const gapMin = travelMinutesBetween(
-        snapshot.travelMinutesMatrix,
-        lastPatientId,
-        slot.patientId,
-        snapshot.travelGapMinutes,
-      )
-      const startSec =
-        lastPatientId === null ? dayStartSec : cursorSec + gapMin * 60
-      const endSec = startSec + durationSec
+      let placed = false
 
-      if (endSec > dayEndSec) {
-        // その号車の稼働帯に入らない分は落とす（他号車へ勝手に移さない）
-        continue
+      while (windowIndex < windows.length) {
+        const window = windows[windowIndex]
+        const gapMin =
+          lastPatientId === null
+            ? 0
+            : travelMinutesBetween(
+                snapshot.travelMinutesMatrix,
+                lastPatientId,
+                slot.patientId,
+                snapshot.travelGapMinutes,
+              )
+        const startSec = Math.max(
+          window.startSec,
+          lastPatientId === null ? window.startSec : cursorSec + gapMin * 60,
+        )
+        const endSec = startSec + durationSec
+        if (startSec >= window.startSec && endSec <= window.endSec) {
+          packed.push({
+            ...slot,
+            proposedStart: secondsToTime(startSec),
+            proposedEnd: secondsToTime(endSec),
+            teamIndex,
+            reason: slot.reason?.trim() || `${teamName}に連続配置`,
+          })
+          cursorSec = endSec
+          lastPatientId = slot.patientId
+          placed = true
+          break
+        }
+
+        windowIndex += 1
+        lastPatientId = null
+        if (windowIndex < windows.length) {
+          cursorSec = windows[windowIndex].startSec
+        }
       }
 
-      packed.push({
-        ...slot,
-        proposedStart: secondsToTime(startSec),
-        proposedEnd: secondsToTime(endSec),
-        teamIndex,
-        reason: slot.reason?.trim() || `${teamName}に連続配置`,
-      })
-      cursorSec = endSec
-      lastPatientId = slot.patientId
+      if (!placed) {
+        // 既存枠を避けた空き帯に入らない分は落とす（他号車へ勝手に移さない）
+        continue
+      }
     }
   }
 

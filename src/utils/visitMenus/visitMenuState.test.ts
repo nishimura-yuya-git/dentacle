@@ -49,6 +49,27 @@ describe('visitMenuState', () => {
     )
   })
 
+  it('院カタログの名称と所要で選択肢と終了時刻を決める', () => {
+    const catalog = [{ code: 'custom-a', name: '院専用', durationMinutes: 50 }]
+    const options = visitMenuSelectOptions({}, '', catalog)
+    assert.equal(options.some((option) => option.label === '院専用 (50分)'), true)
+    assert.equal(endTimeFromStartAndMenu('10:00', 'custom-a', catalog), '10:50')
+    assert.deepEqual(
+      buildVisitMenuSnapshots(
+        { menu_1: 'custom-a', menu_2: '', menu_3: '', menu_sub: '' },
+        catalog,
+      ),
+      [
+        {
+          slot: '1',
+          code: 'custom-a',
+          name_snapshot: '院専用',
+          duration_minutes_snapshot: 50,
+        },
+      ],
+    )
+  })
+
   it('スナップショットは名称と分数を残し、マスタOFFでも読める', () => {
     const snapshots = buildVisitMenuSnapshots({
       menu_1: 'first-visit',

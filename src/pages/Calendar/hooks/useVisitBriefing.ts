@@ -10,6 +10,7 @@ export type VisitBriefingData = {
   preferredWeekdays: number[]
   preferredTimeStart: string | null
   preferredTimeEnd: string | null
+  hasInfectiousDisease: boolean
   constraints: BriefingConstraint[]
 }
 
@@ -20,6 +21,7 @@ const EMPTY: Omit<VisitBriefingData, 'loading'> = {
   preferredWeekdays: [],
   preferredTimeStart: null,
   preferredTimeEnd: null,
+  hasInfectiousDisease: false,
   constraints: [],
 }
 
@@ -47,7 +49,7 @@ export function useVisitBriefing({
       const [patientRes, conditionRes, constraintRes] = await Promise.all([
         supabase
           .from('patients')
-          .select('address, phone')
+          .select('address, phone, has_infectious_disease')
           .eq('clinic_id', clinicId)
           .eq('id', patientId)
           .is('deleted_at', null)
@@ -61,7 +63,7 @@ export function useVisitBriefing({
           .maybeSingle(),
         supabase
           .from('patient_constraints')
-          .select('constraint_type, day_of_week, specific_date, note')
+          .select('constraint_type, day_of_week, specific_date, note, start_time, end_time')
           .eq('clinic_id', clinicId)
           .eq('patient_id', patientId)
           .is('deleted_at', null)
@@ -72,6 +74,7 @@ export function useVisitBriefing({
       setData({
         address: patientRes.data?.address ?? null,
         phone: patientRes.data?.phone ?? null,
+        hasInfectiousDisease: patientRes.data?.has_infectious_disease === true,
         lastVisitDate: conditionRes.data?.last_visit_date ?? null,
         preferredWeekdays: conditionRes.data?.preferred_weekdays ?? [],
         preferredTimeStart: conditionRes.data?.preferred_time_start ?? null,

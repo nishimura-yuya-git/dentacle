@@ -118,4 +118,17 @@ assert.equal(dense[1].teamIndex, 1)
 assert.equal(dense[1].proposedStart, '09:45:00')
 assert.equal(dense[1].proposedEnd, '10:05:00')
 
+// 既存の確定枠は空け、その前後の空きに他の人を詰める
+const aroundOccupied = packProposeSlots(sparseSameCar, {
+  ...snapshot,
+  occupiedVisits: [
+    { patientId: 'locked', start: '10:00:00', end: '10:30:00', teamIndex: 1 },
+  ],
+})
+assert.equal(aroundOccupied.length, 2)
+assert.equal(aroundOccupied[0].proposedStart, '09:00:00')
+assert.equal(aroundOccupied[0].proposedEnd, '09:30:00')
+assert.equal(aroundOccupied[1].proposedStart, '10:45:00')
+assert.equal(aroundOccupied[1].proposedEnd, '11:05:00')
+
 console.log('packProposeSlots.test.ts: ok')

@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import {
   formatBriefingText,
   formatConstraintLine,
+  formatPreferredHopeParts,
   formatPreferredTimeRange,
   formatPreferredWeekdays,
   formatPreviousVisitLabel,
@@ -22,6 +23,39 @@ assert.equal(
     note: '入浴後は不可',
   }),
   'NG / 火曜 / 入浴後は不可',
+)
+assert.equal(
+  formatConstraintLine({
+    constraint_type: 'unavailable',
+    day_of_week: 1,
+    specific_date: null,
+    note: null,
+    start_time: '09:00:00',
+    end_time: '11:00:00',
+  }),
+  '不可 / 月曜 / 09:00〜11:00',
+)
+assert.deepEqual(
+  formatPreferredHopeParts([1, 3], [], '10:00:00', '11:30:00'),
+  { weekdayLabel: '月・水', timeRangeLabel: '10:00〜11:30' },
+)
+assert.deepEqual(
+  formatPreferredHopeParts(
+    [1, 3],
+    [
+      {
+        constraint_type: 'available',
+        day_of_week: 1,
+        specific_date: null,
+        note: null,
+        start_time: '09:00:00',
+        end_time: '11:00:00',
+      },
+    ],
+    '10:00:00',
+    '11:30:00',
+  ),
+  { weekdayLabel: '月 09:00〜11:00・水 10:00〜11:30', timeRangeLabel: null },
 )
 assert.equal(
   formatPreviousVisitLabel(

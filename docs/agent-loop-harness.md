@@ -669,6 +669,21 @@ pnpm run isolate:shadow-branch -- --name hb-fix
 - 反映は `/project-memory-learn` のみ
 - 理解レポート §6 に要詰め件数を記載する運用とする
 
+### 15.8 雛形ハーネス還元（`/harness-up`）
+
+このリポジトリはコピー先である。ベースハーネスを強化したら、雛形へ戻す入口は `/harness-up` だけ。hook は察知とリマインドのみ。
+
+- 雛形パス: `/Users/yuya/JOB/仕事関係/workspace/取引先HP/雛形/hp_model_cursor`
+- 保存先: `.cursor/template-upstream.json`
+- MEMORY・案件画面・自動 commit / push はしない
+
+```bash
+pnpm run harness:up
+pnpm run harness:up -- --status
+pnpm run harness:up -- --apply
+pnpm run test:template-upstream
+```
+
 ## 16. SSoT ハーネス
 
 `check-ssot.cjs` は、SSoT違反を正規表現で検知する。

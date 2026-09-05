@@ -39,6 +39,11 @@ const checks = [
     script: 'memory:audit',
     required: false,
   },
+  {
+    name: '雛形ハーネス還元',
+    script: 'harness:up:status',
+    required: false,
+  },
 ];
 
 function readPackageScripts() {

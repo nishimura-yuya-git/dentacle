@@ -234,6 +234,19 @@ function main() {
     addCommand(commands, 'pnpm run check:provenance', 'ルール・長期記憶変更時の不変条件接続確認');
   }
 
+  if (
+    files.some(
+      (file) =>
+        file === 'scripts/lib/template-upstream-policy.mjs' ||
+        file === 'scripts/template-upstream.mjs' ||
+        file === 'scripts/template-upstream.test.mjs' ||
+        file === '.cursor/commands/harness-up.md' ||
+        file === '.cursor/template-upstream.json',
+    )
+  ) {
+    addCommand(commands, 'pnpm run test:template-upstream', '雛形ハーネス還元の回帰確認');
+  }
+
   addCommand(commands, 'pnpm run check:hard-boundaries', '保護対象変更の検知');
   addCommand(commands, 'pnpm run check:architecture', 'import方向の境界確認');
 

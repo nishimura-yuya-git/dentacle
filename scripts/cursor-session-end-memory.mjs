@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
- * sessionEnd: 追記候補を state に書き出す（fire-and-forget）。
- * PROJECT_MEMORY.md は編集しない。
+ * sessionEnd: MEMORY 追記候補と雛形還元候補を state に書き出す。
+ * PROJECT_MEMORY.md と雛形本体は編集しない。
  */
 import { readFileSync } from 'node:fs';
 import {
@@ -9,6 +9,7 @@ import {
   buildMemoryCandidates,
   writeMemoryCandidates,
 } from './lib/memory-candidates.mjs';
+import { writeTemplateUpstreamCandidatesFromWorkspace } from './lib/template-upstream-policy.mjs';
 
 function readStdin() {
   try {
@@ -18,8 +19,11 @@ function readStdin() {
   }
 }
 
+function isTruthyEnv(value) {
+  return /^(1|true|yes)$/i.test(String(value || ''));
+}
+
 function main() {
-  // stdin は将来の拡張用。失敗しても候補生成は続行する。
   try {
     const raw = readStdin();
     if (raw.trim()) JSON.parse(raw);
@@ -27,12 +31,16 @@ function main() {
     // ignore
   }
 
-  if (String(process.env.MEMORY_CANDIDATES_DISABLE || '').match(/^(1|true|yes)$/i)) {
-    return;
+  if (!isTruthyEnv(process.env.MEMORY_CANDIDATES_DISABLE)) {
+    const report = buildMemoryCandidates({ outputPath: MEMORY_CANDIDATES_PATH });
+    writeMemoryCandidates(report, MEMORY_CANDIDATES_PATH);
   }
 
-  const report = buildMemoryCandidates({ outputPath: MEMORY_CANDIDATES_PATH });
-  writeMemoryCandidates(report, MEMORY_CANDIDATES_PATH);
+  try {
+    writeTemplateUpstreamCandidatesFromWorkspace();
+  } catch (error) {
+    process.stderr.write(`[harness-up] sessionEnd ignored: ${error}\n`);
+  }
 }
 
 main();

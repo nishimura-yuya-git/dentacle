@@ -12,17 +12,46 @@ export function readActiveClinicIdForAudit(): string | null {
   }
 }
 
+/** ログイン成功メール。失敗してもログイン自体は止めない */
+async function requestLoginNotify(auditId: string): Promise<void> {
+  try {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession()
+    const accessToken = session?.access_token
+    if (!accessToken) return
+
+    await fetch('/api/auth/login-notify', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify({ auditId }),
+    })
+  } catch (error) {
+    console.error(
+      '[login_notify]',
+      error instanceof Error ? error.message : error,
+    )
+  }
+}
+
 /** サーバー側 headers 由来で auth_audit_logs に記録（§6.15） */
 export async function recordAuthAuditEvent(
   event: 'login_success' | 'logout',
   clinicId: string | null = readActiveClinicIdForAudit(),
 ): Promise<void> {
-  const { error } = await supabase.rpc('log_auth_audit_event', {
+  const { data, error } = await supabase.rpc('log_auth_audit_event', {
     p_event: event,
     p_clinic_id: clinicId,
   })
   if (error) {
     console.error('[auth_audit]', event, error.message)
+    return
+  }
+  if (event === 'login_success' && typeof data === 'string' && data) {
+    void requestLoginNotify(data)
   }
 }
 

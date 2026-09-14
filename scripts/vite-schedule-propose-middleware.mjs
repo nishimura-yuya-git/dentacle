@@ -56,7 +56,14 @@ export function scheduleProposeMiddleware() {
         const isGapFill = url === '/api/schedule/gap-fill'
         const isFeedback = url === '/api/feedback/send'
         const isAdminInvite = url === '/api/admins/invite'
-        if (!isPropose && !isGapFill && !isFeedback && !isAdminInvite) {
+        const isLoginNotify = url === '/api/auth/login-notify'
+        if (
+          !isPropose &&
+          !isGapFill &&
+          !isFeedback &&
+          !isAdminInvite &&
+          !isLoginNotify
+        ) {
           next()
           return
         }
@@ -84,7 +91,13 @@ export function scheduleProposeMiddleware() {
 
           const body = await readJsonBody(req)
           let outcome
-          if (isAdminInvite) {
+          if (isLoginNotify) {
+            const mod = await server.ssrLoadModule('/server/auth/notifyLogin.ts')
+            outcome = await mod.notifyLoginSuccess({
+              accessToken,
+              auditId: typeof body.auditId === 'string' ? body.auditId : '',
+            })
+          } else if (isAdminInvite) {
             const originHeader = req.headers.origin
             const origin =
               typeof originHeader === 'string' && originHeader.trim()
@@ -169,13 +182,15 @@ export function scheduleProposeMiddleware() {
           res.end(
             JSON.stringify({
               ok: false,
-              error: isAdminInvite
-                ? '運営の招待に失敗しました'
-                : isFeedback
-                  ? 'ご意見の受付に失敗しました'
-                  : isGapFill
-                    ? '空き枠埋めの処理に失敗しました'
-                    : '自動提案の処理に失敗しました',
+              error: isLoginNotify
+                ? 'ログイン通知に失敗しました'
+                : isAdminInvite
+                  ? '運営の招待に失敗しました'
+                  : isFeedback
+                    ? 'ご意見の受付に失敗しました'
+                    : isGapFill
+                      ? '空き枠埋めの処理に失敗しました'
+                      : '自動提案の処理に失敗しました',
             }),
           )
         }

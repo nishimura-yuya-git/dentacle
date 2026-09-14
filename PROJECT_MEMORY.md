@@ -259,6 +259,7 @@
 | 希望曜日の希望時間・いけない時間 | `patient_constraints`（曜日の available / unavailable。終日は時刻なし）+ `weekdayUnavailable.ts` | 毎週の希望／いけない／終日いけないの正。例外・NGは別UI（§6.72 / §10.67 / §10.69） | 患者詳細、訪問詳細の希望 |
 | 距離行列（住所→移動根拠） | `src/utils/schedule/travelDistance.ts` | 座標/距離の算出。エージェントは結果を読むだけ（§6.16） | 割付ジョブ、ルート最適化 |
 | ログインIP・認証監査 | `auth_audit_logs` + `log_auth_audit_event` + `auth_ip_blocks` + `auth_presence` | 誰がいつどこから認証したか。clinic/memberships・地図・IPブロック・在席心拍。閲覧UIは運営のみ `/auth-audit`（§6.15） | ログイン監査画面 |
+| ログイン成功メール | `server/auth/notifyLogin.ts` + `loginNotifyEmail.ts` + `POST /api/auth/login-notify` | `login_success` のあと運営へ1通。事実の正は監査。失敗してもログインは通す（§6.76） | ログイン成功後 |
 | お知らせ公開判定 | `productUpdatePolicy.ts` + RPC（`propose_product_update` / `publish_product_update` / `reject_product_update` / `update_product_update_copy` / `delete_product_update` / `set_product_update_in_progress_badge` / `set_product_update_timeline_mark`） | 院に見えるのは `published` のみ。提案中・入れないは出さない。デプロイでは自動掲載しない（§6.55） | お知らせ画面 |
 | 公開通し番号 | `formatProductUpdateNumber` | `update #N`。日本語の「更新 N」は使わない（§6.55） | 更新情報タイムライン |
 | 進捗→お知らせ文面 | `improvementAnnouncement.ts` + SQL `improvement_page_to_surfaces` | 反映済みのときだけ院向け見出し・本文・対象画面を決める。GitHub / Issue は出さない（§6.55 / §6.57） | 改善の進捗、お知らせ |
@@ -562,7 +563,8 @@ DB上の確定・集計テーブル
 - ログイン系監査と業務操作ログ（`operation_traces`）はテーブル/責務を分離する。
 - エージェント（Cursor SDK）経路に監査テーブルを直結させない（§6.12）。
 - 2026-08-14 追記: レセコンCSV取込の監査は `operation_traces` に件数・成否だけ残す。ログイン監査へ流さない。詳細は §6.58。
-- 関連: `recordAuthAudit.ts`, `authPresence.ts`, `AuthAuditPage.tsx`, `AuthPresencePanel.tsx`, `AuthAuditJapanMap.tsx`, `japanMapZoom.ts`, `formatAuthAudit.ts`, `formatAuthIpBlock.ts`, `lookupIpRegion.ts`, `navConfig.ts`, `public/icon/map-full.svg`, `20260812151000_auth_audit_platform_admin_only.sql`, `20260812160000_auth_audit_clinic_and_ip_blocks.sql`, `20260812170000_auth_presence_heartbeat.sql`, §6.29, §6.50, §6.58, §7, §10.27, §10.28
+- **ログイン成功メール（2026-09-14）**: 監査の後工程。詳細は §6.76。監査RPC・IP取得の正は本節のまま。
+- 関連: `recordAuthAudit.ts`, `authPresence.ts`, `AuthAuditPage.tsx`, `AuthPresencePanel.tsx`, `AuthAuditJapanMap.tsx`, `japanMapZoom.ts`, `formatAuthAudit.ts`, `formatAuthIpBlock.ts`, `lookupIpRegion.ts`, `navConfig.ts`, `public/icon/map-full.svg`, `20260812151000_auth_audit_platform_admin_only.sql`, `20260812160000_auth_audit_clinic_and_ip_blocks.sql`, `20260812170000_auth_presence_heartbeat.sql`, `api/auth/login-notify.ts`, `server/auth/notifyLogin.ts`, `server/auth/loginNotifyEmail.ts`, §6.29, §6.50, §6.58, §6.76, §7, §10.27, §10.28
 
 ### 6.16 距離算出とルート最適化の責務（2026-08-08 決定 / 2026-08-11 改定）
 
@@ -655,7 +657,8 @@ DB上の確定・集計テーブル
 - 開発・デモでは Supabase Auth のメール確認をオフにするのを推奨。オンのままだと signUp 直後に session が発行されず、所属作成RPC等が permission denied になる（§10.5）。
 - 開発用ログインユーザーは `y.nishimura@leanstack.co.jp`。**パスワードは MEMORY・コミット・Issue に書かない。**
 - 検証用に作った他の Auth ユーザーは残さず削除する運用とする。
-- 関連: Supabase Auth, §8.3, §10.5, ログイン
+- **ログイン成功メール（2026-09-14）**: 既定宛先はこのメール。詳細は §6.76。
+- 関連: Supabase Auth, §8.3, §10.5, §6.76, ログイン
 
 ### 6.23 基本フォント Zen Maru Gothic（2026-08-09 決定）
 
@@ -1385,6 +1388,21 @@ DB上の確定・集計テーブル
 - 画面ルートを追加したときは、開発サーバーだけでなく本番の直アクセスも確認する。
 - 関連: `vercel.json`, §2.1, §10.88
 
+### 6.76 ログイン成功の運営メール（2026-09-14 決定）
+
+ログイン成功の事実の正は `auth_audit_logs`（§6.15）。メールは監査の後工程であり、監査の代替ではない。
+
+- **宛先**: 既定は `y.nishimura@leanstack.co.jp`（§6.22）。`LOGIN_NOTIFY_TO` で上書き可。西村さん本人のログインも送る。
+- **対象イベント**: `login_success` のみ。ログアウトは送らない。失敗ログインは送らない（失敗監査自体は後段可のまま）。
+- **経路**: `log_auth_audit_event` 成功後に `void requestLoginNotify(auditId)` → `POST /api/auth/login-notify`。クライアントは `auditId` と JWT だけ送る。IP / UA は送らない。
+- **送信**: サーバーの Resend のみ。`RESEND_API_KEY` と `LOGIN_NOTIFY_FROM`（検証済みドメイン）はサーバー専用。`VITE_` 禁止。監査行の読取はサーバーの service role。
+- **失敗してもログインは止めない**: 未設定・送信失敗・APIエラーでもセッションは維持する。
+- **同じ監査IDは再送しない**: `Idempotency-Key: login-notify-{auditId}` とプロセス内 Set。
+- **本文**: 件名 `【Dentacle】ログイン: {表示名}`。日時は日本時間 `YYYY/MM/DD HH:mm:ss`。端末は `formatAuthAuditDeviceLabel`。所属は `parseAuthAuditMemberships`。
+- **未設定**: 実送信には Resend キー・From・（招待APIと同じ）service role が必要。未設定のまま「届いている」と書かない。
+- パスワード・APIキー実値は MEMORY / Git / Issue に書かない。
+- 関連: `recordAuthAudit.ts`, `api/auth/login-notify.ts`, `server/auth/notifyLogin.ts`, `server/auth/loginNotifyEmail.ts`, `.env.example`, §6.15, §6.22, §7
+
 ---
 
 ## 7. 🔐 RLS・権限・セキュリティ
@@ -1400,6 +1418,7 @@ DB上の確定・集計テーブル
 | `feedback_threads` | 本人または運営 | 本人（所属クリニックまたは運営） | 原則不可 | 原則不可 | アプリ内履歴。正の記録は GitHub Issue（§6.54） |
 | `feedback_messages` | 本人または運営 | 本人 | 原則不可 | 原則不可 | INSERT のみ。UPDATE/DELETE ポリシーなし（§6.54） |
 | `POST /api/feedback/send` | — | ログイン済み | — | — | JWT必須。トークンはサーバ専用。15秒クールダウン。公開エラーは固定文言（§6.54） |
+| `POST /api/auth/login-notify` | — | ログイン済み（本人の `login_success` 監査） | — | — | JWT必須。Resendはサーバー専用。同じ監査IDは再送しない。失敗でログインは止めない。公開エラーは固定文言（§6.76） |
 | お知らせ（`product_updates`） | published は認証済み。提案中・入れないは運営のみ | `propose_product_update` のみ | `publish_product_update` / `reject_product_update` / `update_product_update_copy` / `set_product_update_in_progress_badge` / `set_product_update_timeline_mark` | `delete_product_update`（進捗未連動のみ） | いきなり published 禁止。進捗連動件は削除しない。進捗の反映済みからも propose→publish（§6.55 / §6.57） |
 | `improvement_items` | 運営のみ | `create_improvement_item_for_thread` | `set_improvement_item_status` | grant なし | 院には出さない。反映済みでお知らせ1件。§6.57 |
 | 運営（`platform_admins`） | 運営のみ | `grant_platform_admin`（新規はサーバー招待） | `update_platform_admin` | `revoke_platform_admin` | 直書き禁止。自分と最後の1人は削除不可。クリニック所属者には付けない。Admin API はサーバーのみ（§6.63） |
@@ -1418,6 +1437,7 @@ DB上の確定・集計テーブル
 - 秘密情報をログ・フロント・コミットに出さない
 - `service_role` はサーバーのみ。Cursor Cloud エージェントへ Supabase / DB 直結認証を渡さない（§6.12）
 - ログインIP監査はサーバー側取得のみ。クライアント由来IPを正にしない（§6.15）
+- ログイン成功メールはサーバーの Resend のみ。IPはクライアントから送らない。失敗でログインを止めない（§6.76）
 - 患者・予約・制約・監査の正データは Supabase に置く
 - API レスポンスに内部エラーメッセージ（Postgres/SDK 生文言）を載せない（§6.40 / §10.11）
 - `clinic_members` のオーナー保護・運営除外は UI だけでなく RLS で強制する（§6.40）
@@ -2268,6 +2288,7 @@ AIは作業開始時に以下を確認する。
 □ 精度・導入ナレッジなら §6.13（構造化制約が正・電話確認から昇格・自然文の無確認ハード制約化禁止）を守った
 □ SDK モデル選択なら §6.14 / §6.53（カスケードは後続。手動切替は grok-4.5 / grok-4.6 / composer-2.5。既定は grok-4.5。Grok は1行＋版スライダー、ラベルは版番号のみ。「版」ラベルなし。保存後もパネルを閉じない。IDは list 確認）を守った
 □ 認証・監査なら §6.15（サーバー側IP＝回線出口・clinic/memberships・端末UA要約・運営のみ `/auth-audit`・地図は件数をチップ行右端・九州は zoomSelector・在席はハートビート・IPブロックは回線共有前提文言・運営バイパス・§10.27/§10.28）を守った
+□ ログイン成功通知なら §6.76（宛先は y.nishimura@leanstack.co.jp。`LOGIN_NOTIFY_TO` で上書き可。ログアウトは送らない。失敗でログインを止めない。Resend はサーバー専用。`VITE_` 禁止。IPはクライアントから送らない。同じ監査IDは再送しない）を守った
 □ ルート距離なら §6.16 / §6.39（`travelDistance.ts` で行列、生住所非渡与、住所必須、地図鍵を渡さない）を守った
 □ サービス名・画面コピーなら §6.17（対外名はデンタクル。内部識別子は Detacle。装飾英語見出しを増やさない。SEOはサブタイトル側）を守った
 □ 初期機能・導入なら §6.18 / §6.19（Apotool骨格＋ボタン1つ。v0はMustのみ。立ち上げ/既存の2レーン）を守った
@@ -2425,4 +2446,5 @@ AIは作業開始時に以下を確認する。
 - `2026-08-25`: 訪問メニューを院ごと `clinic_visit_menus` に改定（§6.60 / §3 / §5 / §7 / §10.66 / §12）。コードカタログは初回種。ON/OFFは `is_enabled`。削除済み行があれば再コピーしない（`/project-memory-learn`）
 - `2026-08-25`: 確定枠の主入口を患者詳細に改定（§6.70 / §6.6 経路4）。空マスは空き枠埋め（§6.41 / §10.68）。希望時間・制約とは別欄（`/project-memory-learn`）
 - `2026-08-25`: 希望曜日と例外・NGの統一を §6.72 に追記。毎週は希望曜日。終日いけないは時刻なし unavailable。例外追加は NG のみ。時刻なし available・NG・特定日は消さない（§3 / §10.67 / §10.69 / §12）（`/project-memory-learn`）
+- `2026-09-14`: ログイン成功の運営メールを §6.76 に追記。宛先は y.nishimura@leanstack.co.jp。ログアウトは送らない。失敗でログインは止めない。Resend はサーバー専用。§3 / §6.15 / §6.22 / §7 / §12（`/project-memory-learn`）
 

@@ -274,6 +274,7 @@
 | AI処理中表示 | `ComposingOrb.tsx` | thinking-orbs composing の唯一の入口。直 import 禁止。theme light・日本語（§2.16） | カレンダー自動提案、空き枠埋め、運営ハブ生成 |
 | ヘルプ文言 | `src/pages/Help/helpCopy.ts` | FAQ・セクション見出しの正。Nani の本文は借りない（§6.59） | `/help` |
 | 対外ブランド名 | `src/config/appName.ts`（`APP_DISPLAY_NAME`） | 画面の正は Dentacle。内部識別子 Detacle と混ぜない（§6.17） | タブ・安全性・ヘルプ・契約・ロゴ alt |
+| URLリンクプレビュー | `index.html` 静的 OG + `/icon/og.png` | Chatwork 等のカード。JS注入禁止。正方形 `summary`（§6.77） | URL貼付 |
 | 製品版番号 | `APP_VERSION` + `package.json` version + Git タグ `vX.Y.Z` | 開発者向け SemVer。院向け `update #N` と混ぜない（§6.64） | `/release`、CHANGELOG、GitHub Release |
 | 診療カレンダー他端末の操作中表示 | `calendarLivePeers.ts` + `clinic_calendar_peers` | PC丸・ゴースト・元枠非表示。氏名は持たない（§6.65） | 診療カレンダー |
 | 診療カレンダー silent 再取得 | `shouldUseCalendarDayOnlyReload` + `calendarRealtimeSync.ts` | 号車済み silent は当日分だけ。先頭ティックは即時、連打は静穏 400ms（§6.65） | 診療カレンダー |
@@ -584,7 +585,8 @@ DB上の確定・集計テーブル
 - ファビコンの正は `/icon/favicon.ico`。`/vite.svg` には戻さない。タブ枠は小さいので、余白を削ってマークを大きくする。
 - 装飾英語の見出しを増やさない（`ui-language.mdc`）。Dentacle は公式ブランド名であり装飾英語ではない。
 - SEO・提案書の検索語はサービス名に詰め込まず、説明文・サブタイトルで取る。例: `Dentacle｜訪問歯科のスケジュール自動化`。
-- 関連: `src/config/appName.ts`, `BrandLogo.tsx`, `index.html`, `public/icon/logo.png`, `public/icon/favicon.ico`, §1, §6.24, §10.52, §10.53
+- **URL貼付プレビュー（2026-09-14）**: 正方形アイコンのカード。詳細は §6.77。横長 `logo.png` は画面内ロゴ用のまま。
+- 関連: `src/config/appName.ts`, `BrandLogo.tsx`, `index.html`, `public/icon/logo.png`, `public/icon/favicon.ico`, `public/icon/og.png`, §1, §6.24, §6.77, §10.52, §10.53
 
 ### 6.18 機能ベースと導入レーン（2026-08-08 決定）
 
@@ -1402,6 +1404,17 @@ DB上の確定・集計テーブル
 - **未設定**: 実送信には Resend キー・From・（招待APIと同じ）service role が必要。未設定のまま「届いている」と書かない。
 - パスワード・APIキー実値は MEMORY / Git / Issue に書かない。
 - 関連: `recordAuthAudit.ts`, `api/auth/login-notify.ts`, `server/auth/notifyLogin.ts`, `server/auth/loginNotifyEmail.ts`, `.env.example`, §6.15, §6.22, §7
+
+### 6.77 URL貼付のリンクプレビュー（2026-09-14 決定）
+
+Chatwork / Slack / LINE などに URL を貼ったとき、Zoom のように小さい正方形アイコンが出るようにする。
+
+- **カード種別**: `twitter:card` は `summary`。大きいバナー（`summary_large_image`）にしない。
+- **画像の正**: `/icon/og.png`（ファビコンと同じ歯＋家マーク、正方形）。画面内の横長 `/icon/logo.png` は使わない。
+- **置き場**: `index.html` の静的 meta（`og:*` / `twitter:*` / `apple-touch-icon`）。クローラーは JS を実行しない。React の `useEffect` 注入ではプレビューに出ない。
+- タイトルは Dentacle。説明は「訪問歯科のスケジュール自動化」（§6.17 のサブタイトルと同じ）。
+- localhost への貼付では外部アプリは画像を取りに来られない。確認は本番 URL。一度貼った URL は各アプリがキャッシュすることがある。
+- 関連: `index.html`, `public/icon/og.png`, `public/icon/favicon.ico`, `src/config/appName.test.ts`, §6.17
 
 ---
 
@@ -2291,6 +2304,7 @@ AIは作業開始時に以下を確認する。
 □ ログイン成功通知なら §6.76（宛先は y.nishimura@leanstack.co.jp。`LOGIN_NOTIFY_TO` で上書き可。ログアウトは送らない。失敗でログインを止めない。Resend はサーバー専用。`VITE_` 禁止。IPはクライアントから送らない。同じ監査IDは再送しない）を守った
 □ ルート距離なら §6.16 / §6.39（`travelDistance.ts` で行列、生住所非渡与、住所必須、地図鍵を渡さない）を守った
 □ サービス名・画面コピーなら §6.17（対外名はデンタクル。内部識別子は Detacle。装飾英語見出しを増やさない。SEOはサブタイトル側）を守った
+□ URL貼付プレビューなら §6.77（`twitter:card=summary`。画像は `/icon/og.png`。横長 `logo.png` と `summary_large_image` は使わない。OGは `index.html` の静的meta。JS注入にしない）を守った
 □ 初期機能・導入なら §6.18 / §6.19（Apotool骨格＋ボタン1つ。v0はMustのみ。立ち上げ/既存の2レーン）を守った
 □ 患者種まきなら §6.20 / §10.3（`doc/患者データ.csv`・Adapter経由・完成データ扱い禁止・個人情報をMEMORYに書かない・DB書込は合成CSV優先）を守った
 □ レセコン連携なら §6.58（いまの経路はCSV。ノーザ導入は今から備える。接続5項目と身元受け皿を先に固定。ライブAPIは接続情報を受けてから。監視SaaSは足さない。取込監査は operation_traces に件数・成否だけ。院向けは /security#rececon で「レセコン」。製品名は院向けに出さない。院名は未確認のまま MEMORY に書かない）を守った
@@ -2447,4 +2461,5 @@ AIは作業開始時に以下を確認する。
 - `2026-08-25`: 確定枠の主入口を患者詳細に改定（§6.70 / §6.6 経路4）。空マスは空き枠埋め（§6.41 / §10.68）。希望時間・制約とは別欄（`/project-memory-learn`）
 - `2026-08-25`: 希望曜日と例外・NGの統一を §6.72 に追記。毎週は希望曜日。終日いけないは時刻なし unavailable。例外追加は NG のみ。時刻なし available・NG・特定日は消さない（§3 / §10.67 / §10.69 / §12）（`/project-memory-learn`）
 - `2026-09-14`: ログイン成功の運営メールを §6.76 に追記。宛先は y.nishimura@leanstack.co.jp。ログアウトは送らない。失敗でログインは止めない。Resend はサーバー専用。§3 / §6.15 / §6.22 / §7 / §12（`/project-memory-learn`）
+- `2026-09-14`: URL貼付のリンクプレビューを §6.77 に追記。正方形 `summary`。画像は `/icon/og.png`。OGは `index.html` 静的meta。§3 / §6.17 / §12（`/project-memory-learn`）
 

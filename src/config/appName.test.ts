@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
-import { readFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { APP_DISPLAY_NAME } from './appName.ts'
@@ -55,5 +55,16 @@ describe('APP_DISPLAY_NAME', () => {
     const html = readFileSync(join(here, '../../index.html'), 'utf8')
     assert.match(html, /href="\/icon\/favicon\.ico"/)
     assert.equal(html.includes('/vite.svg'), false)
+  })
+
+  it('URL添付のプレビューは正方形アイコンの summary にする', () => {
+    const html = readFileSync(join(here, '../../index.html'), 'utf8')
+    assert.match(html, /property="og:title" content="Dentacle"/)
+    assert.match(html, /property="og:description" content="訪問歯科のスケジュール自動化"/)
+    assert.match(html, /property="og:image" content="\/icon\/og\.png"/)
+    assert.match(html, /name="twitter:card" content="summary"/)
+    assert.equal(html.includes('summary_large_image'), false)
+    assert.match(html, /rel="apple-touch-icon" href="\/icon\/og\.png"/)
+    assert.equal(existsSync(join(here, '../../public/icon/og.png')), true)
   })
 })

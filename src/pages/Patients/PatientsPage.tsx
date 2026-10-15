@@ -16,6 +16,8 @@ import { PatientsTable } from '@/pages/Patients/PatientsTable'
 import { downloadPatientsCsv } from '@/pages/Patients/exportPatientsCsv'
 import { NameChartSearchInput } from '@/pages/Patients/NameChartSearchInput'
 import { PatientIconPicker } from '@/pages/Patients/PatientIconPicker'
+import { PatientPdfPicker } from '@/pages/Patients/PatientPdfPicker'
+import { uploadPendingPatientPdfs } from '@/pages/Patients/patientDocumentApi'
 import {
   resolvePatientIconId,
   withPatientIcon,
@@ -75,6 +77,7 @@ export function PatientsPage() {
   const [busy, setBusy] = useState(false)
   const [modalOpen, setModalOpen] = useState(false)
   const [form, setForm] = useState(EMPTY_FORM)
+  const [pdfFiles, setPdfFiles] = useState<File[]>([])
   const [totalPatients, setTotalPatients] = useState(0)
   const [newPatientsThisMonth, setNewPatientsThisMonth] = useState(0)
 
@@ -227,11 +230,35 @@ export function PatientsPage() {
       is_provisional: true,
       phone_confirmation_required: true,
     })
+    let pdfFailures: string[] = []
+    try {
+      const pdfResult = await uploadPendingPatientPdfs({
+        clinicId: clinic.id,
+        patientId: created.id,
+        files: pdfFiles,
+      })
+      pdfFailures = pdfResult.failures
+    } catch {
+      pdfFailures = ['PDFの保存に失敗しました。編集画面から再度追加してください。']
+    }
     setBusy(false)
-    toast.success('患者を登録しました')
+    if (pdfFailures.length > 0) {
+      toast.error(`患者は登録しました。${pdfFailures.join(' ')}`)
+    } else if (pdfFiles.length > 0) {
+      toast.success('患者とPDFを登録しました')
+    } else {
+      toast.success('患者を登録しました')
+    }
     setForm(EMPTY_FORM)
+    setPdfFiles([])
     setModalOpen(false)
     await load()
+  }
+
+  function closeCreateModal() {
+    if (busy) return
+    setModalOpen(false)
+    setPdfFiles([])
   }
 
   function handleExport() {
@@ -271,7 +298,11 @@ export function PatientsPage() {
       <Button
         variant="soft"
         className="!px-4 !py-2.5 !text-sm !font-medium"
-        onClick={() => setModalOpen(true)}
+        onClick={() => {
+          setForm(EMPTY_FORM)
+          setPdfFiles([])
+          setModalOpen(true)
+        }}
       >
         <PlusIcon />
         新規患者登録
@@ -332,10 +363,12 @@ export function PatientsPage() {
       <Modal
         isOpen={modalOpen}
         title="新規患者登録"
-        onClose={() => setModalOpen(false)}
+        size="lg"
+        closeDisabled={busy}
+        onClose={closeCreateModal}
         footer={
           <div className="flex justify-end gap-3">
-            <Button variant="secondary" onClick={() => setModalOpen(false)}>
+            <Button variant="secondary" onClick={closeCreateModal} disabled={busy}>
               キャンセル
             </Button>
             <Button type="submit" form="create-patient-form" loading={busy}>
@@ -401,6 +434,14 @@ export function PatientsPage() {
             <p className="mt-1 text-xs font-medium text-slate-400">
               器具・接触に注意。他の患者へうつさない
             </p>
+          </div>
+          <div className="md:col-span-2">
+            <PatientPdfPicker
+              files={pdfFiles}
+              disabled={busy}
+              onChange={setPdfFiles}
+              onReject={(message) => toast.error(message)}
+            />
           </div>
           <p className="md:col-span-2 text-xs font-medium text-slate-400">
             訪問頻度は未設定の仮条件で登録します。電話確認で育成してください。

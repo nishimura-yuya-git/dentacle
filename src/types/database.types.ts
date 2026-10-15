@@ -1012,6 +1012,75 @@ export type Database = {
           },
         ]
       }
+      patient_documents: {
+        Row: {
+          byte_size: number
+          clinic_id: string
+          content_type: string
+          created_at: string
+          deleted_at: string | null
+          deleted_by: string | null
+          file_name: string
+          id: string
+          metadata: Json
+          patient_id: string
+          storage_path: string
+          updated_at: string
+          uploaded_at: string
+          uploaded_by: string | null
+          version: number
+        }
+        Insert: {
+          byte_size: number
+          clinic_id: string
+          content_type?: string
+          created_at?: string
+          deleted_at?: string | null
+          deleted_by?: string | null
+          file_name: string
+          id?: string
+          metadata?: Json
+          patient_id: string
+          storage_path: string
+          updated_at?: string
+          uploaded_at?: string
+          uploaded_by?: string | null
+          version?: number
+        }
+        Update: {
+          byte_size?: number
+          clinic_id?: string
+          content_type?: string
+          created_at?: string
+          deleted_at?: string | null
+          deleted_by?: string | null
+          file_name?: string
+          id?: string
+          metadata?: Json
+          patient_id?: string
+          storage_path?: string
+          updated_at?: string
+          uploaded_at?: string
+          uploaded_by?: string | null
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "patient_documents_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "patient_documents_patient_clinic_fkey"
+            columns: ["patient_id", "clinic_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id", "clinic_id"]
+          },
+        ]
+      }
       patient_visit_conditions: {
         Row: {
           clinic_id: string

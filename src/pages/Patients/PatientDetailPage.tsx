@@ -9,6 +9,7 @@ import { useClinic } from '@/features/clinic/useClinic'
 import { supabase } from '@/lib/supabase'
 import { WEEKDAY_LABELS } from '@/utils/roleLabels'
 import { AddConstraintModal } from '@/pages/Patients/AddConstraintModal'
+import { PatientDocumentsSection } from '@/pages/Patients/PatientDocumentsSection'
 import { PatientConfirmedVisitSection } from '@/pages/Patients/PatientConfirmedVisitSection'
 import {
   PatientDay0Form,
@@ -49,7 +50,7 @@ const CONSTRAINT_SELECT =
 
 export function PatientDetailPage() {
   const { id } = useParams<{ id: string }>()
-  const { clinic, clinicReady } = useClinic()
+  const { clinic, clinicReady, canWriteOperations } = useClinic()
   const { user } = useAuth()
   const toast = useToast()
   const [patient, setPatient] = useState<Day0Patient | null>(null)
@@ -321,6 +322,12 @@ export function PatientDetailPage() {
               onWeekdayWindowsChange={setWeekdayWindows}
               onAddException={() => setConstraintOpen(true)}
               onSubmit={handleSave}
+            />
+
+            <PatientDocumentsSection
+              clinicId={clinic.id}
+              patientId={patient.id}
+              canWrite={canWriteOperations}
             />
 
             <PatientConfirmedVisitSection

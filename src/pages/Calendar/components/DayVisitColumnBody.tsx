@@ -209,24 +209,26 @@ export function DayVisitColumnBody({
             )
             const text = visitBlockTextClasses(infectious)
             const patientName = visit.patients?.name_kanji ?? '患者不明'
+            const treatment = visit.menuText?.trim() ?? ''
+            const titleParts = [
+              infectious ? `${INFECTIOUS_DISEASE_LABEL}。器具・接触に注意` : null,
+              treatment || null,
+              provisionalAuto ? 'クリックで詳細を開く' : null,
+            ].filter((part): part is string => Boolean(part))
             return (
               <div key={visit.id}>
               <button
                 type="button"
                 data-visit-block="true"
-                title={
-                  infectious
-                    ? `${INFECTIOUS_DISEASE_LABEL}。器具・接触に注意`
-                    : provisionalAuto
-                      ? 'クリックで詳細を開く'
-                      : undefined
-                }
+                title={titleParts.length > 0 ? titleParts.join('。') : undefined}
                 aria-label={
                   infectious
-                    ? `${patientName}（${INFECTIOUS_DISEASE_LABEL}）`
+                    ? `${patientName}${treatment ? `、${treatment}` : ''}（${INFECTIOUS_DISEASE_LABEL}）`
                     : provisionalAuto
-                      ? `${visit.patients?.name_kanji ?? '患者'}の仮予約。クリックで詳細を開く`
-                      : undefined
+                      ? `${patientName}の仮予約${treatment ? `。${treatment}` : ''}。クリックで詳細を開く`
+                      : treatment
+                        ? `${patientName}、${treatment}`
+                        : undefined
                 }
                 onPointerDown={(event) => onVisitPointerDown(visit, event)}
                 className={visitBlockClassName(visit)}
@@ -236,6 +238,17 @@ export function DayVisitColumnBody({
                   {formatTime(displayStart)}-{formatTime(displayEnd)}
                 </p>
                 <p className={text.name}>{patientName}</p>
+                {treatment ? (
+                  <p
+                    className={
+                      infectious
+                        ? 'mt-0.5 truncate text-[10px] font-bold leading-none text-slate-200'
+                        : 'mt-0.5 truncate text-[10px] font-bold leading-none text-slate-700'
+                    }
+                  >
+                    {treatment}
+                  </p>
+                ) : null}
                 <p
                   className={[
                     text.status,

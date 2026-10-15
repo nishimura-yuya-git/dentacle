@@ -9,6 +9,8 @@ export type CalendarVisit = {
   /** manual / auto_proposal / import */
   source: string
   cell_color?: VisitCellColor
+  /** 予約時点の治療内容。未指定は空 */
+  menuText?: string
   patients: { name_kanji: string; has_infectious_disease: boolean } | null
 }
 

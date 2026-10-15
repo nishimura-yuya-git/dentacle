@@ -44,6 +44,12 @@ export function reservationMenuText(menus: VisitMenuSnapshot[]): string {
   return names.length > 0 ? names.join(' / ') : '指定なし'
 }
 
+/** 予約カードに出す治療内容。未指定のときは空にしてカードを埋めない */
+export function reservationCardMenuText(menus: VisitMenuSnapshot[]): string {
+  const text = reservationMenuText(menus)
+  return text === '指定なし' ? '' : text
+}
+
 export function canCancelReservation(status: string): boolean {
   return status === 'tentative' || status === 'confirmed'
 }

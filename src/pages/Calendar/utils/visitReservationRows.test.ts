@@ -5,6 +5,7 @@ import {
   ensureCurrentReservation,
   formatReservationDateTime,
   pickPreviousReservation,
+  reservationCardMenuText,
   reservationMenuText,
   staffNameFromJoin,
 } from './visitReservationRows.ts'
@@ -32,6 +33,18 @@ assert.equal(
   'メンテナンス / 初診',
 )
 assert.equal(reservationMenuText([]), '指定なし')
+assert.equal(
+  reservationCardMenuText([
+    {
+      slot: '1',
+      code: 'maintenance',
+      name_snapshot: 'メンテナンス',
+      duration_minutes_snapshot: 15,
+    },
+  ]),
+  'メンテナンス',
+)
+assert.equal(reservationCardMenuText([]), '')
 assert.equal(canCancelReservation('confirmed'), true)
 assert.equal(canCancelReservation('tentative'), true)
 assert.equal(canCancelReservation('cancelled'), false)

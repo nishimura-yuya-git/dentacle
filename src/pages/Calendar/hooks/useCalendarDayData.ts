@@ -4,6 +4,8 @@ import type { Json } from '@/types/database.types'
 import { readVisitMenuEnabled } from '@/utils/clinic/clinicMetadata'
 import { readHasInfectiousDisease } from '@/pages/Patients/infectiousDiseasePolicy'
 import { readVisitCellColor } from '@/utils/visitMenus/visitCellColor'
+import { readVisitMenus } from '@/utils/visitMenus/visitMenuState'
+import { reservationCardMenuText } from '@/pages/Calendar/utils/visitReservationRows'
 import { VISIT_MENU_CATALOG, type VisitMenuItem } from '@/utils/visitMenus/visitMenuCatalog'
 import {
   enabledMapFromMenus,
@@ -336,6 +338,7 @@ function applyCalendarDaySurface(input: {
     input.visits.map((row) => ({
       ...row,
       cell_color: readVisitCellColor(row.metadata),
+      menuText: reservationCardMenuText(readVisitMenus(row.metadata)),
       patients: row.patients
         ? {
             name_kanji: row.patients.name_kanji,

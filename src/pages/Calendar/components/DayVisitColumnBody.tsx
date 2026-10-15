@@ -15,6 +15,7 @@ import {
 import { calendarBlockClassName } from '@/pages/Calendar/utils/calendarBlockAppearance'
 import {
   isAutoProposalTentative,
+  planVisitCardLayout,
   provisionalBlockHeightPx,
   provisionalStatusLabel,
   visitBlockClassName,
@@ -210,6 +211,7 @@ export function DayVisitColumnBody({
             const text = visitBlockTextClasses(infectious)
             const patientName = visit.patients?.name_kanji ?? '患者不明'
             const treatment = visit.menuText?.trim() ?? ''
+            const cardLayout = planVisitCardLayout(blockHeight, treatment.length > 0)
             const titleParts = [
               infectious ? `${INFECTIOUS_DISEASE_LABEL}。器具・接触に注意` : null,
               treatment || null,
@@ -234,33 +236,53 @@ export function DayVisitColumnBody({
                 className={visitBlockClassName(visit)}
                 style={{ top, height: blockHeight }}
               >
-                <p className={text.time}>
-                  {formatTime(displayStart)}-{formatTime(displayEnd)}
-                </p>
+                <span className="flex h-3 w-full min-w-0 shrink-0 items-center gap-1">
+                  <p className={text.time}>
+                    {formatTime(displayStart)}-{formatTime(displayEnd)}
+                  </p>
+                  {cardLayout.statusOnOwnLine ? null : (
+                    <p
+                      className={[
+                        text.status,
+                        'max-w-[46%] text-right',
+                        infectious
+                          ? ''
+                          : provisionalAuto
+                            ? 'text-[#008C01]'
+                            : 'font-medium text-slate-500',
+                      ].join(' ')}
+                    >
+                      {infectious ? `${INFECTIOUS_DISEASE_LABEL} · ${statusText}` : statusText}
+                    </p>
+                  )}
+                </span>
                 <p className={text.name}>{patientName}</p>
-                {treatment ? (
+                {cardLayout.showTreatment ? (
                   <p
                     className={
                       infectious
-                        ? 'mt-0.5 truncate text-[10px] font-bold leading-none text-slate-200'
-                        : 'mt-0.5 truncate text-[10px] font-bold leading-none text-slate-700'
+                        ? 'h-3 w-full shrink-0 truncate text-[10px] font-bold leading-3 text-slate-200'
+                        : 'h-3 w-full shrink-0 truncate text-[10px] font-bold leading-3 text-slate-700'
                     }
                   >
                     {treatment}
                   </p>
                 ) : null}
-                <p
-                  className={[
-                    text.status,
-                    infectious
-                      ? ''
-                      : provisionalAuto
-                        ? 'text-[#008C01]'
-                        : 'font-medium text-slate-500',
-                  ].join(' ')}
-                >
-                  {infectious ? `${INFECTIOUS_DISEASE_LABEL} · ${statusText}` : statusText}
-                </p>
+                {cardLayout.statusOnOwnLine ? (
+                  <p
+                    className={[
+                      text.status,
+                      'h-3 w-full',
+                      infectious
+                        ? ''
+                        : provisionalAuto
+                          ? 'text-[#008C01]'
+                          : 'font-medium text-slate-500',
+                    ].join(' ')}
+                  >
+                    {infectious ? `${INFECTIOUS_DISEASE_LABEL} · ${statusText}` : statusText}
+                  </p>
+                ) : null}
                 {canResize && !provisionalAuto ? (
                   <span
                     data-resize-handle="true"

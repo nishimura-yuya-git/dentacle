@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict'
+import { visitBlockStyle } from './calendarGrid.ts'
 import {
   isAutoProposalTentative,
+  planVisitCardLayout,
   provisionalBlockHeightPx,
   provisionalStatusLabel,
   visitBlockClassName,
@@ -70,5 +72,21 @@ assert.match(
 assert.equal(provisionalBlockHeightPx(54), 64)
 assert.equal(provisionalStatusLabel(64), '仮（クリックで詳細）')
 assert.equal(provisionalStatusLabel(40), '仮')
+
+const shortCard = planVisitCardLayout(visitBlockStyle('10:00', '10:25').height, true)
+assert.equal(shortCard.showTreatment, true)
+assert.equal(shortCard.statusOnOwnLine, false)
+
+const halfHour = planVisitCardLayout(visitBlockStyle('10:00', '10:30').height, true)
+assert.equal(halfHour.showTreatment, true)
+assert.equal(halfHour.statusOnOwnLine, false)
+
+const longCard = planVisitCardLayout(visitBlockStyle('10:00', '10:40').height, true)
+assert.equal(longCard.showTreatment, true)
+assert.equal(longCard.statusOnOwnLine, true)
+
+const noMenu = planVisitCardLayout(visitBlockStyle('10:00', '10:25').height, false)
+assert.equal(noMenu.showTreatment, false)
+assert.equal(noMenu.statusOnOwnLine, true)
 
 console.log('visitBlockAppearance.test.ts: ok')

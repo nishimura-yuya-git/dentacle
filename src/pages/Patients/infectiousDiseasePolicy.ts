@@ -45,14 +45,14 @@ export function visitBlockTextClasses(hasInfectious: boolean): {
 } {
   if (hasInfectious) {
     return {
-      time: 'truncate text-[10px] font-bold leading-none text-slate-300',
-      name: 'mt-0.5 truncate text-[11px] font-bold leading-none text-slate-50',
-      status: 'mt-0.5 shrink-0 truncate text-[10px] font-bold leading-none text-slate-300',
+      time: 'min-w-0 shrink truncate text-[10px] font-bold leading-3 text-slate-300',
+      name: 'h-[13px] w-full shrink-0 truncate text-[11px] font-bold leading-[13px] text-slate-50',
+      status: 'shrink-0 truncate text-[10px] font-bold leading-3 text-slate-300',
     }
   }
   return {
-    time: 'truncate text-[10px] font-bold leading-none text-slate-500',
-    name: 'mt-0.5 truncate text-[11px] font-bold leading-none text-slate-900',
-    status: 'mt-0.5 shrink-0 truncate text-[10px] font-bold leading-none',
+    time: 'min-w-0 shrink truncate text-[10px] font-bold leading-3 text-slate-500',
+    name: 'h-[13px] w-full shrink-0 truncate text-[11px] font-bold leading-[13px] text-slate-900',
+    status: 'shrink-0 truncate text-[10px] font-bold leading-3',
   }
 }
